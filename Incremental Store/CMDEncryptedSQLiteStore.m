@@ -137,7 +137,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
-                unsigned int primaryKey = sqlite3_column_int(statement, 0);
+                unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
                 NSManagedObjectID *objectID = [self newObjectIDForEntity:entity referenceObject:@(primaryKey)];
                 if (type == NSManagedObjectIDResultType) { [results addObject:objectID]; }
                 else {
@@ -161,9 +161,8 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             if (sqlite3_step(statement) == SQLITE_ROW) {
-                unsigned int count = sqlite3_column_int(statement, 0);
-                NSNumber *number = [NSNumber numberWithUnsignedInt:count];
-                [results addObject:number];
+                unsigned long long count = sqlite3_column_int64(statement, 0);
+                [results addObject:@(count)];
             }
             if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
                 if (error) { *error = [self databaseError]; }
@@ -195,7 +194,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     NSEntityDescription *entity = [objectID entity];
     NSMutableArray *columns = [NSMutableArray array];
     NSMutableArray *keys = [NSMutableArray array];
-    unsigned int primaryKey = [[self referenceObjectForObjectID:objectID] unsignedIntValue];
+    unsigned long long primaryKey = [[self referenceObjectForObjectID:objectID] unsignedLongLongValue];
     
     // enumerate properties
     NSDictionary *properties = [entity propertiesByName];
@@ -206,10 +205,14 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
         }
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
             NSRelationshipDescription *inverse = [obj inverseRelationship];
+            
+            // many side of a one-to-many
             if (![obj isToMany] && [inverse isToMany]) {
-                [columns addObject:[NSString stringWithFormat:@"%@_id", key]];
+                NSString *column = [self foreignKeyColumnForRelationship:obj];
+                [columns addObject:column];
                 [keys addObject:key];
             }
+            
         }
     }];
     
@@ -221,7 +224,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     
     // run query
-    sqlite3_bind_int(statement, 1, primaryKey);
+    sqlite3_bind_int64(statement, 1, primaryKey);
     if (sqlite3_step(statement) == SQLITE_ROW) {
         NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
@@ -251,7 +254,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
                         error:(NSError **)error {
     
     // prepare values
-    unsigned int sourceKey = [[self referenceObjectForObjectID:objectID] unsignedIntValue];
+    unsigned long long key = [[self referenceObjectForObjectID:objectID] unsignedLongLongValue];
     NSEntityDescription *sourceEntity = [objectID entity];
     NSRelationshipDescription *inverseRelationship = [relationship inverseRelationship];
     NSEntityDescription *destinationEntity = [relationship destinationEntity];
@@ -259,36 +262,35 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     
     // many side of a one-to-many
     if ([relationship isToMany] && ![inverseRelationship isToMany]) {
-        NSString *column = [NSString stringWithFormat:@"%@_ID", [sourceEntity name]];
         NSString *string = [NSString stringWithFormat:
                             @"SELECT ID FROM %@ WHERE %@=?",
-                            [destinationEntity name],
-                            column];
+                            [self tableNameForEntity:destinationEntity],
+                            [self foreignKeyColumnForRelationship:inverseRelationship]];
         statement = [self preparedStatementForQuery:string];
-        sqlite3_bind_int(statement, 1, sourceKey);
+        sqlite3_bind_int64(statement, 1, key);
     }
     
     // one side of a one-to-many
     else if (![relationship isToMany] && [inverseRelationship isToMany]) {
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT %@_ID FROM %@ WHERE ID=?",
-                            [destinationEntity name],
-                            [sourceEntity name]];
+                            @"SELECT %@ FROM %@ WHERE ID=?",
+                            [self foreignKeyColumnForRelationship:relationship],
+                            [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
-        sqlite3_bind_int(statement, 1, sourceKey);
+        sqlite3_bind_int64(statement, 1, key);
     }
     
     // run query
     NSMutableArray *objectIDs = [NSMutableArray array];
     while (sqlite3_step(statement) == SQLITE_ROW) {
         if (sqlite3_column_type(statement, 0) != SQLITE_NULL) {
-            NSNumber *value = [NSNumber numberWithUnsignedInt:sqlite3_column_int(statement, 0)];
+            NSNumber *value = @(sqlite3_column_int64(statement, 0));
             [objectIDs addObject:[self newObjectIDForEntity:destinationEntity referenceObject:value]];
         }
     }
     
     // error case
-    if (sqlite3_finalize(statement) != SQLITE_OK) {
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
         if (error) { *error = [self databaseError]; }
         return nil;
     }
@@ -541,10 +543,13 @@ fail:
     [columns addObjectsFromArray:attributeNames];
     [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         NSRelationshipDescription *inverse = [obj inverseRelationship];
+        
+        // many side of a one-to-many
         if (![obj isToMany] && [inverse isToMany]) {
-            NSString *name = [NSString stringWithFormat:@"%@_id integer", key];
-            [columns addObject:name];
+            NSString *column = [self foreignKeyColumnForRelationship:obj];
+            [columns addObject:column];
         }
+        
     }];
     
     // create table
@@ -606,24 +611,26 @@ fail:
     BOOL __block success = YES;
     [[request insertedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
-        // get entity
+        // get values
         NSEntityDescription *entity = [object entity];
         NSMutableArray *keys = [NSMutableArray array];
-        [keys addObject:@"ID"];
-        
-        // get attributes
-        NSDictionary *attributes = [entity attributesByName];
-        NSArray *attributeNames = [attributes allKeys];
-        [keys addObjectsFromArray:attributeNames];
-        
-        // get relationships
-        NSDictionary *relationships = [entity relationshipsByName];
-        NSMutableArray *relationshipNames = [NSMutableArray arrayWithCapacity:[relationships count]];
-        [relationships enumerateKeysAndObjectsUsingBlock:^(id name, id relationship, BOOL *stop) {
-            if (![relationship isToMany]) {
-                NSEntityDescription *destination = [relationship destinationEntity];
-                [keys addObject:[NSString stringWithFormat:@"%@_ID", [destination name]]];
-                [relationshipNames addObject:name];
+        NSMutableArray *columns = [NSMutableArray arrayWithObject:@"id"];
+        NSDictionary *properties = [entity propertiesByName];
+        [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+            if ([obj isKindOfClass:[NSAttributeDescription class]]) {
+                [keys addObject:key];
+                [columns addObject:key];
+            }
+            else if ([obj isKindOfClass:[NSPropertyDescription class]]) {
+                NSRelationshipDescription *inverse = [obj inverseRelationship];
+                
+                // many side of a many-to-one
+                if (![obj isToMany] && [inverse isToMany]) {
+                    [keys addObject:key];
+                    NSString *column = [self foreignKeyColumnForRelationship:obj];
+                    [columns addObject:column];
+                }
+                
             }
         }];
         
@@ -631,35 +638,23 @@ fail:
         NSString *string = [NSString stringWithFormat:
                             @"INSERT INTO %@ (%@) VALUES(%@);",
                             [self tableNameForEntity:entity],
-                            [keys componentsJoinedByString:@", "],
-                            [[NSArray cmd_arrayWithObject:@"?" times:[keys count]]
-                             componentsJoinedByString:@", "]];
+                            [columns componentsJoinedByString:@", "],
+                            [[NSArray cmd_arrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // bind id
         NSNumber *number = [self referenceObjectForObjectID:[object objectID]];
         sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
         
-        // bind attributes
-        NSUInteger offset = 2;
-        [attributeNames enumerateObjectsUsingBlock:^(id name, NSUInteger index, BOOL *stop) {
-            NSAttributeDescription *attribute = [attributes objectForKey:name];
+        // bind properties
+        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            NSPropertyDescription *property = [properties objectForKey:obj];
             [self
-             bindAttribute:attribute
-             withValue:[object valueForKey:name]
-             forKey:name
+             bindProperty:property
+             withValue:[object valueForKey:obj]
+             forKey:obj
              toStatement:statement
-             atIndex:(index + offset)];
-        }];
-        
-        // bind relationship foreign keys
-        offset += [attributeNames count];
-        [relationshipNames enumerateObjectsUsingBlock:^(NSString *name, NSUInteger index, BOOL *stop) {
-            NSManagedObject *target = [object valueForKey:name];
-            if (target) {
-                NSNumber *number = [self referenceObjectForObjectID:[target objectID]];
-                sqlite3_bind_int(statement, index + offset, [number unsignedIntValue]);
-            }
+             atIndex:(idx + 2)];
         }];
         
         // execute
@@ -702,28 +697,31 @@ fail:
         NSEntityDescription *entity = [object entity];
         NSDictionary *changedAttributes = [object changedValues];
         NSMutableArray *columns = [NSMutableArray array];
-        NSMutableArray *values = [NSMutableArray array];
+        NSMutableArray *keys = [NSMutableArray array];
         
         // enumerate changed properties
         NSDictionary *properties = [entity propertiesByName];
         [changedAttributes enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
             id property = [properties objectForKey:key];
             if ([property isKindOfClass:[NSAttributeDescription class]]) {
-                [values addObject:[NSString stringWithFormat:@"%@=?", key]];
-                [columns addObject:key];
+                [columns addObject:[NSString stringWithFormat:@"%@=?", key]];
+                [keys addObject:key];
             }
             else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-                if (![property isToMany]) {
-                    NSEntityDescription *destination = [property destinationEntity];
-                    NSString *column = [NSString stringWithFormat:@"%@_ID", [destination name]];
-                    [values addObject:[NSString stringWithFormat:@"%@=?", column]];
-                    [columns addObject:key];
+                NSRelationshipDescription *inverse = [property inverseRelationship];
+                
+                // many side of a many-to-one
+                if (![property isToMany] && [inverse isToMany]) {
+                    NSString *column = [self foreignKeyColumnForRelationship:property];
+                    [columns addObject:column];
+                    [keys addObject:key];
                 }
+                
             }
         }];
         
         // return if nothing needs updating
-        if ([values count] == 0) {
+        if ([keys count] == 0) {
 #if USE_MANUAL_NODE_CACHE
             [node updateWithValues:cacheChanges version:version];
 #endif
@@ -734,33 +732,32 @@ fail:
         NSString *string = [NSString stringWithFormat:
                             @"UPDATE %@ SET %@ WHERE ID=?;",
                             [self tableNameForEntity:entity],
-                            [values componentsJoinedByString:@", "]];
+                            [columns componentsJoinedByString:@", "]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // bind values
-        [columns enumerateObjectsUsingBlock:^(id name, NSUInteger index, BOOL *stop) {
-            id value = [changedAttributes objectForKey:name];
-            id property = [properties objectForKey:name];
-            if ([property isKindOfClass:[NSAttributeDescription class]]) {
+        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            id value = [changedAttributes objectForKey:obj];
+            id property = [properties objectForKey:obj];
 #if USE_MANUAL_NODE_CACHE
-                [cacheChanges setObject:value forKey:name];
+            if (value && ![value isKindOfClass:[NSNull class]]) {
+                [cacheChanges setObject:value forKey:obj];
+            }
+            else {
+                [cacheChanges removeObjectForKey:obj];
+            }
 #endif
-                [self
-                 bindAttribute:property
-                 withValue:value
-                 forKey:name
-                 toStatement:statement
-                 atIndex:(index + 1)];
-            }
-            else if ([property isKindOfClass:[NSPropertyDescription class]]) {
-                NSNumber *number = [self referenceObjectForObjectID:[value objectID]];
-                sqlite3_bind_int(statement, index + 1, [number unsignedIntValue]);
-            }
+            [self
+             bindProperty:property
+             withValue:value
+             forKey:obj
+             toStatement:statement
+             atIndex:(idx + 1)];
         }];
         
         // execute
         NSNumber *number = [self referenceObjectForObjectID:objectID];
-        sqlite3_bind_int(statement, [columns count] + 1, [number unsignedIntegerValue]);
+        sqlite3_bind_int64(statement, ([columns count] + 1), [number unsignedLongLongValue]);
         sqlite3_step(statement);
         
         // finish up
@@ -792,7 +789,7 @@ fail:
                             @"DELETE FROM %@ WHERE ID=?;",
                             [self tableNameForEntity:entity]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-        sqlite3_bind_int(statement, 1, [objectID unsignedIntValue]);
+        sqlite3_bind_int64(statement, 1, [objectID unsignedLongLongValue]);
         sqlite3_step(statement);
         
         // finish up
@@ -887,12 +884,12 @@ fail:
         }
         sqlite3_finalize(statement);
     }
-    value = @([value unsignedLongValue] + 1);
+    value = @([value unsignedLongLongValue] + 1);
     [objectIDCache setObject:value forKey:table];
     return value;
 }
 
-- (void)bindProperty:(NSAttributeDescription *)property
+- (void)bindProperty:(NSPropertyDescription *)property
            withValue:(id)value
               forKey:(NSString *)key
          toStatement:(sqlite3_stmt *)statement
@@ -1014,7 +1011,7 @@ fail:
     }
     else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
         NSEntityDescription *target = [(id)property destinationEntity];
-        NSNumber *number = @(sqlite3_column_int(statement, index));
+        NSNumber *number = @(sqlite3_column_int64(statement, index));
         return [self newObjectIDForEntity:target referenceObject:number];
     }
     return nil;
@@ -1122,7 +1119,7 @@ fail:
             NSString *leftExpression = [[(id)predicate leftExpression] keyPath];
             id property = [properties objectForKey:leftExpression];
             if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-                leftExpression = [NSString stringWithFormat:@"%@_ID", leftExpression];
+                leftExpression = [self foreignKeyColumnForRelationship:property];
             }
             
             // right expression
@@ -1199,6 +1196,11 @@ fail:
         }
         
     }];
+}
+
+- (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
+    NSEntityDescription *destination = [relationship destinationEntity];
+    return [NSString stringWithFormat:@"%@_id", [destination name]];
 }
 
 @end
