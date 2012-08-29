@@ -13,3 +13,6 @@ build/*
 xcuserdata
 profile
 *.moved-aside
+
+# Finder
+.DS_Store

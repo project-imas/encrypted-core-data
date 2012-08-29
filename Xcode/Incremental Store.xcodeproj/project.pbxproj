@@ -1,0 +1,557 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3BD5EFFA15EE5DDF00333320 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
+		3BD5EFFC15EE5DDF00333320 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
+		3BD5EFFE15EE5DDF00333320 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */; };
+		3BD5F00415EE5DDF00333320 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3BD5F00215EE5DDF00333320 /* InfoPlist.strings */; };
+		3BD5F00615EE5DDF00333320 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F00515EE5DDF00333320 /* main.m */; };
+		3BD5F00A15EE5DDF00333320 /* ISDAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */; };
+		3BD5F00D15EE5DDF00333320 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */; };
+		3BD5F01015EE5DDF00333320 /* ISDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F00F15EE5DDF00333320 /* ISDViewController.m */; };
+		3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F02515EE5E7200333320 /* SenTestingKit.framework */; };
+		3BD5F02715EE5E7200333320 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
+		3BD5F02815EE5E7200333320 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
+		3BD5F02E15EE5E7200333320 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3BD5F02C15EE5E7200333320 /* InfoPlist.strings */; };
+		3BD5F03115EE5E7200333320 /* Incremental_Store_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F03015EE5E7200333320 /* Incremental_Store_Tests.m */; };
+		3BD5F04D15EE5EBA00333320 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F03E15EE5E9400333320 /* libcrypto.a */; };
+		3BD5F04E15EE5EBE00333320 /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F04815EE5E9E00333320 /* libsqlcipher.a */; };
+		3BD5F05315EE5ED000333320 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F03E15EE5E9400333320 /* libcrypto.a */; };
+		3BD5F05415EE5ED300333320 /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F04815EE5E9E00333320 /* libsqlcipher.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3BD5F03D15EE5E9400333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03615EE5E9400333320 /* openssl.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
+		3BD5F04715EE5E9E00333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		3BD5F04915EE5EAE00333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		3BD5F04B15EE5EB200333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03615EE5E9400333320 /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
+		3BD5F04F15EE5ECA00333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		3BD5F05115EE5ECD00333320 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BD5F03615EE5E9400333320 /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Incremental Store Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BD5EFF915EE5DDF00333320 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		3BD5EFFB15EE5DDF00333320 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		3BD5F00115EE5DDF00333320 /* Incremental Store Demo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Incremental Store Demo-Info.plist"; sourceTree = "<group>"; };
+		3BD5F00315EE5DDF00333320 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		3BD5F00515EE5DDF00333320 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		3BD5F00715EE5DDF00333320 /* Incremental Store Demo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Incremental Store Demo-Prefix.pch"; sourceTree = "<group>"; };
+		3BD5F00815EE5DDF00333320 /* ISDAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISDAppDelegate.h; sourceTree = "<group>"; };
+		3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ISDAppDelegate.m; sourceTree = "<group>"; };
+		3BD5F00C15EE5DDF00333320 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/MainStoryboard.storyboard; sourceTree = "<group>"; };
+		3BD5F00E15EE5DDF00333320 /* ISDViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISDViewController.h; sourceTree = "<group>"; };
+		3BD5F00F15EE5DDF00333320 /* ISDViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ISDViewController.m; sourceTree = "<group>"; };
+		3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Incremental Store Tests.octest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BD5F02515EE5E7200333320 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		3BD5F02B15EE5E7200333320 /* Incremental Store Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Incremental Store Tests-Info.plist"; sourceTree = "<group>"; };
+		3BD5F02D15EE5E7200333320 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		3BD5F02F15EE5E7200333320 /* Incremental_Store_Tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Incremental_Store_Tests.h; sourceTree = "<group>"; };
+		3BD5F03015EE5E7200333320 /* Incremental_Store_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Incremental_Store_Tests.m; sourceTree = "<group>"; };
+		3BD5F03215EE5E7200333320 /* Incremental Store Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Incremental Store Tests-Prefix.pch"; sourceTree = "<group>"; };
+		3BD5F03615EE5E9400333320 /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = ../vendor/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
+		3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3BD5EFF215EE5DDF00333320 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F04E15EE5EBE00333320 /* libsqlcipher.a in Frameworks */,
+				3BD5F04D15EE5EBA00333320 /* libcrypto.a in Frameworks */,
+				3BD5EFFA15EE5DDF00333320 /* UIKit.framework in Frameworks */,
+				3BD5EFFC15EE5DDF00333320 /* Foundation.framework in Frameworks */,
+				3BD5EFFE15EE5DDF00333320 /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BD5F02015EE5E7200333320 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F05415EE5ED300333320 /* libsqlcipher.a in Frameworks */,
+				3BD5F05315EE5ED000333320 /* libcrypto.a in Frameworks */,
+				3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */,
+				3BD5F02715EE5E7200333320 /* UIKit.framework in Frameworks */,
+				3BD5F02815EE5E7200333320 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3BD5EFEA15EE5DDF00333320 = {
+			isa = PBXGroup;
+			children = (
+				3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */,
+				3BD5F03615EE5E9400333320 /* openssl.xcodeproj */,
+				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
+				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
+				3BD5EFF815EE5DDF00333320 /* Frameworks */,
+				3BD5EFF615EE5DDF00333320 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3BD5EFF615EE5DDF00333320 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */,
+				3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3BD5EFF815EE5DDF00333320 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5EFF915EE5DDF00333320 /* UIKit.framework */,
+				3BD5EFFB15EE5DDF00333320 /* Foundation.framework */,
+				3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */,
+				3BD5F02515EE5E7200333320 /* SenTestingKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F00815EE5DDF00333320 /* ISDAppDelegate.h */,
+				3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */,
+				3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */,
+				3BD5F00E15EE5DDF00333320 /* ISDViewController.h */,
+				3BD5F00F15EE5DDF00333320 /* ISDViewController.m */,
+				3BD5F00015EE5DDF00333320 /* Supporting Files */,
+			);
+			path = "Incremental Store Demo";
+			sourceTree = "<group>";
+		};
+		3BD5F00015EE5DDF00333320 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F00115EE5DDF00333320 /* Incremental Store Demo-Info.plist */,
+				3BD5F00215EE5DDF00333320 /* InfoPlist.strings */,
+				3BD5F00515EE5DDF00333320 /* main.m */,
+				3BD5F00715EE5DDF00333320 /* Incremental Store Demo-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		3BD5F02915EE5E7200333320 /* Incremental Store Tests */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F02F15EE5E7200333320 /* Incremental_Store_Tests.h */,
+				3BD5F03015EE5E7200333320 /* Incremental_Store_Tests.m */,
+				3BD5F02A15EE5E7200333320 /* Supporting Files */,
+			);
+			path = "Incremental Store Tests";
+			sourceTree = "<group>";
+		};
+		3BD5F02A15EE5E7200333320 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F02B15EE5E7200333320 /* Incremental Store Tests-Info.plist */,
+				3BD5F02C15EE5E7200333320 /* InfoPlist.strings */,
+				3BD5F03215EE5E7200333320 /* Incremental Store Tests-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		3BD5F03715EE5E9400333320 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F03E15EE5E9400333320 /* libcrypto.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3BD5F04015EE5E9E00333320 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3BD5F04815EE5E9E00333320 /* libsqlcipher.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3BD5EFF415EE5DDF00333320 /* Incremental Store Demo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BD5F01315EE5DDF00333320 /* Build configuration list for PBXNativeTarget "Incremental Store Demo" */;
+			buildPhases = (
+				3BD5EFF115EE5DDF00333320 /* Sources */,
+				3BD5EFF215EE5DDF00333320 /* Frameworks */,
+				3BD5EFF315EE5DDF00333320 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3BD5F04C15EE5EB200333320 /* PBXTargetDependency */,
+				3BD5F04A15EE5EAE00333320 /* PBXTargetDependency */,
+			);
+			name = "Incremental Store Demo";
+			productName = "Incremental Store Demo";
+			productReference = 3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3BD5F02315EE5E7200333320 /* Incremental Store Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BD5F03315EE5E7200333320 /* Build configuration list for PBXNativeTarget "Incremental Store Tests" */;
+			buildPhases = (
+				3BD5F01F15EE5E7200333320 /* Sources */,
+				3BD5F02015EE5E7200333320 /* Frameworks */,
+				3BD5F02115EE5E7200333320 /* Resources */,
+				3BD5F02215EE5E7200333320 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3BD5F05215EE5ECD00333320 /* PBXTargetDependency */,
+				3BD5F05015EE5ECA00333320 /* PBXTargetDependency */,
+			);
+			name = "Incremental Store Tests";
+			productName = "Incremental Store Tests";
+			productReference = 3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3BD5EFEC15EE5DDF00333320 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = ISD;
+				LastUpgradeCheck = 0440;
+				ORGANIZATIONNAME = "Caleb Davenport";
+			};
+			buildConfigurationList = 3BD5EFEF15EE5DDF00333320 /* Build configuration list for PBXProject "Incremental Store" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3BD5EFEA15EE5DDF00333320;
+			productRefGroup = 3BD5EFF615EE5DDF00333320 /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 3BD5F03715EE5E9400333320 /* Products */;
+					ProjectRef = 3BD5F03615EE5E9400333320 /* openssl.xcodeproj */;
+				},
+				{
+					ProductGroup = 3BD5F04015EE5E9E00333320 /* Products */;
+					ProjectRef = 3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				3BD5EFF415EE5DDF00333320 /* Incremental Store Demo */,
+				3BD5F02315EE5E7200333320 /* Incremental Store Tests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		3BD5F03E15EE5E9400333320 /* libcrypto.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libcrypto.a;
+			remoteRef = 3BD5F03D15EE5E9400333320 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3BD5F04815EE5E9E00333320 /* libsqlcipher.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libsqlcipher.a;
+			remoteRef = 3BD5F04715EE5E9E00333320 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3BD5EFF315EE5DDF00333320 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F00415EE5DDF00333320 /* InfoPlist.strings in Resources */,
+				3BD5F00D15EE5DDF00333320 /* MainStoryboard.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BD5F02115EE5E7200333320 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F02E15EE5E7200333320 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		3BD5F02215EE5E7200333320 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3BD5EFF115EE5DDF00333320 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F00615EE5DDF00333320 /* main.m in Sources */,
+				3BD5F00A15EE5DDF00333320 /* ISDAppDelegate.m in Sources */,
+				3BD5F01015EE5DDF00333320 /* ISDViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BD5F01F15EE5E7200333320 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD5F03115EE5E7200333320 /* Incremental_Store_Tests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3BD5F04A15EE5EAE00333320 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = sqlcipher;
+			targetProxy = 3BD5F04915EE5EAE00333320 /* PBXContainerItemProxy */;
+		};
+		3BD5F04C15EE5EB200333320 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 3BD5F04B15EE5EB200333320 /* PBXContainerItemProxy */;
+		};
+		3BD5F05015EE5ECA00333320 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = sqlcipher;
+			targetProxy = 3BD5F04F15EE5ECA00333320 /* PBXContainerItemProxy */;
+		};
+		3BD5F05215EE5ECD00333320 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 3BD5F05115EE5ECD00333320 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		3BD5F00215EE5DDF00333320 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3BD5F00315EE5DDF00333320 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3BD5F00C15EE5DDF00333320 /* en */,
+			);
+			name = MainStoryboard.storyboard;
+			sourceTree = "<group>";
+		};
+		3BD5F02C15EE5E7200333320 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3BD5F02D15EE5E7200333320 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		3BD5F01115EE5DDF00333320 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		3BD5F01215EE5DDF00333320 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		3BD5F01415EE5DDF00333320 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
+				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		3BD5F01515EE5DDF00333320 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
+				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		3BD5F03415EE5E7200333320 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
+				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Debug;
+		};
+		3BD5F03515EE5E7200333320 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
+				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3BD5EFEF15EE5DDF00333320 /* Build configuration list for PBXProject "Incremental Store" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BD5F01115EE5DDF00333320 /* Debug */,
+				3BD5F01215EE5DDF00333320 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BD5F01315EE5DDF00333320 /* Build configuration list for PBXNativeTarget "Incremental Store Demo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BD5F01415EE5DDF00333320 /* Debug */,
+				3BD5F01515EE5DDF00333320 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BD5F03315EE5E7200333320 /* Build configuration list for PBXNativeTarget "Incremental Store Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BD5F03415EE5E7200333320 /* Debug */,
+				3BD5F03515EE5E7200333320 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3BD5EFEC15EE5DDF00333320 /* Project object */;
+}
