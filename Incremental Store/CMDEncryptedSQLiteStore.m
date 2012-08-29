@@ -713,7 +713,7 @@ fail:
                 // many side of a many-to-one
                 if (![property isToMany] && [inverse isToMany]) {
                     NSString *column = [self foreignKeyColumnForRelationship:property];
-                    [columns addObject:column];
+                    [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
                     [keys addObject:key];
                 }
                 
