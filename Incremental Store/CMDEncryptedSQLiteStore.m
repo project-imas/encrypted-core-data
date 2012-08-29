@@ -1,13 +1,11 @@
 //
-//  INCIncrementalStore.m
-//  INCTest
+//  CMDEncryptedSQLiteStore.m
 //
 //  Created by Caleb Davenport on 7/26/12.
 //  Copyright (c) 2012 Caleb Davenport. All rights reserved.
 //
 
 #import <sqlite3.h>
-
 #import "CMDEncryptedSQLiteStore.h"
 
 NSString * const CMDEncryptedSQLiteStoreType = @"CMDEncryptedSQLiteStore";
@@ -326,10 +324,6 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
             else { [objectCountCache setObject:@(newValue) forKey:obj]; }
         }
     }];
-}
-
-- (NSString *)type {
-    return CMDEncryptedSQLiteStoreType;
 }
 
 #pragma mark - initialize database
@@ -814,42 +808,6 @@ fail:
         NSEntityDescription *entity = [object entity];
         NSNumber *objectID = [self referenceObjectForObjectID:[object objectID]];
         
-        // handle related objects
-        {
-            //            NSDictionary *relationships = [entity relationshipsByName];
-            //            [relationships enumerateKeysAndObjectsUsingBlock:^(id name, id relationship, BOOL *stop) {
-            //                NSRelationshipDescription *inverseRelationship = [relationship inverseRelationship];
-            //                NSEntityDescription *destinationEntity = [relationship destinationEntity];
-            //                NSDeleteRule rule = [relationship deleteRule];
-            //
-            //                // one side of a one-to-many
-            //                if ([relationship isToMany] && ![inverseRelationship isToMany]) {
-            //                    NSString *column = [NSString stringWithFormat:@"%@_ID", [entity name]];
-            //                    NSString *query = nil;
-            //                    if (rule == NSCascadeDeleteRule) {
-            //                        query = [NSString stringWithFormat:
-            //                                 @"DELETE FROM %@ WHERE %@=?;",
-            //                                 [destinationEntity name],
-            //                                 column];
-            //                    }
-            //                    else if (rule == NSNullifyDeleteRule) {
-            //                        query = [NSString stringWithFormat:
-            //                                 @"UPDATE %@ SET %@=NULL WHERE %@=?;",
-            //                                 [destinationEntity name],
-            //                                 column,
-            //                                 column];
-            //                    }
-            //                    if (query) {
-            //                        sqlite3_stmt *statement = [self preparedStatementForQuery:query];
-            //                        sqlite3_bind_int(statement, 1, [objectID unsignedIntValue]);
-            //                        sqlite3_step(statement);
-            //                        if (sqlite3_finalize(statement)) { rollback = *stop = YES; }
-            //                    }
-            //                }
-            //
-            //            }];
-        }
-        
         // delete object
         NSString *string = [NSString stringWithFormat:
                             @"DELETE FROM %@ WHERE ID=?;",
@@ -859,7 +817,7 @@ fail:
         sqlite3_step(statement);
         
         // finish up
-        if (sqlite3_finalize(statement) != SQLITE_OK) {
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
             if (error != NULL) { *error = [self databaseError]; }
             *stop = YES;
             success = NO;
@@ -942,7 +900,12 @@ fail:
 }
 
 - (sqlite3_stmt *)preparedStatementForQuery:(NSString *)query {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"]) { NSLog(@"STATEMENT: %@", query); }
+    static BOOL debug = NO;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
+    });
+    if (debug) { NSLog(@"SQL DEBUG: %@", query); }
     sqlite3_stmt *statement = NULL;
     if (sqlite3_prepare_v2(database, [query UTF8String], -1, &statement, NULL) == SQLITE_OK) { return statement; }
     return NULL;
