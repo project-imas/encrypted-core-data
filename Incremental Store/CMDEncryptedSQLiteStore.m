@@ -892,58 +892,64 @@ fail:
     return value;
 }
 
-- (void)bindAttribute:(NSAttributeDescription *)attribute
-            withValue:(id)value
-               forKey:(NSString *)key
-          toStatement:(sqlite3_stmt *)statement
-              atIndex:(int)index {
+- (void)bindProperty:(NSAttributeDescription *)property
+           withValue:(id)value
+              forKey:(NSString *)key
+         toStatement:(sqlite3_stmt *)statement
+             atIndex:(int)index {
     if (value && ![value isKindOfClass:[NSNull class]]) {
-        NSAttributeType type = [attribute attributeType];
-        
-        // string
-        if (type == NSStringAttributeType) {
-            sqlite3_bind_text(statement, index, [value UTF8String], -1, SQLITE_TRANSIENT);
+        if ([property isKindOfClass:[NSAttributeDescription class]]) {
+            NSAttributeType type = [(id)property attributeType];
+            
+            // string
+            if (type == NSStringAttributeType) {
+                sqlite3_bind_text(statement, index, [value UTF8String], -1, SQLITE_TRANSIENT);
+            }
+            
+            // real numbers
+            else if (type == NSDoubleAttributeType ||
+                     type == NSFloatAttributeType) {
+                sqlite3_bind_double(statement, index, [value doubleValue]);
+            }
+            
+            // integers
+            else if (type == NSInteger16AttributeType ||
+                     type == NSInteger32AttributeType ||
+                     type == NSInteger64AttributeType) {
+                sqlite3_bind_int64(statement, index, [value longLongValue]);
+            }
+            
+            // boolean
+            else if (type == NSBooleanAttributeType) {
+                sqlite3_bind_int(statement, index, [value boolValue] ? 0 : 1);
+            }
+            
+            // date
+            else if (type == NSDateAttributeType) {
+                sqlite3_bind_double(statement, index, [value timeIntervalSince1970]);
+            }
+            
+            // blob
+            else if (type == NSBinaryDataAttributeType) {
+                sqlite3_bind_blob(statement, index, [value bytes], [value length], SQLITE_TRANSIENT);
+            }
+            
+            // optimus prime
+            else if (type == NSTransformableAttributeType) {
+                NSString *name = ([(id)property valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
+                NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
+                NSData *data = [transformer reverseTransformedValue:value];
+                sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
+            }
+            
+            // NSDecimalAttributeType
+            // NSObjectIDAttributeType
+            
         }
-        
-        // real numbers
-        else if (type == NSDoubleAttributeType ||
-                 type == NSFloatAttributeType) {
-            sqlite3_bind_double(statement, index, [value doubleValue]);
+        else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+            NSNumber *number = [self referenceObjectForObjectID:[value objectID]];
+            sqlite3_bind_int64(statement, index, [number unsignedLongLongValue]);
         }
-        
-        // integers
-        else if (type == NSInteger16AttributeType ||
-                 type == NSInteger32AttributeType ||
-                 type == NSInteger64AttributeType) {
-            sqlite3_bind_int64(statement, index, [value longLongValue]);
-        }
-        
-        // boolean
-        else if (type == NSBooleanAttributeType) {
-            sqlite3_bind_int(statement, index, [value boolValue] ? 0 : 1);
-        }
-        
-        // date
-        else if (type == NSDateAttributeType) {
-            sqlite3_bind_double(statement, index, [value timeIntervalSince1970]);
-        }
-        
-        // blob
-        else if (type == NSBinaryDataAttributeType) {
-            sqlite3_bind_blob(statement, index, [value bytes], [value length], SQLITE_TRANSIENT);
-        }
-        
-        // optimus prime
-        else if (type == NSTransformableAttributeType) {
-            NSString *name = ([attribute valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
-            NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
-            NSData *data = [transformer reverseTransformedValue:value];
-            sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
-        }
-        
-        // NSDecimalAttributeType
-        // NSObjectIDAttributeType
-        
     }
 }
 
