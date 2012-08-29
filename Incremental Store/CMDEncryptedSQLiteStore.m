@@ -584,36 +584,6 @@ fail:
     return YES;
 }
 
-
-
-
-
-
-- (BOOL)migrateDatabaseFromVersion:(unsigned long)version {
-    unsigned long currentVersion = version;
-    unsigned long targetVersion = [self targetDatabaseVersion];
-    while (currentVersion < targetVersion) {
-        unsigned long nextVersion = (currentVersion + 1);
-        SEL method = NSSelectorFromString([NSString stringWithFormat:
-                                           @"migrateDatabaseToVersion_%lu",
-                                           nextVersion]);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        [self performSelector:method];
-#pragma clang diagnostic pop
-        currentVersion = nextVersion;
-    }
-    return [self setDatabaseVersion:targetVersion];
-}
-
-- (BOOL)setDatabaseVersion:(unsigned long)version {
-    static NSString *string = @"UPDATE META SET VERSION=?;";
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-    sqlite3_bind_int64(statement, 1, version);
-    sqlite3_step(statement);
-    return (sqlite3_finalize(statement) == SQLITE_OK);
-}
-
 #pragma mark - save changes to the database
 
 - (NSArray *)handleSaveChangesRequest:(NSSaveChangesRequest *)request error:(NSError **)error {
@@ -834,33 +804,6 @@ fail:
         
     }];
     return success;
-}
-
-#pragma mark - migration definitions
-
-- (NSUInteger)targetDatabaseVersion {
-    return 3;
-}
-
-- (void)migrateDatabaseToVersion_1 {
-    static NSString *string = @"CREATE TABLE USER(ID INTEGER PRIMARY KEY, NAME TEXT);";
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    sqlite3_finalize(statement);
-}
-
-- (void)migrateDatabaseToVersion_2 {
-    static NSString *string = @"CREATE TABLE POST(ID INTEGER PRIMARY KEY, USER_ID INTEGER, TITLE TEXT, BODY TEXT);";
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    sqlite3_finalize(statement);
-}
-
-- (void)migrateDatabaseToVersion_3 {
-    static NSString *string = @"ALTER TABLE POST ADD TAGS BLOB;";
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    sqlite3_finalize(statement);
 }
 
 # pragma mark - SQL helpers
