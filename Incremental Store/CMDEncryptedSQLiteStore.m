@@ -5,7 +5,12 @@
 //  Copyright (c) 2012 Caleb Davenport. All rights reserved.
 //
 
+#if !__has_feature(objc_arc)
+#error This class requires ARC.
+#endif
+
 #import <sqlite3.h>
+
 #import "CMDEncryptedSQLiteStore.h"
 
 NSString * const CMDEncryptedSQLiteStoreType = @"CMDEncryptedSQLiteStore";
@@ -324,6 +329,10 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
             else { [objectCountCache setObject:@(newValue) forKey:obj]; }
         }
     }];
+}
+
+- (NSString *)type {
+    return CMDEncryptedSQLiteStoreType;
 }
 
 #pragma mark - initialize database
