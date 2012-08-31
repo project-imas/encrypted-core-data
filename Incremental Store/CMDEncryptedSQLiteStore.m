@@ -20,7 +20,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
 
 #pragma mark - category interfaces
 
-@interface NSArray (CMDEncryptedSQLStoreAdditions)
+@interface NSArray (CMDEncryptedSQLiteStoreAdditions)
 
 /*
  
@@ -36,6 +36,13 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
  
  */
 - (NSArray *)cmd_collect:(id (^) (id object))block;
+
+/*
+ 
+ 
+ 
+ */
+- (NSArray *)cmd_flatten;
 
 @end
 
@@ -1207,7 +1214,7 @@ fail:
 
 #pragma mark - category implementations
 
-@implementation NSArray (CMDEncryptedSQLStoreAdditions)
+@implementation NSArray (CMDEncryptedSQLiteStoreAdditions)
 
 + (NSArray *)cmd_arrayWithObject:(id)object times:(NSUInteger)times {
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:times];
@@ -1221,6 +1228,19 @@ fail:
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:[self count]];
     [self enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         [array addObject:block(obj)];
+    }];
+    return array;
+}
+
+- (NSArray *)cmd_flatten {
+    NSMutableArray *array = [NSMutableArray arrayWithCapacity:[self count]];
+    [self enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        if ([obj isKindOfClass:[NSArray class]]) {
+            [array addObjectsFromArray:[obj cmd_flatten]];
+        }
+        else {
+            [array addObject:obj];
+        }
     }];
     return array;
 }
