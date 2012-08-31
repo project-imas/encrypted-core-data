@@ -1057,12 +1057,7 @@ fail:
 - (NSDictionary *)recursive_whereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
     
 //    enum {
-//        NSLessThanPredicateOperatorType = 0,
-//        NSLessThanOrEqualToPredicateOperatorType,
-//        NSGreaterThanPredicateOperatorType,
-//        NSGreaterThanOrEqualToPredicateOperatorType,
 //        NSMatchesPredicateOperatorType,
-//        NSInPredicateOperatorType,
 //        NSCustomSelectorPredicateOperatorType,
 //        NSBetweenPredicateOperatorType
 //    };
@@ -1077,88 +1072,88 @@ fail:
             @(NSContainsPredicateOperatorType)      : @{ @"operator" : @"LIKE",     @"format" : @"%%%@%%" },
             @(NSBeginsWithPredicateOperatorType)    : @{ @"operator" : @"LIKE",     @"format" : @"%@%%" },
             @(NSEndsWithPredicateOperatorType)      : @{ @"operator" : @"LIKE",     @"format" : @"%%%@" },
-            @(NSLikePredicateOperatorType)          : @{ @"operator" : @"LIKE",     @"format" : @"%@" }
+            @(NSLikePredicateOperatorType)          : @{ @"operator" : @"LIKE",     @"format" : @"%@" },
+            @(NSInPredicateOperatorType)            : @{ @"operator" : @"IN",       @"format" : @"(%@)" },
+            @(NSLessThanPredicateOperatorType)      : @{ @"operator" : @"<", @"format" : @"%@" },
+            @(NSLessThanOrEqualToPredicateOperatorType) : @{ @"operator" : @"<=", @"format" : @"%@" },
+            @(NSGreaterThanPredicateOperatorType) : @{ @"operator" : @">", @"format" : @"%@" },
+            @(NSGreaterThanOrEqualToPredicateOperatorType) : @{ @"operator" : @">=", @"format" : @"%@" }
         };
     });
     
-    if (predicate) {
+    if ([predicate isKindOfClass:[NSCompoundPredicate class]]) {
         
-        if ([predicate isKindOfClass:[NSCompoundPredicate class]]) {
-            
-            // get subpredicates
-            NSCompoundPredicateType type = [(id)predicate compoundPredicateType];
-            NSMutableArray *queries = [NSMutableArray array];
-            NSMutableArray *bindings = [NSMutableArray array];
-            [[(id)predicate subpredicates] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSDictionary *result = [self recursive_whereClauseWithFetchRequest:request predicate:obj];
-                [queries addObject:[result objectForKey:@"query"]];
-                [bindings addObjectsFromArray:[result objectForKey:@"bindings"]];
-            }];
-            
-            // build query
-            NSString *query = nil;
-            if (type == NSAndPredicateType) {
-                query = [NSString stringWithFormat:
-                         @"(%@)",
-                         [queries componentsJoinedByString:@" AND "]];
-            }
-            else if (type == NSOrPredicateType) {
-                query = [NSString stringWithFormat:
-                         @"(%@)",
-                         [queries componentsJoinedByString:@" OR "]];
-            }
-            
-            // build result and return
-            return @{
-                @"query" : query,
-                @"bindings" : bindings
-            };
-
+        // get subpredicates
+        NSCompoundPredicateType type = [(id)predicate compoundPredicateType];
+        NSMutableArray *queries = [NSMutableArray array];
+        NSMutableArray *bindings = [NSMutableArray array];
+        [[(id)predicate subpredicates] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            NSDictionary *result = [self recursive_whereClauseWithFetchRequest:request predicate:obj];
+            [queries addObject:[result objectForKey:@"query"]];
+            [bindings addObjectsFromArray:[result objectForKey:@"bindings"]];
+        }];
+        
+        // build query
+        NSString *query = nil;
+        if (type == NSAndPredicateType) {
+            query = [NSString stringWithFormat:
+                     @"(%@)",
+                     [queries componentsJoinedByString:@" AND "]];
+        }
+        else if (type == NSOrPredicateType) {
+            query = [NSString stringWithFormat:
+                     @"(%@)",
+                     [queries componentsJoinedByString:@" OR "]];
         }
         
-        else if ([predicate isKindOfClass:[NSComparisonPredicate class]]) {
-            NSNumber *type = @([(id)predicate predicateOperatorType]);
-            NSDictionary *operator = [operators objectForKey:type];
-            
-            // left expression
-            NSEntityDescription *entity = [request entity];
-            NSDictionary *properties = [entity propertiesByName];
-            NSString *leftExpression = [[(id)predicate leftExpression] keyPath];
-            id property = [properties objectForKey:leftExpression];
-            if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-                leftExpression = [self foreignKeyColumnForRelationship:property];
-            }
-            
-            // right expression
-            id rightExpression = nil;
-            id rightValue = [[(id)predicate rightExpression] constantValue];
-            if ([rightValue isKindOfClass:[NSManagedObject class]]) {
-                NSManagedObjectID *objectID = [rightValue objectID];
-                rightExpression = [self referenceObjectForObjectID:objectID];
-            }
-            else if ([rightValue isKindOfClass:[NSManagedObjectID class]]) {
-                rightExpression = [self referenceObjectForObjectID:rightValue];
-            }
-            else if ([rightValue isKindOfClass:[NSString class]]) {
-                rightExpression = [NSString stringWithFormat:
-                                   [operator objectForKey:@"format"],
-                                   rightValue];
-            }
-            else {
-                rightExpression = rightValue;
-            }
-            
-            // build result and return
-            NSString *query = [NSString stringWithFormat:
-                               @"%@ %@ ?",
-                               leftExpression,
-                               [operator objectForKey:@"operator"]];
-            return @{
-                @"query" : query,
-                @"bindings" : @[ rightExpression ]
-            };
-            
-        }
+        // build result and return
+        return @{
+            @"query" : query,
+            @"bindings" : bindings
+        };
+        
+    }
+    
+    else if ([predicate isKindOfClass:[NSComparisonPredicate class]]) {
+        NSNumber *type = @([(id)predicate predicateOperatorType]);
+        NSDictionary *operator = [operators objectForKey:type];
+        
+        // left expression
+        id leftOperand = nil;
+        id leftBindings = nil;
+        [self
+         parseExpression:[(id)predicate leftExpression]
+         inPredicate:(id)predicate
+         inFetchRequest:request
+         operator:operator
+         operand:&leftOperand
+         bindings:&leftBindings];
+        
+        // right expression
+        id rightOperand = nil;
+        id rightBindings = nil;
+        [self
+         parseExpression:[(id)predicate rightExpression]
+         inPredicate:(id)predicate
+         inFetchRequest:request
+         operator:operator
+         operand:&rightOperand
+         bindings:&rightBindings];
+        
+        // build result and return
+        NSMutableArray *bindings = [NSMutableArray arrayWithCapacity:2];
+        if (leftBindings) { [bindings addObject:leftBindings]; }
+        if (rightBindings) { [bindings addObject:rightBindings]; }
+        NSString *query = [NSString stringWithFormat:
+                           @"%@ %@ %@",
+                           leftOperand,
+                           [operator objectForKey:@"operator"],
+                           rightOperand];
+        return @{
+            @"query" : query,
+            @"bindings" : [bindings cmd_flatten]
+        };
+        
     }
     
     // no result
@@ -1202,7 +1197,93 @@ fail:
             }
         }
         
+        // managed object id
+        else if ([obj isKindOfClass:[NSManagedObjectID class]]) {
+            id referenceObject = [self referenceObjectForObjectID:obj];
+            sqlite3_bind_int64(statement, (idx + 1), [referenceObject unsignedLongLongValue]);
+        }
+        
+        // managed object
+        else if ([obj isKindOfClass:[NSManagedObject class]]) {
+            NSManagedObjectID *objectID = [obj objectID];
+            id referenceObject = [self referenceObjectForObjectID:objectID];
+            sqlite3_bind_int64(statement, (idx + 1), [referenceObject unsignedLongLongValue]);
+        }
+        
     }];
+}
+
+/*
+ 
+ 
+ 
+ */
+- (void)parseExpression:(NSExpression *)expression
+            inPredicate:(NSComparisonPredicate *)predicate
+         inFetchRequest:(NSFetchRequest *)request
+               operator:(NSDictionary *)operator
+                operand:(id *)operand
+               bindings:(id *)bindings {
+    NSExpressionType type = [expression expressionType];
+    
+    // reference a column in the query
+    if (type == NSKeyPathExpressionType) {
+        id value = [expression keyPath];
+        NSEntityDescription *entity = [request entity];
+        NSDictionary *properties = [entity propertiesByName];
+        id property = [properties objectForKey:value];
+        if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+            value = [self foreignKeyColumnForRelationship:property];
+        }
+        *operand = value;
+    }
+    else if (type == NSEvaluatedObjectExpressionType) {
+        *operand = @"id";
+    }
+    
+    // a value to be bound to the query
+    else if (type == NSConstantValueExpressionType) {
+        id value = [expression constantValue];
+        if ([value isKindOfClass:[NSSet class]]) {
+            NSUInteger count = [value count];
+            NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
+            *bindings = [value allObjects];
+            *operand = [NSString stringWithFormat:
+                        [operator objectForKey:@"format"],
+                        [parameters componentsJoinedByString:@", "]];
+        }
+        else if ([value isKindOfClass:[NSArray class]]) {
+            NSUInteger count = [value count];
+            NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
+            *bindings = value;
+            *operand = [NSString stringWithFormat:
+                        [operator objectForKey:@"format"],
+                        [parameters componentsJoinedByString:@", "]];
+        }
+        if ([value isKindOfClass:[NSString class]]) {
+            if ([predicate options] & NSCaseInsensitivePredicateOption) {
+                *operand = @"UPPER(?)";
+                *bindings = [NSString stringWithFormat:
+                             [operator objectForKey:@"format"],
+                             [value uppercaseString]];
+            }
+            else {
+                *operand = @"?";
+                *bindings = [NSString stringWithFormat:
+                             [operator objectForKey:@"format"],
+                             value];
+            }
+        }
+        else {
+            *bindings = value;
+            *operand = @"?";
+        }
+    }
+    
+    // unsupported type
+    else {
+        NSLog(@"%s Unsupported expression type %ld", __PRETTY_FUNCTION__, (unsigned long)type);
+    }
 }
 
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
