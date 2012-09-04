@@ -351,12 +351,15 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
         
         // passphrase
         if (![self configureDatabasePassphrase]) {
-            goto fail;
+            *error = [self databaseError];
+            sqlite3_close(database);
+            database = NULL;
+            return NO;
         }
         
         // load metadata
-        {
-            NSString *table = @"meta";
+        BOOL success = [self performInTransaction:^{
+            static NSString * const table = @"meta";
             NSString *string = nil;
             NSDictionary *metadata = nil;
             sqlite3_stmt *statement = NULL;
@@ -367,12 +370,13 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
                       @"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='%@';",
                       table];
             statement = [self preparedStatementForQuery:string];
-            if (sqlite3_step(statement) == SQLITE_ROW) {
+            if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
                 count = sqlite3_column_int(statement, 0);
             }
             else {
                 sqlite3_finalize(statement);
-                goto fail;
+                *error = [self databaseError];
+                return NO;
             }
             sqlite3_finalize(statement);
             
@@ -380,10 +384,20 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
             if (count == 0) {
                 
                 // create table
-                string = [NSString stringWithFormat:@"CREATE TABLE %@(data);", table];
+                string = [NSString stringWithFormat:@"CREATE TABLE %@(plist);", table];
                 statement = [self preparedStatementForQuery:string];
                 sqlite3_step(statement);
-                if (sqlite3_finalize(statement) != SQLITE_OK) { goto fail; }
+                if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+                    *error = [self databaseError];
+                    return NO;
+                }
+                
+                // run migrations
+                NSManagedObjectModel *model = [[self persistentStoreCoordinator] managedObjectModel];
+                if (![self initializeDatabaseWithModel:model]) {
+                    *error = [self databaseError];
+                    return NO;
+                }
                 
                 // create and set metadata
                 metadata = @{
@@ -391,21 +405,22 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
                     NSStoreTypeKey : [self type]
                 };
                 [self setMetadata:metadata];
-                if (![self saveMetadata]) { goto fail; }
-                
-                // run migrations
-                NSManagedObjectModel *model = [[self persistentStoreCoordinator] managedObjectModel];
-                if (![self initializeDatabaseWithModel:model]) { goto fail; }
+                if (![self saveMetadata]) {
+                    *error = [self databaseError];
+                    return NO;
+                }
                 
             }
             
             // load existing metadata
             else {
+                
+                // load
                 string = [NSString stringWithFormat:
-                          @"SELECT data FROM %@ LIMIT 1;",
+                          @"SELECT plist FROM %@ LIMIT 1;",
                           table];
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-                if (sqlite3_step(statement) == SQLITE_ROW) {
+                if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
                     const void *bytes = sqlite3_column_blob(statement, 0);
                     unsigned int length = sqlite3_column_bytes(statement, 0);
                     NSData *data = [NSData dataWithBytes:bytes length:length];
@@ -414,7 +429,8 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
                 }
                 else {
                     sqlite3_finalize(statement);
-                    goto fail;
+                    *error = [self databaseError];
+                    return NO;
                 }
                 sqlite3_finalize(statement);
                 
@@ -426,32 +442,55 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
                                                   mergedModelFromBundles:bundles
                                                   forStoreMetadata:metadata];
                 NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
-                BOOL success = [self
-                                handleMigrationWithFromModel:oldModel
-                                toModel:newModel
-                                error:error];
-                if (!success) {
-                    goto fail;
+                if (![oldModel isEqual:newModel]) {
+                    
+                    // generate mapping model
+                    NSMappingModel *mappingModel = [NSMappingModel
+                                                    inferredMappingModelForSourceModel:oldModel
+                                                    destinationModel:newModel
+                                                    error:error];
+                    if (mappingModel == nil) {
+                        return NO;
+                    }
+                    
+                    // run migrations
+                    if (![self migrateToModel:newModel withMappingModel:mappingModel]) {
+                        *error = [self databaseError];
+                        return NO;
+                    }
+                    
+                    // update metadata
+                    NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                    [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
+                    [self setMetadata:mutableMetadata];
+                    if (![self saveMetadata]) {
+                        *error = [self databaseError];
+                        return NO;
+                    }
+                    
                 }
-                
-                // update metadata
-                NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                [self setMetadata:mutableMetadata];
-                [self saveMetadata];
                 
             }
             
+            // worked
+            return YES;
+            
+        }];
+        
+        // finish up
+        if (!success) {
+            sqlite3_close(database);
+            database = NULL;
+            return NO;
         }
         
         // return
         return YES;
         
     }
-
-fail:
-    if (error && !*error) { *error = [self databaseError]; }
-    sqlite3_close(database);
+    
+    // return
+    *error = [self databaseError];
     database = NULL;
     return NO;
     
@@ -465,15 +504,15 @@ fail:
     string = @"DELETE FROM meta;";
     statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
-    if (!statement || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
     
     // save
-    string = @"INSERT INTO meta (data) VALUES(?);";
+    string = @"INSERT INTO meta (plist) VALUES(?);";
     statement = [self preparedStatementForQuery:string];
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:[self metadata]];
     sqlite3_bind_blob(statement, 1, [data bytes], [data length], SQLITE_TRANSIENT);
     sqlite3_step(statement);
-    if (!statement || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
     
     return YES;
 }
@@ -491,15 +530,8 @@ fail:
     return YES;
 }
 
-- (BOOL)handleMigrationWithFromModel:(NSManagedObjectModel *)fromModel toModel:(NSManagedObjectModel *)toModel error:(NSError **)error {
+- (BOOL)migrateToModel:(NSManagedObjectModel *)toModel withMappingModel:(NSMappingModel *)mappingModel {
     BOOL __block succuess = YES;
-    
-    // grab mapping model
-    NSMappingModel *mappingModel = [NSMappingModel
-                                    inferredMappingModelForSourceModel:fromModel
-                                    destinationModel:toModel
-                                    error:error];
-    if (mappingModel == nil) { return NO; }
     
     // grab final entity snapshot
     NSDictionary *entities = [toModel entitiesByName];
@@ -527,7 +559,7 @@ fail:
         
         if (!succuess) { *stop = YES; }
     }];
-                
+    
     return succuess;
 }
 
