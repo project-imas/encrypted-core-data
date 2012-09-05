@@ -53,3 +53,9 @@ This project has several areas that could be improved.
 - **More Test Cases** I built several test cases that helped find bugs and improve support for things like relationships. These cases currently do not touch every feature supported by the store.
 - **Migrations** The store currently supports a very small subset of lightweight migrations with inferred migration maps. I would like to imp lement more migration map parsing.
 - **Persistent Store Options** You have the option to pass a number of options when adding a new store a coordinator. I added my own option which provides the database key but would like to support system options as well. Things like data protection class, SQLite pragmas, and migration options would be nice to have.
+
+# Resources
+
+- [OpenSSL](http://www.openssl.org)
+- [SQLCipher](http://sqlcipher.net)
+- [SQLCipher in Xcode](http://sqlcipher.net/sqlcipher-binaries-ios-and-osx/)
