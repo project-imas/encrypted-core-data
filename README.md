@@ -32,13 +32,15 @@ Add the flag `-DSQLITE_HAS_CODEC` to all configurations of all appropriate targe
 
 Using it is easy. Just set the appropriate type and a database key when you load your persistent store:
 
-    NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE" };
-    NSPersistentStore *store = [coordinator
-                                addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
-                                configuration:nil
-                                URL:databaseURL
-                                options:options
-                                error:&error];
+```objc
+NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE" };
+NSPersistentStore *store = [coordinator
+                            addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
+                            configuration:nil
+                            URL:databaseURL
+                            options:options
+                            error:&error];
+```
 
 # Debugging
 
