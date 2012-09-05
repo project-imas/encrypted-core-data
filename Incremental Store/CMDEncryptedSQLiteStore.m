@@ -2,7 +2,7 @@
 //  CMDEncryptedSQLiteStore.m
 //
 //  Created by Caleb Davenport on 7/26/12.
-//  Copyright (c) 2012 Caleb Davenport. All rights reserved.
+//  Copyright (c) 2012 The MITRE Corporation. All rights reserved.
 //
 
 #if !__has_feature(objc_arc)

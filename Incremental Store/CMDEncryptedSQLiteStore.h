@@ -2,7 +2,7 @@
 //  CMDEncryptedSQLiteStore.h
 //
 //  Created by Caleb Davenport on 7/26/12.
-//  Copyright (c) 2012 Caleb Davenport. All rights reserved.
+//  Copyright (c) 2012 The MITRE Corporation. All rights reserved.
 //
 
 #import <CoreData/CoreData.h>

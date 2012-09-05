@@ -3,7 +3,6 @@
 //  Incremental Store Tests
 //
 //  Created by Caleb Davenport on 8/7/12.
-//  Copyright (c) 2012 Caleb Davenport. All rights reserved.
 //
 
 #import <SenTestingKit/SenTestingKit.h>
