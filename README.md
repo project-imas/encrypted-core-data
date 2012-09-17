@@ -1,7 +1,7 @@
 Encrypted CoreData SQLite Store
 ===================
 
-CoreData encrypted SQLite store using SQLCipher
+CoreData encrypted SQLite store using [SQLCipher](http://sqlcipher.net)
 
 # Project Setup
 
