@@ -1068,12 +1068,12 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
  with the following schema:
  
  {
- "query": "query string with ? parameters",
- "bindings": [
- "array",
- "of",
- "bindings"
- ]
+     "query": "query string with ? parameters",
+     "bindings": [
+         "array",
+         "of",
+         "bindings"
+     ]
  }
  
  */
