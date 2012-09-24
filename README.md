@@ -59,3 +59,7 @@ This project has several areas that could be improved.
 - [OpenSSL](http://www.openssl.org)
 - [SQLCipher](http://sqlcipher.net)
 - [SQLCipher in Xcode](http://sqlcipher.net/sqlcipher-binaries-ios-and-osx/)
+
+# License
+
+This library is provided under the MIT license. Approved for Public Release: 12-3393 by The MITRE Corporation. Distribution unlimited.
