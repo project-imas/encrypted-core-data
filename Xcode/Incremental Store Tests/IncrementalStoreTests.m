@@ -112,6 +112,11 @@
     coordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
     
     // add store
+    NSDictionary *options = @{
+        CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE",
+        NSMigratePersistentStoresAutomaticallyOption : @YES,
+        NSInferMappingModelAutomaticallyOption : @YES
+    };
     URL = [IncrementalStoreTests databaseURL];
     NSLog(@"Working with database at URL: %@", URL);
     NSError *error = nil;
@@ -120,14 +125,14 @@
              addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
              configuration:nil
              URL:URL
-             options:nil//@{ CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE" }
+             options:options
              error:&error];
 #else
     store = [coordinator
              addPersistentStoreWithType:NSSQLiteStoreType
              configuration:nil
              URL:URL
-             options:nil
+             options:options
              error:&error];
 #endif
     STAssertNotNil(store, @"Unable to add persistent store.\n%@", error);

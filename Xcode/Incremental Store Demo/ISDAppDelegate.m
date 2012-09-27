@@ -27,7 +27,11 @@
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
         NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:@"database.sqlite"];
-        NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE" };
+        NSDictionary *options = @{
+            CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE",
+            NSMigratePersistentStoresAutomaticallyOption : @YES,
+            NSInferMappingModelAutomaticallyOption : @YES
+        };
         NSError *error = nil;
         NSPersistentStore *store = [coordinator
                                     addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
