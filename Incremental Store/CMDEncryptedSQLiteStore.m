@@ -389,37 +389,41 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                 sqlite3_finalize(statement);
                 
                 // run migrations
-                NSMutableArray *bundles = [NSMutableArray array];
-                [bundles addObjectsFromArray:[NSBundle allBundles]];
-                [bundles addObjectsFromArray:[NSBundle allFrameworks]];
-                NSManagedObjectModel *oldModel = [NSManagedObjectModel
-                                                  mergedModelFromBundles:bundles
-                                                  forStoreMetadata:metadata];
-                NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
-                if (![oldModel isEqual:newModel]) {
-                    
-                    // generate mapping model
-                    NSMappingModel *mappingModel = [NSMappingModel
-                                                    inferredMappingModelForSourceModel:oldModel
-                                                    destinationModel:newModel
-                                                    error:error];
-                    if (mappingModel == nil) { return NO; }
-                    
-                    // run migrations
-                    if (![self migrateToModel:newModel withMappingModel:mappingModel]) {
-                        if (error) { *error = [self databaseError]; }
-                        return NO;
+                NSDictionary *options = [self options];
+                if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
+                    [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
+                    NSMutableArray *bundles = [NSMutableArray array];
+                    [bundles addObjectsFromArray:[NSBundle allBundles]];
+                    [bundles addObjectsFromArray:[NSBundle allFrameworks]];
+                    NSManagedObjectModel *oldModel = [NSManagedObjectModel
+                                                      mergedModelFromBundles:bundles
+                                                      forStoreMetadata:metadata];
+                    NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
+                    if (![oldModel isEqual:newModel]) {
+                        
+                        // generate mapping model
+                        NSMappingModel *mappingModel = [NSMappingModel
+                                                        inferredMappingModelForSourceModel:oldModel
+                                                        destinationModel:newModel
+                                                        error:error];
+                        if (mappingModel == nil) { return NO; }
+                        
+                        // run migrations
+                        if (![self migrateToModel:newModel withMappingModel:mappingModel]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
+                        }
+                        
+                        // update metadata
+                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                        [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
+                        [self setMetadata:mutableMetadata];
+                        if (![self saveMetadata]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
+                        }
+                        
                     }
-                    
-                    // update metadata
-                    NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                    [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                    [self setMetadata:mutableMetadata];
-                    if (![self saveMetadata]) {
-                        if (error) { *error = [self databaseError]; }
-                        return NO;
-                    }
-                    
                 }
                 
             }
