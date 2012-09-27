@@ -344,7 +344,7 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     return CMDEncryptedSQLiteStoreType;
 }
 
-#pragma mark - initialize database
+#pragma mark - metadata helpers
 
 - (BOOL)loadMetadata:(NSError **)error {
     if (sqlite3_open([[[self URL] path] UTF8String], &database) == SQLITE_OK) {
@@ -518,6 +518,8 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     return YES;
 }
 
+#pragma mark - passphrase
+
 - (BOOL)configureDatabasePassphrase {
     NSString *passphrase = [[self options] objectForKey:CMDEncryptedSQLiteStorePassphraseKey];
     if (passphrase) {
@@ -530,6 +532,8 @@ NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteSt
     passphrase = nil;
     return YES;
 }
+
+#pragma mark - migration helpers
 
 - (BOOL)migrateToModel:(NSManagedObjectModel *)toModel withMappingModel:(NSMappingModel *)mappingModel {
     BOOL __block succuess = YES;
