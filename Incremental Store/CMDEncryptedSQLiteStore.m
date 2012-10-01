@@ -1256,6 +1256,11 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             sqlite3_bind_int64(statement, (idx + 1), [referenceObject unsignedLongLongValue]);
         }
         
+        // date
+        else if ([obj isKindOfClass:[NSDate class]]) {
+            sqlite3_bind_double(statement, (idx + 1), [obj timeIntervalSince1970]);
+        }
+        
     }];
 }
 
