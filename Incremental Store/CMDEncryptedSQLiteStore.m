@@ -567,7 +567,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         
         // drop table for deleted entity
         else if (type == NSRemoveEntityMappingType) {
-//            succuess = [self dropTableForEntity:entityDescription];
+            succuess = [self dropTableForEntity:sourceEntity];
         }
         
         // change an entity
