@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */; };
+		3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */; };
 		3BD5EFFA15EE5DDF00333320 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
 		3BD5EFFC15EE5DDF00333320 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
 		3BD5EFFE15EE5DDF00333320 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */; };
@@ -30,8 +32,6 @@
 		3BD5F06715EE62F300333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05D15EE616E00333320 /* ISDUserListViewController.m */; };
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
-		3BD5F07A15EE656000333320 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F07815EE656000333320 /* Model.xcdatamodeld */; };
-		3BD5F07B15EE656000333320 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F07815EE656000333320 /* Model.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +82,7 @@
 /* Begin PBXFileReference section */
 		3BA7C32715F7BFD400846895 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		3BA7C32815F7BFD400846895 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Incremental Store Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BD5EFF915EE5DDF00333320 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		3BD5EFFB15EE5DDF00333320 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -110,7 +111,6 @@
 		3BD5F06015EE61A700333320 /* ISDEditPostViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDEditPostViewController.h; sourceTree = "<group>"; };
 		3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDEditPostViewController.m; sourceTree = "<group>"; };
 		3BD5F06515EE62EC00333320 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
-		3BD5F07915EE656000333320 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +150,7 @@
 				3BD5F03615EE5E9400333320 /* openssl.xcodeproj */,
 				3BA7C32815F7BFD400846895 /* README.md */,
 				3BA7C32715F7BFD400846895 /* LICENSE */,
+				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
 				3BD5F05515EE610B00333320 /* Incremental Store */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
 				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
@@ -198,7 +199,6 @@
 				3BD5F00215EE5DDF00333320 /* InfoPlist.strings */,
 				3BD5F00515EE5DDF00333320 /* main.m */,
 				3BD5F00715EE5DDF00333320 /* Incremental Store Demo-Prefix.pch */,
-				3BD5F07815EE656000333320 /* Model.xcdatamodeld */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -405,7 +405,7 @@
 				3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */,
 				3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */,
 				3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */,
-				3BD5F07A15EE656000333320 /* Model.xcdatamodeld in Sources */,
+				3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,7 +415,7 @@
 			files = (
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
 				3BD5F05915EE610B00333320 /* CMDEncryptedSQLiteStore.m in Sources */,
-				3BD5F07B15EE656000333320 /* Model.xcdatamodeld in Sources */,
+				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -620,12 +620,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		3BD5F07815EE656000333320 /* Model.xcdatamodeld */ = {
+		3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				3BD5F07915EE656000333320 /* Model.xcdatamodel */,
+				3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */,
 			);
-			currentVersion = 3BD5F07915EE656000333320 /* Model.xcdatamodel */;
+			currentVersion = 3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */;
 			path = Model.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
