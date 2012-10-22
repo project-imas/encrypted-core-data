@@ -401,16 +401,8 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
                     if (![oldModel isEqual:newModel]) {
                         
-                        // generate mapping model
-                        NSMappingModel *mappingModel = [NSMappingModel
-                                                        inferredMappingModelForSourceModel:oldModel
-                                                        destinationModel:newModel
-                                                        error:error];
-                        if (mappingModel == nil) { return NO; }
-                        
                         // run migrations
-                        if (![self migrateToModel:newModel withMappingModel:mappingModel]) {
-                            if (error) { *error = [self databaseError]; }
+                        if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
                             return NO;
                         }
                         
@@ -540,31 +532,50 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 
 #pragma mark - migration helpers
 
-- (BOOL)migrateToModel:(NSManagedObjectModel *)toModel withMappingModel:(NSMappingModel *)mappingModel {
+- (BOOL)migrateFromModel:(NSManagedObjectModel *)fromModel toModel:(NSManagedObjectModel *)toModel error:(NSError **)error {
     BOOL __block succuess = YES;
     
-    // grab final entity snapshot
-    NSDictionary *entities = [toModel entitiesByName];
+    // generate mapping model
+    NSMappingModel *mappingModel = [NSMappingModel
+                                    inferredMappingModelForSourceModel:fromModel
+                                    destinationModel:toModel
+                                    error:error];
+    if (mappingModel == nil) { return NO; }
+    
+    // grab entity snapshots
+    NSDictionary *sourceEntities = [fromModel entitiesByName];
+    NSDictionary *destinationEntities = [toModel entitiesByName];
     
     // enumerate over entities
     [[mappingModel entityMappings] enumerateObjectsUsingBlock:^(NSEntityMapping *entityMapping, NSUInteger idx, BOOL *stop) {
-        NSString *entityName = [entityMapping destinationEntityName];
-        NSEntityDescription *entityDescription = [entities objectForKey:entityName];
+        
+        // get names
+        NSString *sourceEntityName = [entityMapping sourceEntityName];
+        NSString *destinationEntityName = [entityMapping destinationEntityName];
+        
+        // get entity descriptions
+        NSEntityDescription *sourceEntity = [sourceEntities objectForKey:sourceEntityName];
+        NSEntityDescription *destinationEntity = [destinationEntities objectForKey:destinationEntityName];
+        
+        // get mapping type
         NSEntityMappingType type = [entityMapping mappingType];
         
         // add a new entity from final snapshot
         if (type == NSAddEntityMappingType) {
-            succuess = [self createTableForEntity:entityDescription];
+            succuess = [self createTableForEntity:destinationEntity];
         }
         
         // drop table for deleted entity
         else if (type == NSRemoveEntityMappingType) {
-            succuess = [self dropTableForEntity:entityDescription];
+//            succuess = [self dropTableForEntity:entityDescription];
         }
         
         // change an entity
         else if (type == NSTransformEntityMappingType) {
-            succuess = [self alterTableForEntity:entityDescription withMapping:entityMapping];
+            succuess = [self
+                        alterTableForSourceEntity:sourceEntity
+                        destinationEntity:destinationEntity
+                        withMapping:entityMapping];
         }
         
         if (!succuess) { *stop = YES; }
@@ -613,28 +624,87 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 }
 
 - (BOOL)dropTableForEntity:(NSEntityDescription *)entity {
+    NSString *name = [self tableNameForEntity:entity];
+    return [self dropTableNamed:name];
+}
+
+- (BOOL)dropTableNamed:(NSString *)name {
     NSString *string = [NSString stringWithFormat:
                         @"DROP TABLE %@;",
-                        [self tableNameForEntity:entity]];
+                        name];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     return (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
 }
 
-- (BOOL)alterTableForEntity:(NSEntityDescription *)entity withMapping:(NSEntityMapping *)mapping {
+- (BOOL)alterTableForSourceEntity:(NSEntityDescription *)sourceEntity
+                destinationEntity:(NSEntityDescription *)destinationEntity
+                      withMapping:(NSEntityMapping *)mapping {
+    NSString *string;
+    sqlite3_stmt *statement;
+    NSString *sourceEntityName = [sourceEntity name];
+    NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
+    NSString *destinationTableName = [destinationEntity name];
+    
+    // move existing table to temporary new table
+    string = [NSString stringWithFormat:
+              @"ALTER TABLE %@ "
+              @"RENAME TO %@;",
+              sourceEntityName,
+              temporaryTableName];
+    statement = [self preparedStatementForQuery:string];
+    sqlite3_step(statement);
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+        return NO;
+    }
+    
+    // create new table
+    if (![self createTableForEntity:destinationEntity]) {
+        return NO;
+    }
+    
+    // get columns
+    NSMutableArray *sourceColumns = [NSMutableArray array];
+    NSMutableArray *destinationColumns = [NSMutableArray array];
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-//        NSExpression *expression = [obj valueExpression];
-//        if (expression == nil) {
-//            // create column
-//        }
-//        else {
-//            NSExpression *source = [expression operand];
-//            NSString *function = [expression function];
-//            [source perform]
-//        }
-//        NSLog(@"%@", obj);
-//        NSLog(@"%@", expression);
+        NSExpression *expression = [obj valueExpression];
+        if (expression != nil) {
+            [destinationColumns addObject:[obj name]];
+            NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
+            [sourceColumns addObject:source];
+        }
     }];
+//    [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+//        NSExpression *expression = [obj valueExpression];
+//        if (expression != nil) {
+//            NSString *destination = [self foreignKeyColumnWithName:[obj name]];
+//            [destinationColumns addObject:destination];
+//            NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
+//            source = [self foreignKeyColumnWithName:source];
+//            [sourceColumns addObject:source];
+//        }
+//    }];
+    
+    // copy data
+    string = [NSString stringWithFormat:
+              @"INSERT INTO %@ (%@)"
+              @"SELECT %@ "
+              @"FROM %@",
+              destinationTableName,
+              [destinationColumns componentsJoinedByString:@", "],
+              [sourceColumns componentsJoinedByString:@", "],
+              temporaryTableName];
+    statement = [self preparedStatementForQuery:string];
+    sqlite3_step(statement);
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+        return NO;
+    }
+    
+    // delete old table
+    if (![self dropTableNamed:temporaryTableName]) {
+        return NO;
+    }
+    
     return YES;
 }
 
