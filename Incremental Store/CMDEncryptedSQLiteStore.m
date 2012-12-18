@@ -1041,7 +1041,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             
             // boolean
             else if (type == NSBooleanAttributeType) {
-                sqlite3_bind_int(statement, index, [value boolValue] ? 0 : 1);
+                sqlite3_bind_int(statement, index, [value boolValue] ? 1 : 0);
             }
             
             // date
