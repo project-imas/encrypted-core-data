@@ -71,7 +71,7 @@ We strongly encourage developers to clone and use iMAS. Once you’ve had a chan
 
 ## Recognition
 
-MITRE wishes to thank [Caleb Davenport](https://github.com/calebmdavenport) for creating, implementing, and pushing for this security control.
+MITRE wishes to thank [Caleb Davenport](https://github.com/calebmdavenport) for creating, implementing, and pushing for the public release of this security control.
 
 ## License
 
