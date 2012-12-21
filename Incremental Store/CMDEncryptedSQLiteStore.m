@@ -104,16 +104,21 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 - (NSArray *)obtainPermanentIDsForObjects:(NSArray *)array error:(NSError **)error {
     NSMutableArray *__block objectIDs = [NSMutableArray arrayWithCapacity:[array count]];
     [array enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSEntityDescription *entity = [(NSManagedObject *)obj entity];
-        NSString *table = [self tableNameForEntity:entity];
-        NSNumber *value = [self maximumObjectIDInTable:table];
-        if (value == nil) {
-            if (error) { *error = [self databaseError]; }
-            *stop = YES;
-            objectIDs = nil;
-            return;
+        NSManagedObjectID *objectID = [obj objectID];
+        
+        if ([objectID isTemporaryID]) {
+            NSEntityDescription *entity = [(NSManagedObject *)obj entity];
+            NSString *table = [self tableNameForEntity:entity];
+            NSNumber *value = [self maximumObjectIDInTable:table];
+            if (value == nil) {
+                if (error) { *error = [self databaseError]; }
+                *stop = YES;
+                objectIDs = nil;
+                return;
+            }
+            objectID = [self newObjectIDForEntity:entity referenceObject:value];
         }
-        NSManagedObjectID *objectID = [self newObjectIDForEntity:entity referenceObject:value];
+        
         [objectIDs addObject:objectID];
     }];
     return objectIDs;
