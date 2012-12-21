@@ -1,7 +1,10 @@
 Encrypted CoreData SQLite Store
 ===================
 
-CoreData encrypted SQLite store using [SQLCipher](http://sqlcipher.net). This library is a work in progress and will probably not work in every case or with highly complex models. Please submit pull requests to fix bugs that you find.
+CoreData encrypted SQLite store using [SQLCipher](http://sqlcipher.net).  Use this security control to encrypt data stored in CoreData with SQLite by leveraging the great work at SQLCipher.  With this control one no longer has to translate each query result in/out of data models.  
+
+# Caveat
+This library is a work in progress and will probably not work in every case or with highly complex models.
 
 # Project Setup
 
@@ -61,6 +64,14 @@ This project has several areas that could be improved (in order of preference):
 - [OpenSSL](http://www.openssl.org)
 - [SQLCipher](http://sqlcipher.net)
 - [SQLCipher in Xcode](http://sqlcipher.net/sqlcipher-binaries-ios-and-osx/)
+
+## Use, Feedback, and Improvement
+
+We strongly encourage developers to clone and use iMAS. Once you’ve had a chance to use iMAS, tell us what you think by providing us with feedback on your intended use. This information will enable us to address relevancy and need - which will help to keep our research funded in the long run. Lastly, feel free to enhance and improve the actual controls by submitting pull requests early and often!
+
+## Recognition
+
+MITRE wishes to thank [Caleb Davenport](https://github.com/calebmdavenport) for creating, implementing, and pushing for this security control.
 
 ## License
 
