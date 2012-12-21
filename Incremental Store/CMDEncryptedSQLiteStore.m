@@ -1381,7 +1381,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
         }
-        if ([value isKindOfClass:[NSString class]]) {
+        else if ([value isKindOfClass:[NSString class]]) {
             if ([predicate options] & NSCaseInsensitivePredicateOption) {
                 *operand = @"UPPER(?)";
                 *bindings = [NSString stringWithFormat:
