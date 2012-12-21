@@ -1352,9 +1352,28 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                bindings:(id *)bindings {
     NSExpressionType type = [expression expressionType];
     
+    id value = nil;
+    
+    // key path expressed as function expression
+    if (type == NSFunctionExpressionType) {
+        NSString *methodString = NSStringFromSelector(@selector(valueForKeyPath:));
+        
+        if ([[expression function] isEqualToString:methodString]) {
+            NSExpression *argumentExpression;
+            argumentExpression = [[expression arguments] objectAtIndex:0];
+            
+            if ([argumentExpression expressionType] == NSConstantValueExpressionType) {
+                value = [argumentExpression constantValue];
+                type = NSKeyPathExpressionType;
+            }
+        }
+    }
+    
     // reference a column in the query
     if (type == NSKeyPathExpressionType) {
-        id value = [expression keyPath];
+        if (value == nil) {
+            value = [expression keyPath];
+        }
         NSEntityDescription *entity = [request entity];
         NSDictionary *properties = [entity propertiesByName];
         id property = [properties objectForKey:value];
@@ -1369,7 +1388,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     
     // a value to be bound to the query
     else if (type == NSConstantValueExpressionType) {
-        id value = [expression constantValue];
+        value = [expression constantValue];
         if ([value isKindOfClass:[NSSet class]]) {
             NSUInteger count = [value count];
             NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
