@@ -98,16 +98,21 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 - (NSArray *)obtainPermanentIDsForObjects:(NSArray *)array error:(NSError **)error {
     NSMutableArray *__block objectIDs = [NSMutableArray arrayWithCapacity:[array count]];
     [array enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSEntityDescription *entity = [(NSManagedObject *)obj entity];
-        NSString *table = [self tableNameForEntity:entity];
-        NSNumber *value = [self maximumObjectIDInTable:table];
-        if (value == nil) {
-            if (error) { *error = [self databaseError]; }
-            *stop = YES;
-            objectIDs = nil;
-            return;
+        NSManagedObjectID *objectID = [obj objectID];
+        
+        if ([objectID isTemporaryID]) {
+            NSEntityDescription *entity = [(NSManagedObject *)obj entity];
+            NSString *table = [self tableNameForEntity:entity];
+            NSNumber *value = [self maximumObjectIDInTable:table];
+            if (value == nil) {
+                if (error) { *error = [self databaseError]; }
+                *stop = YES;
+                objectIDs = nil;
+                return;
+            }
+            objectID = [self newObjectIDForEntity:entity referenceObject:value];
         }
-        NSManagedObjectID *objectID = [self newObjectIDForEntity:entity referenceObject:value];
+        
         [objectIDs addObject:objectID];
     }];
     return objectIDs;
@@ -1341,9 +1346,28 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                bindings:(id *)bindings {
     NSExpressionType type = [expression expressionType];
     
+    id value = nil;
+    
+    // key path expressed as function expression
+    if (type == NSFunctionExpressionType) {
+        NSString *methodString = NSStringFromSelector(@selector(valueForKeyPath:));
+        
+        if ([[expression function] isEqualToString:methodString]) {
+            NSExpression *argumentExpression;
+            argumentExpression = [[expression arguments] objectAtIndex:0];
+            
+            if ([argumentExpression expressionType] == NSConstantValueExpressionType) {
+                value = [argumentExpression constantValue];
+                type = NSKeyPathExpressionType;
+            }
+        }
+    }
+    
     // reference a column in the query
     if (type == NSKeyPathExpressionType) {
-        id value = [expression keyPath];
+        if (value == nil) {
+            value = [expression keyPath];
+        }
         NSEntityDescription *entity = [request entity];
         NSDictionary *properties = [entity propertiesByName];
         id property = [properties objectForKey:value];
@@ -1358,7 +1382,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     
     // a value to be bound to the query
     else if (type == NSConstantValueExpressionType) {
-        id value = [expression constantValue];
+        value = [expression constantValue];
         if ([value isKindOfClass:[NSSet class]]) {
             NSUInteger count = [value count];
             NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
@@ -1375,7 +1399,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
         }
-        if ([value isKindOfClass:[NSString class]]) {
+        else if ([value isKindOfClass:[NSString class]]) {
             if ([predicate options] & NSCaseInsensitivePredicateOption) {
                 *operand = @"UPPER(?)";
                 *bindings = [NSString stringWithFormat:
