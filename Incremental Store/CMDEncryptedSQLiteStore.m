@@ -25,22 +25,25 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 
 /*
  
- 
+ Creates an array with the given object repeated for the given number of times.
  
  */
-+ (NSArray *)cmd_arrayWithObject:(id)object times:(NSUInteger)times;
++ (NSArray *)cmd_arrayWithObject:(id<NSCopying>)object times:(NSUInteger)times;
 
 /*
  
- 
- 
+ Mirrors the Ruby Array collect method. Iterates over the receiver's contents
+ and calls the given block with each object collecting the return value in
+ a new array.
  
  */
 - (NSArray *)cmd_collect:(id (^) (id object))block;
 
 /*
  
- 
+ Recursively flattens the receiver. Any object that is another array inside
+ the receiver has its contents flattened and added as siblings to all
+ other objects.
  
  */
 - (NSArray *)cmd_flatten;
@@ -48,15 +51,6 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 @end
 
 @interface CMDIncrementalStoreNode : NSIncrementalStoreNode
-
-@end
-
-@implementation CMDIncrementalStoreNode
-
-- (void)updateWithValues:(NSDictionary *)values version:(uint64_t)version {
-    [super updateWithValues:values version:version];
-    NSLog(@"%s", __PRETTY_FUNCTION__);
-}
 
 @end
 
@@ -1445,6 +1439,17 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         }
     }];
     return array;
+}
+
+@end
+
+#pragma mark - incremental store node subclass
+
+@implementation CMDIncrementalStoreNode
+
+- (void)updateWithValues:(NSDictionary *)values version:(uint64_t)version {
+    [super updateWithValues:values version:version];
+    NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
 @end

@@ -80,8 +80,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3BA7C32715F7BFD400846895 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
-		3BA7C32815F7BFD400846895 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		3BA7C32815F7BFD400846895 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; wrapsLines = 1; };
 		3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Incremental Store Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BD5EFF915EE5DDF00333320 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -143,17 +142,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3BD5EFEA15EE5DDF00333320 = {
+		3B3C8D921688A7AF006192E4 /* Vendor */ = {
 			isa = PBXGroup;
 			children = (
 				3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */,
 				3BD5F03615EE5E9400333320 /* openssl.xcodeproj */,
+			);
+			name = Vendor;
+			sourceTree = "<group>";
+		};
+		3BD5EFEA15EE5DDF00333320 = {
+			isa = PBXGroup;
+			children = (
 				3BA7C32815F7BFD400846895 /* README.md */,
-				3BA7C32715F7BFD400846895 /* LICENSE */,
 				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
 				3BD5F05515EE610B00333320 /* Incremental Store */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
 				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
+				3B3C8D921688A7AF006192E4 /* Vendor */,
 				3BD5EFF815EE5DDF00333320 /* Frameworks */,
 				3BD5EFF615EE5DDF00333320 /* Products */,
 			);
