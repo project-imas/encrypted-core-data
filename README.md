@@ -8,6 +8,7 @@ Core Data encrypted SQLite store using [SQLCipher](http://sqlcipher.net). Use th
   - CWE-311: Missing Encryption of Sensitive Data
 2. SQLite database file protected with 4 digit system passcode
   - CWE-326: Inadequate Encryption Strength
+  - SRG-APP-000129-MAPP-000029  Severity-CAT II: The mobile application must implement automated mechanisms to enforce access control restrictions which are not provided by the operating system
 
 # Caveat
 This library is a work in progress and will probably not work in every case or with highly complex models. There is also what I believe to be a bug in the implementation of `NSIncrementalStoreNode` and its use through the Core Data framework. I have an open DTS ticket with Apple and am working on this. The issue can be seen by changing the value of and searching for `USE_CUSTOM_NODE_CACHE` in `CMDEncryptedSQLiteStore.m`.
