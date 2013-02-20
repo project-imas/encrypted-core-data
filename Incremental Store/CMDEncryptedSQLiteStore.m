@@ -158,6 +158,38 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             }
         }
         
+        // return fetched dictionaries
+        if (type == NSDictionaryResultType && [[fetchRequest propertiesToFetch] count] > 0) {
+            BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
+            NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
+            NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
+            NSString *string = [NSString stringWithFormat:
+                                @"SELECT %@%@ FROM %@%@%@%@;",
+                                (isDistinctFetchEnabled)?@"DISTINCT ":@"",
+                                propertiesToFetchString,
+                                table,
+                                [condition objectForKey:@"query"],
+                                order,
+                                limit];
+            sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+            [self bindWhereClause:condition toStatement:statement];
+            while (sqlite3_step(statement) == SQLITE_ROW) {
+                NSMutableDictionary* singleResult = [NSMutableDictionary dictionary];
+                [propertiesToFetch enumerateObjectsUsingBlock:^(id property, NSUInteger idx, BOOL *stop) {
+                    id value = [self valueForProperty:property inStatement:statement atIndex:idx];
+                    if (value)
+                    {
+                        [singleResult setValue:value forKey:[property name]];
+                    }
+                }];
+                [results addObject:singleResult];
+            }
+            if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+                if (error) { *error = [self databaseError]; }
+                return nil;
+            }
+        }
+        
         // return a count
         else if (type == NSCountResultType) {
             NSString *string = [NSString stringWithFormat:
@@ -995,6 +1027,21 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     }
     return @"";
 }
+
+- (NSString *)columnsClauseWithProperties:(NSArray *)properties {
+    NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[properties count]];
+    [properties enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [columns addObject:[NSString stringWithFormat:
+                            @"%@",
+                            [obj name]
+                            ]];
+    }];
+    if ([columns count]) {
+        return [NSString stringWithFormat:@"%@", [columns componentsJoinedByString:@", "]];
+    }
+    return @"";
+}
+
 
 - (NSNumber *)maximumObjectIDInTable:(NSString *)table {
     NSNumber *value = [objectIDCache objectForKey:table];
