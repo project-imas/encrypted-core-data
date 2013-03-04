@@ -95,3 +95,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/50cf88b71d3c78a0268ae42ea79d8951 "githalytics.com")](http://githalytics.com/project-imas/encrypted-core-data)
+
+
