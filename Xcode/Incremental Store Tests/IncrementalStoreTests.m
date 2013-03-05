@@ -392,4 +392,44 @@
     }];
 }
 
+- (void)test_createSeveralUsersWithPostsAndComplexSearch {
+    NSUInteger limit = 1;
+    [self createUsers:limit];
+    NSError *error;
+    NSFetchRequest *request;
+    NSError *__block errorBlock;
+    NSFetchRequest *__block requestBlock;
+    BOOL save;
+    
+    // fetch user
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    [request setFetchLimit:limit];
+    NSArray *users = [context executeFetchRequest:request error:&error];
+    STAssertNil(error, @"Unable to perform fetch request.");
+    STAssertEquals([users count], limit, @"Invalid number of results.");
+    NSManagedObject *user = [users lastObject];
+    STAssertNotNil(user, @"No object found.");
+    
+    // create posts
+    [self createPosts:5 forUser:user];
+    
+    // fetch users
+    NSArray *predicates = @[
+    [NSPredicate predicateWithFormat:@"posts.title like[c] %@", @"title"],
+    [NSPredicate predicateWithFormat:@"posts.title contains[c] %@", @"title"],
+    [NSPredicate predicateWithFormat:@"posts.title endswith[c] %@", @"title"]
+    ];
+    [predicates enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        errorBlock = nil;
+        requestBlock = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+        [request setPredicate:obj];
+        NSArray *users = [context executeFetchRequest:request error:&errorBlock];
+        STAssertNil(error, @"Unable to perform fetch request.");
+        STAssertEquals([users count], limit, @"Invalid number of results.");
+        NSManagedObject *user = [users lastObject];
+        STAssertNotNil(user, @"No object found.");
+    }];
+}
+
 @end
