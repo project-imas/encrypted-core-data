@@ -392,6 +392,9 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         // load metadata
         BOOL success = [self performInTransaction:^{
             
+            //enable regexp
+            sqlite3_create_function(database, "REGEXP", 2, SQLITE_ANY, NULL, (void *)dbsqlite_regexp, NULL, NULL);
+            
             // ask if we have a metadata table
             BOOL hasTable = NO;
             if (![self hasMetadataTable:&hasTable error:error]) { return NO; }
@@ -559,6 +562,40 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     }
     passphrase = nil;
     return YES;
+}
+
+#pragma mark - user functions
+
+static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **argv) {
+    NSUInteger numberOfMatches = 0;
+    NSString *pattern, *string;
+    
+    if (argc == 2) {
+        
+        const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
+        
+        pattern = [NSString stringWithUTF8String:aux];
+        
+        aux     = (const char *)sqlite3_value_text((sqlite3_value*)argv[1]);
+        
+        string  = [NSString stringWithUTF8String:aux];
+        
+        if(pattern != nil && string != nil){
+            NSError *error;
+            NSRegularExpression *regex = [NSRegularExpression
+                                          regularExpressionWithPattern:pattern
+                                          options:NSRegularExpressionCaseInsensitive
+                                          error:&error];
+            
+            if(error == nil){
+                numberOfMatches = [regex numberOfMatchesInString:string
+                                                         options:0
+                                                           range:NSMakeRange(0, [string length])];
+            }
+        }
+	}
+    
+	(void)sqlite3_result_int(context, numberOfMatches);
 }
 
 #pragma mark - migration helpers
@@ -1219,7 +1256,6 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 - (NSDictionary *)recursive_whereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
     
 //    enum {
-//        NSMatchesPredicateOperatorType,
 //        NSCustomSelectorPredicateOperatorType,
 //        NSBetweenPredicateOperatorType
 //    };
@@ -1235,6 +1271,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             @(NSBeginsWithPredicateOperatorType)    : @{ @"operator" : @"LIKE",     @"format" : @"%@%%" },
             @(NSEndsWithPredicateOperatorType)      : @{ @"operator" : @"LIKE",     @"format" : @"%%%@" },
             @(NSLikePredicateOperatorType)          : @{ @"operator" : @"LIKE",     @"format" : @"%@" },
+            @(NSMatchesPredicateOperatorType)       : @{ @"operator" : @"REGEXP",   @"format" : @"%@" },            
             @(NSInPredicateOperatorType)            : @{ @"operator" : @"IN",       @"format" : @"(%@)" },
             @(NSLessThanPredicateOperatorType)      : @{ @"operator" : @"<", @"format" : @"%@" },
             @(NSLessThanOrEqualToPredicateOperatorType) : @{ @"operator" : @"<=", @"format" : @"%@" },
