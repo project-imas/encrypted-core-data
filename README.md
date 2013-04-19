@@ -14,42 +14,29 @@ Core Data encrypted SQLite store using [SQLCipher](http://sqlcipher.net). Use th
 This library is a work in progress and will probably not work in every case or with highly complex models. There is also what I believe to be a bug in the implementation of `NSIncrementalStoreNode` and its use through the Core Data framework. I have an open DTS ticket with Apple and am working on this. The issue can be seen by changing the value of and searching for `USE_CUSTOM_NODE_CACHE` in `CMDEncryptedSQLiteStore.m`.
 
 # Project Setup
-
-Add this repository as a submodule to your project.
-    git submodule add https://github.com/calebmdavenport/encrypted-core-data.git vendor/encrypted-core-data
-    git submodule update --init --recursive
-
-## Configure OpenSSL Source for Xcode
-
-- Download the OpenSSL source code from <http://www.openssl.org/source/>. This has been tested against `1.0.1c`.
-- Untar the source and place in a known location.
-- Add a new source tree in Xcode > Preferences > Locations > Source Trees called `OPENSSL_SRC` pointing to the OpenSSL source folder.
-
-## Build the OpenSSL and SQLCipher Libraries
-
-Add the Xcode projects found in `vendor/encrypted-core-data/vendor/sqlcipher` and `vendor/encrypted-core-data/vendor/openssl` as subprojects to your Xcode project.
-
-Add the source files found in `vendor/encrypted-core-data/Incremental Store` to your Xcode project. Pick the appropriate targets and uncheck "copy files".
-
-Add the `crypto` and `sqlcipher` libraries as dependencies and linked libraries to all appropriate targets.
-
-Add the flag `-DSQLITE_HAS_CODEC` to all configurations of all appropriate targets
+  * When creating the project make sure "Use Core Data" is selected
+  * Follow the [SQLCipher for iOS](http://sqlcipher.net/ios-tutorial/) setup guide
+  * Switch into your project's root directory and checkout the encrypted-core-data project code
+```shell
+    cd ~/Documents/code/YourApp
+    git clone https://github.com/project-imas/encrypted-core-data.git
+```
+  * Click on the top level Project item and add files ("option-command-a")
+  * Navigate to **encrypted-core-data**, highlight **Incremental Store**, and click **Add**
 
 # Using CMDEncryptedSQLiteStore
 
-`CMDEncryptedSQLiteStore` is a subclass of `NSIncrementalStore` that enables communication between CoreData and an SQLCipher encrypted database. It registers itself at runtime so you do not have to call `registerStoreClass:forStoreType:` on `NSPersistentStoreCoordinator`.
-
-Using it is easy. Just set the appropriate type and a database key when you load your persistent store:
-
+In your application delegate source file (i.e. AppDelegate.m) you should see
 ```objc
-NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE" };
-NSPersistentStore *store = [coordinator
-                            addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
-                            configuration:nil
-                            URL:databaseURL
-                            options:options
-                            error:&error];
+   NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 ```
+replace that line with
+```objc
+       NSPersistentStoreCoordinator *coordinator = [CMDEncryptedSQLiteStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+```
+
+Replacing **SOME_PASSWORD** with an actual password.
+
 
 # Debugging
 
