@@ -66,6 +66,29 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     
 }
 
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel
+                                           :(NSString*)passcode
+{
+    NSString *dbName = NSBundle.mainBundle.infoDictionary  [@"CFBundleDisplayName"];
+    NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : passcode };
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
+    
+    NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
+    [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
+    NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
+
+    NSError *error = nil;
+    NSPersistentStore *store = [persistentCoordinator
+                                addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
+                                configuration:nil
+                                URL:databaseURL
+                                options:options
+                                error:&error];
+    NSAssert(store, @"Unable to add persistent store\n%@", error);
+    return persistentCoordinator;
+}
+
 + (void)load {
     @autoreleasepool {
         [NSPersistentStoreCoordinator

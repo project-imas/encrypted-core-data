@@ -18,7 +18,7 @@ This library is a work in progress and will probably not work in every case or w
   * Follow the [SQLCipher for iOS](http://sqlcipher.net/ios-tutorial/) setup guide
   * Switch into your project's root directory and checkout the encrypted-core-data project code
 ```shell
-    cd ~/Documents/code/YourApp
+    cd ~/Documents/code/YourApp; 
     git clone https://github.com/project-imas/encrypted-core-data.git
 ```
   * Click on the top level Project item and add files ("option-command-a")

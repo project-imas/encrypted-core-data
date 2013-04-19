@@ -13,5 +13,7 @@ extern NSString * const CMDEncryptedSQLiteStoreErrorDomain;
 extern NSString * const CMDEncryptedSQLiteStoreErrorMessageKey;
 
 @interface CMDEncryptedSQLiteStore : NSIncrementalStore
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
+                                           :(NSString *) passcode;
 
 @end
