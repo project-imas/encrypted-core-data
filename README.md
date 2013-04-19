@@ -14,12 +14,12 @@ Core Data encrypted SQLite store using [SQLCipher](http://sqlcipher.net). Use th
 This library is a work in progress and will probably not work in every case or with highly complex models. There is also what I believe to be a bug in the implementation of `NSIncrementalStoreNode` and its use through the Core Data framework. I have an open DTS ticket with Apple and am working on this. The issue can be seen by changing the value of and searching for `USE_CUSTOM_NODE_CACHE` in `CMDEncryptedSQLiteStore.m`.
 
 # Project Setup
-  * When creating the project make sure "Use Core Data" is selected
+  * When creating the project make sure **Use Core Data** is selected
   * Follow the [SQLCipher for iOS](http://sqlcipher.net/ios-tutorial/) setup guide
   * Switch into your project's root directory and checkout the encrypted-core-data project code
 ```shell
-    cd ~/Documents/code/YourApp
-    git clone https://github.com/project-imas/encrypted-core-data.git
+ cd ~/Documents/code/YourApp
+ git clone https://github.com/project-imas/encrypted-core-data.git
 ```
   * Click on the top level Project item and add files ("option-command-a")
   * Navigate to **encrypted-core-data**, highlight **Incremental Store**, and click **Add**
@@ -28,11 +28,11 @@ This library is a work in progress and will probably not work in every case or w
 
 In your application delegate source file (i.e. AppDelegate.m) you should see
 ```objc
-   NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
+NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 ```
 replace that line with
 ```objc
-       NSPersistentStoreCoordinator *coordinator = [CMDEncryptedSQLiteStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+NSPersistentStoreCoordinator *coordinator = [CMDEncryptedSQLiteStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
 ```
 
 Replacing **SOME_PASSWORD** with an actual password.
