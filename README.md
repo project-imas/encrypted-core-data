@@ -16,7 +16,6 @@ This library is a work in progress and will probably not work in every case or w
 # Project Setup
 
 Add this repository as a submodule to your project.
-
     git submodule add https://github.com/calebmdavenport/encrypted-core-data.git vendor/encrypted-core-data
     git submodule update --init --recursive
 
