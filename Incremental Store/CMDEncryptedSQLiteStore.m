@@ -268,8 +268,8 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
             NSRelationshipDescription *inverse = [obj inverseRelationship];
             
-            // many side of a one-to-many
-            if (![obj isToMany] && [inverse isToMany]) {
+            // Handle one-to-many and one-to-one
+            if (![obj isToMany]) {
                 NSString *column = [self foreignKeyColumnForRelationship:obj];
                 [columns addObject:column];
                 [keys addObject:key];
@@ -332,8 +332,8 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         sqlite3_bind_int64(statement, 1, key);
     }
     
-    // one side of a one-to-many
-    else if (![relationship isToMany] && [inverseRelationship isToMany]) {
+    // one side of a one-to-many and one-to-one
+    else if (![relationship isToMany]) {
         NSString *string = [NSString stringWithFormat:
                             @"SELECT %@ FROM %@ WHERE ID=?",
                             [self foreignKeyColumnForRelationship:relationship],
@@ -369,6 +369,8 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     
     // satisfied to-one relationship
     else {
+        //return objectIDs;
+
         return [objectIDs lastObject];
     }
     
@@ -695,8 +697,8 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         NSRelationshipDescription *inverse = [obj inverseRelationship];
         
-        // many side of a one-to-many
-        if (![obj isToMany] && [inverse isToMany]) {
+        // handle one-to-many and one-to-one
+        if (![obj isToMany]) { 
             NSString *column = [self foreignKeyColumnForRelationship:obj];
             [columns addObject:column];
         }
@@ -822,7 +824,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     [[request insertedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
         // get values
-        NSEntityDescription *entity = [object entity];
+        NSEntityDescription *entity = [object   entity];
         NSMutableArray *keys = [NSMutableArray array];
         NSMutableArray *columns = [NSMutableArray arrayWithObject:@"id"];
         NSDictionary *properties = [entity propertiesByName];
@@ -834,8 +836,8 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
             else if ([obj isKindOfClass:[NSPropertyDescription class]]) {
                 NSRelationshipDescription *inverse = [obj inverseRelationship];
                 
-                // many side of a many-to-one
-                if (![obj isToMany] && [inverse isToMany]) {
+                // one side of both one-to-one and one-to-many
+                if (![obj isToMany]){
                     [keys addObject:key];
                     NSString *column = [self foreignKeyColumnForRelationship:obj];
                     [columns addObject:column];
@@ -920,8 +922,8 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
             else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
                 NSRelationshipDescription *inverse = [property inverseRelationship];
                 
-                // many side of a many-to-one
-                if (![property isToMany] && [inverse isToMany]) {
+                // one side of a many-to-one and one-to-one
+                if (![property isToMany]) {
                     NSString *column = [self foreignKeyColumnForRelationship:property];
                     [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
                     [keys addObject:key];
