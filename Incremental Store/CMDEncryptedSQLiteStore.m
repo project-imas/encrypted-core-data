@@ -153,8 +153,13 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         NSMutableArray *results = [NSMutableArray array];
         NSString *table = [self tableNameForEntity:entity];
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
-        NSString *order = @""; // [self orderClauseWithSortDescriptors:[fetchRequest sortDescriptors]];
+        NSString *order = [self orderClauseWithSortDescriptors:[fetchRequest sortDescriptors]];
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
+        
+        if([order length] > 0) {
+            NSLog(@">>>>%@-%@", order, table);
+            order = @"";
+        }
         
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
