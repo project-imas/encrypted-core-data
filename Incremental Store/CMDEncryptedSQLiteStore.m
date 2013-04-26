@@ -152,11 +152,20 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         NSFetchRequestResultType type = [fetchRequest resultType];
         NSMutableArray *results = [NSMutableArray array];
         NSString *table = [self tableNameForEntity:entity];
+        NSString *joinedTables = table;
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
         NSString *order = [self orderClauseWithSortDescriptors:[fetchRequest sortDescriptors]];
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
         
+        // TODO: Toying around code, move somewhere sane after things limp along
         if([order length] > 0) {
+            NSDictionary* rels = [entity relationshipsByName];
+            for(id key in rels) {
+                NSLog(@"key=%@", key);
+                NSRelationshipDescription *rel = [rels objectForKey:key];
+                NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
+                joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
+            }
             NSLog(@">>>>%@-%@", order, table);
             order = @"";
         }
@@ -164,11 +173,13 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT ID FROM %@%@%@%@;",
+                                @"SELECT %@.ID FROM %@%@%@%@;",
                                 table,
+                                joinedTables,
                                 [condition objectForKey:@"query"],
                                 order,
                                 limit];
+            NSLog(@">>>>%@", string);
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
