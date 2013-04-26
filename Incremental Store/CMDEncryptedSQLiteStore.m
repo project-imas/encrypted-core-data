@@ -159,15 +159,26 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         
         // TODO: Toying around code, move somewhere sane after things limp along
         if([order length] > 0) {
-            NSDictionary* rels = [entity relationshipsByName];
-            for(id key in rels) {
-                NSLog(@"key=%@", key);
-                NSRelationshipDescription *rel = [rels objectForKey:key];
-                NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
-                joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
+            NSArray *descs = [fetchRequest sortDescriptors];
+            for (id object in descs) {
+                NSSortDescriptor *sd = object;
+                NSString *sortKey = [sd key];
+                NSArray *array = [sortKey componentsSeparatedByString:@"."];
+                NSString *relName = [array objectAtIndex:0];
+                NSString *relField = [array objectAtIndex:1];
+            
+            
+                NSDictionary *rels = [entity relationshipsByName];
+                for(id key in rels) {
+                    NSLog(@"key=%@", key);
+                    NSRelationshipDescription *rel = [rels objectForKey:key];
+                    if([key isEqualToString:relName]) {
+                      NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
+                      joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
+                      order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
+                    }
+                }
             }
-            NSLog(@">>>>%@-%@", order, table);
-            order = @"";
         }
         
         // return objects or ids
