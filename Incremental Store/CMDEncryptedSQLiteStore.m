@@ -1096,7 +1096,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                             ([obj ascending]) ? @"ASC" : @"DESC"]];
     }];
     if ([columns count]) {
-      //  return [NSString stringWithFormat:@" ORDER BY %@", [columns componentsJoinedByString:@", "]];
+      //  return 
         NSArray *descs = [fetchRequest sortDescriptors];
         for (id object in descs) {
             NSSortDescriptor *sd = object;
@@ -1123,6 +1123,8 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                     order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
                   }
               }
+            } else {
+              order = [NSString stringWithFormat:@" ORDER BY %@", [columns componentsJoinedByString:@", "]];
             }
         }
         
