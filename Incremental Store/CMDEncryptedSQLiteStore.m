@@ -189,7 +189,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
             NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
             
-            // TODO: This will break
+            // TODO: Need a test case to test this, or remove it entirely
             NSString *string = [NSString stringWithFormat:
                                 @"SELECT %@%@ FROM %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
@@ -1096,7 +1096,6 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                             ([obj ascending]) ? @"ASC" : @"DESC"]];
     }];
     if ([columns count]) {
-      //  return 
         NSArray *descs = [fetchRequest sortDescriptors];
         for (id object in descs) {
             NSSortDescriptor *sd = object;
@@ -1121,6 +1120,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                     NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
                     joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
                     order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
+                    // TODO: Add back in ASC and DESC here
                   }
               }
             } else {
