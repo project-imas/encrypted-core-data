@@ -1102,19 +1102,27 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
             NSSortDescriptor *sd = object;
             NSString *sortKey = [sd key];
             NSArray *array = [sortKey componentsSeparatedByString:@"."];
-            NSString *relName = [array objectAtIndex:0];
-            NSString *relField = [array objectAtIndex:1];
+            
+            // If array has only 1 element then the sort descriptor is in this table
+            // otherwise it's in a related table and we need to go figure out the name
+            NSString *relName = table;
+            NSString *relField = [array objectAtIndex:0];
+            NSLog(@"%lu", (unsigned long)[array count]);
+            if ( [array count] > 1) {
+              relName = [array objectAtIndex:0];
+              relField = [array objectAtIndex:1];
+        
                 
-                
-            NSDictionary *rels = [entity relationshipsByName];
-            for(id key in rels) {
-                NSLog(@"key=%@", key);
-                NSRelationshipDescription *rel = [rels objectForKey:key];
-                if([key isEqualToString:relName]) {
+              NSDictionary *rels = [entity relationshipsByName];
+              for(id key in rels) {
+                  NSLog(@"key=%@", key);
+                  NSRelationshipDescription *rel = [rels objectForKey:key];
+                  if([key isEqualToString:relName]) {
                     NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
                     joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
                     order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
-                }
+                  }
+              }
             }
         }
         
