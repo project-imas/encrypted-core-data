@@ -151,44 +151,19 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         NSEntityDescription *entity = [fetchRequest entity];
         NSFetchRequestResultType type = [fetchRequest resultType];
         NSMutableArray *results = [NSMutableArray array];
-        NSString *table = [self tableNameForEntity:entity];
-        NSString *joinedTables = table;
+        //NSString *joinedTables = table;
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
-        NSString *order = [self orderClauseWithSortDescriptors:[fetchRequest sortDescriptors]];
+        NSDictionary *ordering = [self orderClause:fetchRequest:entity];
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
-        
-        // TODO: Toying around code, move somewhere sane after things limp along
-        if([order length] > 0) {
-            NSArray *descs = [fetchRequest sortDescriptors];
-            for (id object in descs) {
-                NSSortDescriptor *sd = object;
-                NSString *sortKey = [sd key];
-                NSArray *array = [sortKey componentsSeparatedByString:@"."];
-                NSString *relName = [array objectAtIndex:0];
-                NSString *relField = [array objectAtIndex:1];
-            
-            
-                NSDictionary *rels = [entity relationshipsByName];
-                for(id key in rels) {
-                    NSLog(@"key=%@", key);
-                    NSRelationshipDescription *rel = [rels objectForKey:key];
-                    if([key isEqualToString:relName]) {
-                      NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
-                      joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
-                      order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
-                    }
-                }
-            }
-        }
         
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
                                 @"SELECT %@.ID FROM %@%@%@%@;",
-                                table,
-                                joinedTables,
+                                [ordering objectForKey:@"table"],
+                                [ordering objectForKey:@"joinedTables"],
                                 [condition objectForKey:@"query"],
-                                order,
+                                [ordering objectForKey:@"order"],
                                 limit];
             NSLog(@">>>>%@", string);
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
@@ -213,13 +188,15 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
             BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
             NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
             NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
+            
+            // TODO: This will break
             NSString *string = [NSString stringWithFormat:
                                 @"SELECT %@%@ FROM %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 propertiesToFetchString,
-                                table,
+                                [ordering objectForKey:@"table"],
                                 [condition objectForKey:@"query"],
-                                order,
+                                [ordering objectForKey:@"order"],
                                 limit];
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
@@ -244,7 +221,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
         else if (type == NSCountResultType) {
             NSString *string = [NSString stringWithFormat:
                                 @"SELECT COUNT(*) FROM %@%@%@;",
-                                table,
+                                [ordering objectForKey:@"table"],
                                 [condition objectForKey:@"query"],
                                 limit];
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
@@ -1103,7 +1080,14 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return NULL;
 }
 
-- (NSString *)orderClauseWithSortDescriptors:(NSArray *)descriptors {
+- (NSDictionary *)orderClause:(NSFetchRequest *) fetchRequest
+                             :(NSEntityDescription *) entity {
+    NSArray *descriptors = [fetchRequest sortDescriptors];
+    NSString *order = @"";
+    NSString *table = [self tableNameForEntity:entity];
+    NSString *joinedTables = table;
+    NSArray *keys = [NSArray arrayWithObjects:@"table",@"joinedTables", @"order", nil];
+    
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[descriptors count]];
     [descriptors enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         [columns addObject:[NSString stringWithFormat:
@@ -1112,9 +1096,33 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                             ([obj ascending]) ? @"ASC" : @"DESC"]];
     }];
     if ([columns count]) {
-        return [NSString stringWithFormat:@" ORDER BY %@", [columns componentsJoinedByString:@", "]];
+      //  return [NSString stringWithFormat:@" ORDER BY %@", [columns componentsJoinedByString:@", "]];
+        NSArray *descs = [fetchRequest sortDescriptors];
+        for (id object in descs) {
+            NSSortDescriptor *sd = object;
+            NSString *sortKey = [sd key];
+            NSArray *array = [sortKey componentsSeparatedByString:@"."];
+            NSString *relName = [array objectAtIndex:0];
+            NSString *relField = [array objectAtIndex:1];
+                
+                
+            NSDictionary *rels = [entity relationshipsByName];
+            for(id key in rels) {
+                NSLog(@"key=%@", key);
+                NSRelationshipDescription *rel = [rels objectForKey:key];
+                if([key isEqualToString:relName]) {
+                    NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
+                    joinedTables = [NSString stringWithFormat:@"%@, %@", joinedTables, destEnt];
+                    order = [NSString stringWithFormat:@" ORDER BY %@.%@", destEnt, relField];
+                }
+            }
+        }
+        
+        
     }
-    return @"";
+    
+    return [NSDictionary dictionaryWithObjects:
+            [NSArray arrayWithObjects:table,joinedTables,order,nil] forKeys:keys];
 }
 
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
