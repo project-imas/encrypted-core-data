@@ -272,6 +272,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 NSString *column = [self foreignKeyColumnForRelationship:obj];
                 [columns addObject:column];
                 [keys addObject:key];
+            } else {
+                NSLog(@"newValuesForObjectWithID->many");
             }
             
         }
@@ -339,6 +341,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
+    } else {
+        NSLog(@"newValueForRelationship->manyToMany");
     }
     
     // run query
@@ -700,6 +704,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         if (![obj isToMany]) { 
             NSString *column = [self foreignKeyColumnForRelationship:obj];
             [columns addObject:column];
+        } else {
+            NSLog(@"createTableForEntity->many");
         }
         
     }];
@@ -840,6 +846,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     [keys addObject:key];
                     NSString *column = [self foreignKeyColumnForRelationship:obj];
                     [columns addObject:column];
+                } else {
+                    NSLog(@"handleInsertedObjectsInSaveRequest->many");
                 }
                 
             }
@@ -926,6 +934,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     NSString *column = [self foreignKeyColumnForRelationship:property];
                     [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
                     [keys addObject:key];
+                } else {
+                    NSLog(@"handleUpdatedObjectsInSaveRequest->many");
                 }
                 
             }
