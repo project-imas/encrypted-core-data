@@ -11,7 +11,7 @@ Core Data encrypted SQLite store using [SQLCipher](http://sqlcipher.net). Use th
   - SRG-APP-000129-MAPP-000029  Severity-CAT II: The mobile application must implement automated mechanisms to enforce access control restrictions which are not provided by the operating system
 
 # Caveat
-This library is a work in progress and will probably not work in every case or with highly complex models. There is also what I believe to be a bug in the implementation of `NSIncrementalStoreNode` and its use through the Core Data framework. I have an open DTS ticket with Apple and am working on this. The issue can be seen by changing the value of and searching for `USE_CUSTOM_NODE_CACHE` in `CMDEncryptedSQLiteStore.m`.
+This library is a work in progress and will probably not work in every case or with highly complex models. There is also what I believe to be a bug in the implementation of `NSIncrementalStoreNode` and its use through the Core Data framework. I have an open DTS ticket with Apple and am working on this. The issue can be seen by changing the value of and searching for `USE_CUSTOM_NODE_CACHE` in `EncryptedStore.m`.
 
 # Project Setup
   * When creating the project make sure **Use Core Data** is selected
@@ -25,7 +25,7 @@ This library is a work in progress and will probably not work in every case or w
   * Click on the top level Project item and add files ("option-command-a")
   * Navigate to **encrypted-core-data**, highlight **Incremental Store**, and click **Add**
 
-# Using CMDEncryptedSQLiteStore
+# Using EncryptedStore
 
 In your application delegate source file (i.e. AppDelegate.m) you should see
 ```objc
@@ -33,19 +33,19 @@ NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 ```
 replace that line with
 ```objc
-NSPersistentStoreCoordinator *coordinator = [CMDEncryptedSQLiteStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+NSPersistentStoreCoordinator *coordinator = [EncryptedStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
 ```
 
 Replacing **SOME_PASSWORD** with an actual password.
 
-Also in the same file add an import for CMDEncryptedSQLiteStore:
+Also in the same file add an import for EncryptedStore.h:
 ```objc
-   #import "CMDEncryptedSQLiteStore.h"
+   #import "EncryptedStore.h"
 ```
 
 # Debugging
 
-`CMDEncryptedSQLiteStore` responds to the standard CoreData SQL debug flag. Add `-com.apple.CoreData.SQLDebug 1` as an argument to the "run" phase of your scheme to see all generated statements logged to the console.
+`EncryptedStore` responds to the standard CoreData SQL debug flag. Add `-com.apple.CoreData.SQLDebug 1` as an argument to the "run" phase of your scheme to see all generated statements logged to the console.
 
 # Improvements
 
