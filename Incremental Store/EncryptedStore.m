@@ -1,9 +1,4 @@
-//
-//  CMDEncryptedSQLiteStore.m
-//
-//  Created by Caleb Davenport on 7/26/12.
 //  Copyright (c) 2012 The MITRE Corporation.
-//
 
 #if !__has_feature(objc_arc)
 #error This class requires ARC.
@@ -11,17 +6,17 @@
 
 #import <sqlite3.h>
 
-#import "CMDEncryptedSQLiteStore.h"
+#import "EncryptedStore.h"
 
-NSString * const CMDEncryptedSQLiteStoreType = @"CMDEncryptedSQLiteStore";
-NSString * const CMDEncryptedSQLiteStorePassphraseKey = @"CMDEncryptedSQLiteStorePassphrase";
-NSString * const CMDEncryptedSQLiteStoreErrorDomain = @"CMDEncryptedSQLiteStoreErrorDomain";
-NSString * const CMDEncryptedSQLiteStoreErrorMessageKey = @"CMDEncryptedSQLiteStoreErrorMessage";
-static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
+NSString * const EncryptedStoreType = @"EncryptedStore";
+NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
+NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
+NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
+static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 #pragma mark - category interfaces
 
-@interface NSArray (CMDEncryptedSQLiteStoreAdditions)
+@interface NSArray (EncryptedStoreAdditions)
 
 /*
  
@@ -54,7 +49,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 
 @end
 
-@implementation CMDEncryptedSQLiteStore {
+@implementation EncryptedStore {
     
     // database resources
     sqlite3 *database;
@@ -70,7 +65,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                                            :(NSString*)passcode
 {
     NSString *dbName = NSBundle.mainBundle.infoDictionary  [@"CFBundleDisplayName"];
-    NSDictionary *options = @{ CMDEncryptedSQLiteStorePassphraseKey : passcode };
+    NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
     
@@ -80,7 +75,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 
     NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
-                                addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
+                                addPersistentStoreWithType:EncryptedStoreType
                                 configuration:nil
                                 URL:databaseURL
                                 options:options
@@ -92,8 +87,8 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 + (void)load {
     @autoreleasepool {
         [NSPersistentStoreCoordinator
-         registerStoreClass:[CMDEncryptedSQLiteStore class]
-         forStoreType:CMDEncryptedSQLiteStoreType];
+         registerStoreClass:[EncryptedStore class]
+         forStoreType:EncryptedStoreType];
     }
 }
 
@@ -402,7 +397,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 }
 
 - (NSString *)type {
-    return CMDEncryptedSQLiteStoreType;
+    return EncryptedStoreType;
 }
 
 #pragma mark - metadata helpers
@@ -435,7 +430,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                 NSDictionary *metadata = nil;
                 NSString *string = [NSString stringWithFormat:
                                     @"SELECT plist FROM %@ LIMIT 1;",
-                                    CMDEncryptedSQLiteStoreMetadataTableName];
+                                    EncryptedStoreMetadataTableName];
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
                 if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
                     const void *bytes = sqlite3_column_blob(statement, 0);
@@ -489,7 +484,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
                 // create table
                 NSString *string = [NSString stringWithFormat:
                                     @"CREATE TABLE %@(plist);",
-                                    CMDEncryptedSQLiteStoreMetadataTableName];
+                                    EncryptedStoreMetadataTableName];
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
                 sqlite3_step(statement);
                 if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
@@ -538,7 +533,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     int count = 0;
     NSString *string = [NSString stringWithFormat:
                         @"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='%@';",
-                        CMDEncryptedSQLiteStoreMetadataTableName];
+                        EncryptedStoreMetadataTableName];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
         count = sqlite3_column_int(statement, 0);
@@ -560,7 +555,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     // delete
     string = [NSString stringWithFormat:
               @"DELETE FROM %@;",
-              CMDEncryptedSQLiteStoreMetadataTableName];
+              EncryptedStoreMetadataTableName];
     statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
@@ -568,7 +563,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
     // save
     string = [NSString stringWithFormat:
               @"INSERT INTO %@ (plist) VALUES(?);",
-              CMDEncryptedSQLiteStoreMetadataTableName];
+              EncryptedStoreMetadataTableName];
     statement = [self preparedStatementForQuery:string];
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:[self metadata]];
     sqlite3_bind_blob(statement, 1, [data bytes], [data length], SQLITE_TRANSIENT);
@@ -581,7 +576,7 @@ static NSString * const CMDEncryptedSQLiteStoreMetadataTableName = @"meta";
 #pragma mark - passphrase
 
 - (BOOL)configureDatabasePassphrase {
-    NSString *passphrase = [[self options] objectForKey:CMDEncryptedSQLiteStorePassphraseKey];
+    NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
     if (passphrase) {
         const char *string = [passphrase UTF8String];
         int status = sqlite3_key(database, string, strlen(string));
@@ -1025,7 +1020,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     int code = sqlite3_errcode(database);
     if (code) {
         NSDictionary *userInfo = @{
-            CMDEncryptedSQLiteStoreErrorMessageKey : [NSString stringWithUTF8String:sqlite3_errmsg(database)]
+            EncryptedStoreErrorMessageKey : [NSString stringWithUTF8String:sqlite3_errmsg(database)]
         };
         return [NSError
                 errorWithDomain:NSSQLiteErrorDomain
@@ -1588,7 +1583,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
 
 #pragma mark - category implementations
 
-@implementation NSArray (CMDEncryptedSQLiteStoreAdditions)
+@implementation NSArray (EncryptedStoreAdditions)
 
 + (NSArray *)cmd_arrayWithObject:(id)object times:(NSUInteger)times {
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:times];
