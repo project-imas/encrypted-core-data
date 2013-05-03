@@ -23,7 +23,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
  Creates an array with the given object repeated for the given number of times.
  
  */
-+ (NSArray *)cmd_arrayWithObject:(id<NSCopying>)object times:(NSUInteger)times;
++ (NSArray *)cmdArrayWithObject:(id<NSCopying>)object times:(NSUInteger)times;
 
 /*
  
@@ -32,7 +32,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
  a new array.
  
  */
-- (NSArray *)cmd_collect:(id (^) (id object))block;
+- (NSArray *)cmdCollect:(id (^) (id object))block;
 
 /*
  
@@ -41,7 +41,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
  other objects.
  
  */
-- (NSArray *)cmd_flatten;
+- (NSArray *)cmdFlatten;
 
 @end
 
@@ -184,7 +184,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
             NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
             
-            // TODO: Need a test case to test this, or remove it entirely
+            // TODO: Need a test case to reach here, or remove it entirely
             NSString *string = [NSString stringWithFormat:
                                 @"SELECT %@%@ FROM %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
@@ -417,7 +417,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         BOOL success = [self performInTransaction:^{
             
             //enable regexp
-            sqlite3_create_function(database, "REGEXP", 2, SQLITE_ANY, NULL, (void *)dbsqlite_regexp, NULL, NULL);
+            sqlite3_create_function(database, "REGEXP", 2, SQLITE_ANY, NULL, (void *)dbsqliteRegExp, NULL, NULL);
             
             // ask if we have a metadata table
             BOOL hasTable = NO;
@@ -590,7 +590,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 #pragma mark - user functions
 
-static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **argv) {
+static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv) {
     NSUInteger numberOfMatches = 0;
     NSString *pattern, *string;
     
@@ -850,7 +850,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                             @"INSERT INTO %@ (%@) VALUES(%@);",
                             [self tableNameForEntity:entity],
                             [columns componentsJoinedByString:@", "],
-                            [[NSArray cmd_arrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
+                            [[NSArray cmdArrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // bind id
@@ -1305,7 +1305,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
  
  */
 - (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request {
-    NSDictionary *result = [self recursive_whereClauseWithFetchRequest:request predicate:[request predicate]];
+    NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:[request predicate]];
     if (result) {
         NSString *query = [result objectForKey:@"query"];
         query = [NSString stringWithFormat:@" WHERE %@", query];
@@ -1318,7 +1318,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     }
 }
 
-- (NSDictionary *)recursive_whereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
+- (NSDictionary *)recursiveWhereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
     
 //    enum {
 //        NSCustomSelectorPredicateOperatorType,
@@ -1352,7 +1352,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
         NSMutableArray *queries = [NSMutableArray array];
         NSMutableArray *bindings = [NSMutableArray array];
         [[(id)predicate subpredicates] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            NSDictionary *result = [self recursive_whereClauseWithFetchRequest:request predicate:obj];
+            NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:obj];
             [queries addObject:[result objectForKey:@"query"]];
             [bindings addObjectsFromArray:[result objectForKey:@"bindings"]];
         }];
@@ -1415,7 +1415,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
                            rightOperand];
         return @{
             @"query" : query,
-            @"bindings" : [bindings cmd_flatten]
+            @"bindings" : [bindings cmdFlatten]
         };
         
     }
@@ -1534,7 +1534,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
         value = [expression constantValue];
         if ([value isKindOfClass:[NSSet class]]) {
             NSUInteger count = [value count];
-            NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
+            NSArray *parameters = [NSArray cmdArrayWithObject:@"?" times:count];
             *bindings = [value allObjects];
             *operand = [NSString stringWithFormat:
                         [operator objectForKey:@"format"],
@@ -1542,7 +1542,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
         }
         else if ([value isKindOfClass:[NSArray class]]) {
             NSUInteger count = [value count];
-            NSArray *parameters = [NSArray cmd_arrayWithObject:@"?" times:count];
+            NSArray *parameters = [NSArray cmdArrayWithObject:@"?" times:count];
             *bindings = value;
             *operand = [NSString stringWithFormat:
                         [operator objectForKey:@"format"],
@@ -1585,7 +1585,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
 
 @implementation NSArray (EncryptedStoreAdditions)
 
-+ (NSArray *)cmd_arrayWithObject:(id)object times:(NSUInteger)times {
++ (NSArray *)cmdArrayWithObject:(id)object times:(NSUInteger)times {
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:times];
     for (NSUInteger i = 0; i < times; i++) {
         [array addObject:object];
@@ -1593,7 +1593,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return [array copy];
 }
 
-- (NSArray *)cmd_collect:(id (^) (id object))block {
+- (NSArray *)cmdCollect:(id (^) (id object))block {
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:[self count]];
     [self enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         [array addObject:block(obj)];
@@ -1601,11 +1601,11 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return array;
 }
 
-- (NSArray *)cmd_flatten {
+- (NSArray *)cmdFlatten {
     NSMutableArray *array = [NSMutableArray arrayWithCapacity:[self count]];
     [self enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         if ([obj isKindOfClass:[NSArray class]]) {
-            [array addObjectsFromArray:[obj cmd_flatten]];
+            [array addObjectsFromArray:[obj cmdFlatten]];
         }
         else {
             [array addObject:obj];
