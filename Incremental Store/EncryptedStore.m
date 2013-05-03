@@ -805,9 +805,9 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
 - (NSArray *)handleSaveChangesRequest:(NSSaveChangesRequest *)request error:(NSError **)error {
     NSMutableDictionary *localNodeCache = [nodeCache mutableCopy];
     BOOL success = [self performInTransaction:^{
-        BOOL insert = [self handleInsertedObjectsInSaveReuqest:request error:error];
-        BOOL update = [self handleUpdatedObjectsInSaveReuqest:request cache:localNodeCache error:error];
-        BOOL delete = [self handleDeletedObjectsInSaveReuqest:request error:error];
+        BOOL insert = [self handleInsertedObjectsInSaveRequest:request error:error];
+        BOOL update = [self handleUpdatedObjectsInSaveRequest:request cache:localNodeCache error:error];
+        BOOL delete = [self handleDeletedObjectsInSaveRequest:request error:error];
         return (BOOL)(insert && update && delete);
     }];
     if (success) {
@@ -818,7 +818,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return nil;
 }
 
-- (BOOL)handleInsertedObjectsInSaveReuqest:(NSSaveChangesRequest *)request error:(NSError **)error {
+- (BOOL)handleInsertedObjectsInSaveRequest:(NSSaveChangesRequest *)request error:(NSError **)error {
     BOOL __block success = YES;
     [[request insertedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
@@ -882,7 +882,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return success;
 }
 
-- (BOOL)handleUpdatedObjectsInSaveReuqest:(NSSaveChangesRequest *)request cache:(NSMutableDictionary *)cache error:(NSError **)error {
+- (BOOL)handleUpdatedObjectsInSaveRequest:(NSSaveChangesRequest *)request cache:(NSMutableDictionary *)cache error:(NSError **)error {
     BOOL __block success = YES;
     [[request updatedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
@@ -987,7 +987,7 @@ static void dbsqlite_regexp(sqlite3_context *context, int argc, const char **arg
     return success;
 }
 
-- (BOOL)handleDeletedObjectsInSaveReuqest:(NSSaveChangesRequest *)request error:(NSError **)error {
+- (BOOL)handleDeletedObjectsInSaveRequest:(NSSaveChangesRequest *)request error:(NSError **)error {
     BOOL __block success = YES;
     [[request deletedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
