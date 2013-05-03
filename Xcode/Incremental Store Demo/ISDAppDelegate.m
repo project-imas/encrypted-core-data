@@ -5,7 +5,7 @@
 //  Created by Caleb Davenport on 8/29/12.
 //
 
-#import <CMDEncryptedSQLiteStore.h>
+#import <EncryptedStore.h>
 
 #import "ISDAppDelegate.h"
 
@@ -28,13 +28,13 @@
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
         NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:@"database.sqlite"];
         NSDictionary *options = @{
-            CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE",
+            EncryptedStorePassphraseKey : @"DB_KEY_HERE",
             NSMigratePersistentStoresAutomaticallyOption : @YES,
             NSInferMappingModelAutomaticallyOption : @YES
         };
         NSError *error = nil;
         NSPersistentStore *store = [coordinator
-                                    addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
+                                    addPersistentStoreWithType:EncryptedStoreType
                                     configuration:nil
                                     URL:databaseURL
                                     options:options

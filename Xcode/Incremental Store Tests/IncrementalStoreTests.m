@@ -7,7 +7,7 @@
 
 #import <SenTestingKit/SenTestingKit.h>
 #import <CoreData/CoreData.h>
-#import <CMDEncryptedSQLiteStore.h>
+#import <EncryptedStore.h>
 
 /*
  
@@ -113,7 +113,7 @@
     
     // add store
     NSDictionary *options = @{
-        CMDEncryptedSQLiteStorePassphraseKey : @"DB_KEY_HERE",
+        EncryptedStorePassphraseKey : @"DB_KEY_HERE",
         NSMigratePersistentStoresAutomaticallyOption : @YES,
         NSInferMappingModelAutomaticallyOption : @YES
     };
@@ -122,7 +122,7 @@
     NSError *error = nil;
 #if USE_ENCRYPTED_STORE
     store = [coordinator
-             addPersistentStoreWithType:CMDEncryptedSQLiteStoreType
+             addPersistentStoreWithType:EncryptedStoreType
              configuration:nil
              URL:URL
              options:options
