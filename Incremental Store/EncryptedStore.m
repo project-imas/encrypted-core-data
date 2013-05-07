@@ -883,7 +883,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
             @try {
-            
               [self
                  bindProperty:property
                  withValue:[object valueForKey:obj]
@@ -892,6 +891,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                   atIndex:(idx + 2)];
             }
             @catch (NSException *exception) {
+                // TODO: Something is off the previous statement will die on some
+                //       Many-to-many statements.  But ignoring it still works.
+                //       Warrants specific testing, and figuring out where it went wrong
                 NSLog(@"Exception: %@", exception.description);
                 NSLog(@"Trace: %@", [exception callStackSymbols]);
             }
