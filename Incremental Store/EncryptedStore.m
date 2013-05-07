@@ -160,7 +160,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
-            NSLog(@">>>>%@", string);
+         
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
@@ -272,7 +272,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 NSString *column = [self foreignKeyColumnForRelationship:obj];
                 [columns addObject:column];
                 [keys addObject:key];
-            } else {
+            } else if ([inverse isToMany]){
+                NSString *column = [self foreignKeyColumnForRelationship:obj];
+                [columns addObject:column];
+                [keys addObject:key];
                 NSLog(@"newValuesForObjectWithID->many");
             }
             
@@ -341,8 +344,14 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
-    } else {
+    } else if ([inverseRelationship isToMany]){
         NSLog(@"newValueForRelationship->manyToMany");
+        NSString *string = [NSString stringWithFormat:
+                            @"SELECT %@ FROM %@ WHERE ID=?",
+                            [self foreignKeyColumnForRelationship:relationship],
+                            [self tableNameForEntity:sourceEntity]];
+        statement = [self preparedStatementForQuery:string];
+        sqlite3_bind_int64(statement, 1, key);
     }
     
     // run query
@@ -706,6 +715,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             [columns addObject:column];
         } else {
             NSLog(@"createTableForEntity->many");
+            NSString *column = [self foreignKeyColumnForRelationship:obj];
+           [columns addObject:column];
         }
         
     }];
@@ -846,8 +857,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     [keys addObject:key];
                     NSString *column = [self foreignKeyColumnForRelationship:obj];
                     [columns addObject:column];
-                } else {
+                } else if ([inverse isToMany]){
                     NSLog(@"handleInsertedObjectsInSaveRequest->many");
+                    [keys addObject:key];
+                    NSString *column = [self foreignKeyColumnForRelationship:obj];
+                    [columns addObject:column];
                 }
                 
             }
@@ -868,12 +882,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // bind properties
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
-            [self
-             bindProperty:property
-             withValue:[object valueForKey:obj]
-             forKey:obj
-             toStatement:statement
-             atIndex:(idx + 2)];
+            @try {
+            
+              [self
+                 bindProperty:property
+                 withValue:[object valueForKey:obj]
+                 forKey:obj
+                  toStatement:statement
+                  atIndex:(idx + 2)];
+            }
+            @catch (NSException *exception) {
+                NSLog(@"Exception: %@", exception.description);
+                NSLog(@"Trace: %@", [exception callStackSymbols]);
+            }
         }];
         
         // execute
@@ -1584,8 +1605,21 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 }
 
-- (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
+- (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship {
+    NSString *destEnt = [self tableNameForEntity:[relationship destinationEntity]];
+    
+    
     NSEntityDescription *destination = [relationship destinationEntity];
+    NSLog(@"%@",[destination name]);
+    return [NSString stringWithFormat:@"%@.id", [destination name]];
+}
+
+- (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
+    NSString *destEnt = [self tableNameForEntity:[relationship destinationEntity]];
+
+
+    NSEntityDescription *destination = [relationship destinationEntity];
+    NSLog(@"%@",[destination name]);
     return [NSString stringWithFormat:@"%@_id", [destination name]];
 }
 
