@@ -321,24 +321,22 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSEntityDescription *destinationEntity = [relationship destinationEntity];
     sqlite3_stmt *statement = NULL;
     
-    // many side of a one-to-many
-    if ([relationship isToMany] && ![inverseRelationship isToMany]) {
-        NSString *string = [NSString stringWithFormat:
-                            @"SELECT ID FROM %@ WHERE %@=?",
-                            [self tableNameForEntity:destinationEntity],
-                            [self foreignKeyColumnForRelationship:inverseRelationship]];
-        statement = [self preparedStatementForQuery:string];
-        sqlite3_bind_int64(statement, 1, key);
-    }
-    
+
     // one side of a one-to-many and one-to-one
-    else if (![relationship isToMany] || [inverseRelationship isToMany]) {
+    if (![relationship isToMany] || [inverseRelationship isToMany]) {
         NSString *string = [NSString stringWithFormat:
                             @"SELECT %@ FROM %@ WHERE ID=?",
                             [self foreignKeyColumnForRelationship:relationship],
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
+    } else {
+        NSString *string = [NSString stringWithFormat:
+                            @"SELECT ID FROM %@ WHERE %@=?",
+                            [self tableNameForEntity:destinationEntity],
+                            [self foreignKeyColumnForRelationship:inverseRelationship]];
+        statement = [self preparedStatementForQuery:string];
+        sqlite3_bind_int64(statement, 1, key);        
     }
     
     // run query
