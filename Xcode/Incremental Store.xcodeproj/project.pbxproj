@@ -25,13 +25,12 @@
 		3BD5F04E15EE5EBE00333320 /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F04815EE5E9E00333320 /* libsqlcipher.a */; };
 		3BD5F05315EE5ED000333320 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F03E15EE5E9400333320 /* libcrypto.a */; };
 		3BD5F05415EE5ED300333320 /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F04815EE5E9E00333320 /* libsqlcipher.a */; };
-		3BD5F05815EE610B00333320 /* CMDEncryptedSQLiteStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05715EE610B00333320 /* CMDEncryptedSQLiteStore.m */; };
-		3BD5F05915EE610B00333320 /* CMDEncryptedSQLiteStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05715EE610B00333320 /* CMDEncryptedSQLiteStore.m */; };
 		3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */; };
 		3BD5F06615EE62EC00333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06715EE62F300333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05D15EE616E00333320 /* ISDUserListViewController.m */; };
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
+		3EB6A0EE17469B2300BC65F4 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB6A0ED17469B2300BC65F4 /* EncryptedStore.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,8 +100,6 @@
 		3BD5F03215EE5E7200333320 /* Incremental Store Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Incremental Store Tests-Prefix.pch"; sourceTree = "<group>"; };
 		3BD5F03615EE5E9400333320 /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = ../vendor/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
 		3BD5F03F15EE5E9E00333320 /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
-		3BD5F05615EE610B00333320 /* CMDEncryptedSQLiteStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CMDEncryptedSQLiteStore.h; sourceTree = "<group>"; };
-		3BD5F05715EE610B00333320 /* CMDEncryptedSQLiteStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CMDEncryptedSQLiteStore.m; sourceTree = "<group>"; };
 		3BD5F05A15EE616E00333320 /* ISDPostListViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDPostListViewController.h; sourceTree = "<group>"; };
 		3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDPostListViewController.m; sourceTree = "<group>"; };
 		3BD5F05C15EE616E00333320 /* ISDUserListViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDUserListViewController.h; sourceTree = "<group>"; };
@@ -110,6 +107,8 @@
 		3BD5F06015EE61A700333320 /* ISDEditPostViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDEditPostViewController.h; sourceTree = "<group>"; };
 		3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDEditPostViewController.m; sourceTree = "<group>"; };
 		3BD5F06515EE62EC00333320 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		3EB6A0EC17469B2300BC65F4 /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
+		3EB6A0ED17469B2300BC65F4 /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -154,9 +153,9 @@
 		3BD5EFEA15EE5DDF00333320 = {
 			isa = PBXGroup;
 			children = (
+				3EB6A0EB17469B2300BC65F4 /* Incremental Store */,
 				3BA7C32815F7BFD400846895 /* README.md */,
 				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
-				3BD5F05515EE610B00333320 /* Incremental Store */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
 				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
 				3B3C8D921688A7AF006192E4 /* Vendor */,
@@ -244,16 +243,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		3BD5F05515EE610B00333320 /* Incremental Store */ = {
-			isa = PBXGroup;
-			children = (
-				3BD5F05615EE610B00333320 /* CMDEncryptedSQLiteStore.h */,
-				3BD5F05715EE610B00333320 /* CMDEncryptedSQLiteStore.m */,
-			);
-			name = "Incremental Store";
-			path = "../Incremental Store";
-			sourceTree = "<group>";
-		};
 		3BD5F06415EE61E200333320 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
@@ -265,6 +254,16 @@
 				3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */,
 			);
 			name = "View Controllers";
+			sourceTree = "<group>";
+		};
+		3EB6A0EB17469B2300BC65F4 /* Incremental Store */ = {
+			isa = PBXGroup;
+			children = (
+				3EB6A0EC17469B2300BC65F4 /* EncryptedStore.h */,
+				3EB6A0ED17469B2300BC65F4 /* EncryptedStore.m */,
+			);
+			name = "Incremental Store";
+			path = "../Incremental Store";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -407,11 +406,11 @@
 			files = (
 				3BD5F00615EE5DDF00333320 /* main.m in Sources */,
 				3BD5F00A15EE5DDF00333320 /* ISDAppDelegate.m in Sources */,
-				3BD5F05815EE610B00333320 /* CMDEncryptedSQLiteStore.m in Sources */,
 				3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */,
 				3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */,
 				3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */,
 				3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
+				3EB6A0EE17469B2300BC65F4 /* EncryptedStore.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,7 +419,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
-				3BD5F05915EE610B00333320 /* CMDEncryptedSQLiteStore.m in Sources */,
 				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
