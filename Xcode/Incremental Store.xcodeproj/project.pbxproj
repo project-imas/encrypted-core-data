@@ -30,6 +30,8 @@
 		3BD5F06715EE62F300333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05D15EE616E00333320 /* ISDUserListViewController.m */; };
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
+		3E2A9542174D2072004FA256 /* EncryptedStore.h in Sources */ = {isa = PBXBuildFile; fileRef = 3EB6A0EC17469B2300BC65F4 /* EncryptedStore.h */; };
+		3E2A9543174D2072004FA256 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB6A0ED17469B2300BC65F4 /* EncryptedStore.m */; };
 		3EB6A0EE17469B2300BC65F4 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB6A0ED17469B2300BC65F4 /* EncryptedStore.m */; };
 /* End PBXBuildFile section */
 
@@ -418,6 +420,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3E2A9542174D2072004FA256 /* EncryptedStore.h in Sources */,
+				3E2A9543174D2072004FA256 /* EncryptedStore.m in Sources */,
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
 				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
 			);
