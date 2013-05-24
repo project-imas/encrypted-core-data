@@ -345,6 +345,7 @@
     STAssertNil(error, @"Unable to perform fetch request.");
     STAssertEquals([users count], limit, @"Invalid number of results.");
     NSManagedObject *user = [users lastObject];
+    
     STAssertNotNil(user, @"No object found.");
     
     // create posts
@@ -399,7 +400,6 @@
     NSFetchRequest *request;
     NSError *__block errorBlock;
     NSFetchRequest *__block requestBlock;
-    BOOL save;
     
     // fetch user
     error = nil;
