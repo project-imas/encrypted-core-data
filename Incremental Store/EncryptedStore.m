@@ -1593,7 +1593,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
     NSEntityDescription *destination = [relationship destinationEntity];
     NSLog(@"%@",[destination name]);
-    return [NSString stringWithFormat:@"%@_id", [destination name]];
+    return [NSString stringWithFormat:@"%@_id", [relationship name]];
 }
 
 @end
