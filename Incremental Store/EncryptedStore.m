@@ -693,8 +693,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSArray *attributeNames = [[entity attributesByName] allKeys];
     [columns addObjectsFromArray:attributeNames];
     [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        NSRelationshipDescription *inverse = [obj inverseRelationship];
-        
+   
         // handle one-to-many and one-to-one
         NSString *column = [self foreignKeyColumnForRelationship:obj];
         [columns addObject:column];
@@ -924,10 +923,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [columns addObject:[NSString stringWithFormat:@"%@=?", key]];
                 [keys addObject:key];
             }
-            else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-                NSRelationshipDescription *inverse = [property inverseRelationship];
-                
-                // This seems to be enough for all cases
+            else if ([property isKindOfClass:[NSRelationshipDescription class]]) {          
                 // TODO: More edge case testing
                 NSString *column = [self foreignKeyColumnForRelationship:property];
                 [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
@@ -1579,20 +1575,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 - (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship {
-    NSString *destEnt = [self tableNameForEntity:[relationship destinationEntity]];
-    
-    
     NSEntityDescription *destination = [relationship destinationEntity];
     NSLog(@"%@",[destination name]);
     return [NSString stringWithFormat:@"%@.id", [destination name]];
 }
 
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
-    NSString *destEnt = [self tableNameForEntity:[relationship destinationEntity]];
-
-
-    NSEntityDescription *destination = [relationship destinationEntity];
-    NSLog(@"%@",[destination name]);
     return [NSString stringWithFormat:@"%@_id", [relationship name]];
 }
 
