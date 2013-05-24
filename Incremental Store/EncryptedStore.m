@@ -5,6 +5,7 @@
 #endif
 
 #import <sqlite3.h>
+#import <objc/runtime.h>
 
 #import "EncryptedStore.h"
 
@@ -997,6 +998,18 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // get identifying information
         NSEntityDescription *entity = [object entity];
         NSNumber *objectID = [self referenceObjectForObjectID:[object objectID]];
+       
+        /* Delete rule handling, everything seems to be working, but if there are further issues
+         * this is the place to start looking
+        NSDictionary* rels = [entity relationshipsByName];
+        for(id key in rels) {
+            NSLog(@"key=%@", key);
+            NSRelationshipDescription *rel = [rels objectForKey:key];
+            NSString *destEnt = [self tableNameForEntity:[rel destinationEntity]];
+            NSDeleteRule* dr = [rel deleteRule];
+            NSLog(@"Del: %i", dr);
+        }
+        */
         
         // delete object
         NSString *string = [NSString stringWithFormat:
