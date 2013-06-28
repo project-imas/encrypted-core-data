@@ -924,10 +924,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [keys addObject:key];
             }
             else if ([property isKindOfClass:[NSRelationshipDescription class]]) {          
-                // TODO: More edge case testing
-                NSString *column = [self foreignKeyColumnForRelationship:property];
-                [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
-                [keys addObject:key];
+                // TODO: More edge case testing and handling
+                if (![(NSRelationshipDescription *) property isToMany]||[[(NSRelationshipDescription *) property inverseRelationship] isToMany]) {
+                  NSString *column = [self foreignKeyColumnForRelationship:property];
+                  [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
+                  [keys addObject:key];
+                }
             }
         }];
         
