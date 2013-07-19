@@ -5,7 +5,7 @@
 //  Created by Caleb Davenport on 8/29/12.
 //
 
-#import <EncryptedStore.h>
+#import "EncryptedStore.h"
 
 #import "ISDAppDelegate.h"
 

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		3E1F9A261799EB870057E202 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1F9A251799EB870057E202 /* EncryptedStore.m */; };
+		3EB6440A1799EEF300392BFF /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E1F9A1B1799EB650057E202 /* libcrypto.a */; };
+		3EB6440B1799EEF300392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E1F9A221799EB710057E202 /* libsqlcipher.a */; };
 		4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BC151D932E00FB21FA /* UIKit.framework */; };
 		4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BE151D932E00FB21FA /* Foundation.framework */; };
 		4B7AB8C1151D932E00FB21FA /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8C0151D932E00FB21FA /* CoreGraphics.framework */; };
@@ -88,6 +90,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3EB6440A1799EEF300392BFF /* libcrypto.a in Frameworks */,
+				3EB6440B1799EEF300392BFF /* libsqlcipher.a in Frameworks */,
 				4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */,
 				4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */,
 				4B7AB8C1151D932E00FB21FA /* CoreGraphics.framework in Frameworks */,
