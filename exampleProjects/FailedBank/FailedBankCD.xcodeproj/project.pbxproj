@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3E89356117257F4E00EF5BAC /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E89355C17257F2D00EF5BAC /* libcrypto.a */; };
-		3E89356217257F4E00EF5BAC /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E89355617257F1C00EF5BAC /* libsqlcipher.a */; };
-		3EC3C5E817340EEA00A53E38 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EC3C5E717340EEA00A53E38 /* EncryptedStore.m */; };
+		3E1F9A261799EB870057E202 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1F9A251799EB870057E202 /* EncryptedStore.m */; };
 		4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BC151D932E00FB21FA /* UIKit.framework */; };
 		4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BE151D932E00FB21FA /* Foundation.framework */; };
 		4B7AB8C1151D932E00FB21FA /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8C0151D932E00FB21FA /* CoreGraphics.framework */; };
@@ -32,27 +30,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		3E89355517257F1C00EF5BAC /* PBXContainerItemProxy */ = {
+		3E1F9A1A1799EB650057E202 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 3E89355017257F1C00EF5BAC /* sqlcipher.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = D2AAC046055464E500DB518D;
-			remoteInfo = sqlcipher;
-		};
-		3E89355B17257F2D00EF5BAC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3E89355717257F2C00EF5BAC /* openssl.xcodeproj */;
+			containerPortal = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
 			remoteInfo = crypto;
 		};
+		3E1F9A211799EB710057E202 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3E89355017257F1C00EF5BAC /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = FailedBankCD/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
-		3E89355717257F2C00EF5BAC /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = "FailedBankCD/openssl-xcode/openssl.xcodeproj"; sourceTree = "<group>"; };
-		3EC3C5E617340EEA00A53E38 /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
-		3EC3C5E717340EEA00A53E38 /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
+		3E1F9A161799EB650057E202 /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = ../../vendor/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
+		3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
+		3E1F9A241799EB870057E202 /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
+		3E1F9A251799EB870057E202 /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
 		4B7AB8B8151D932E00FB21FA /* FailedBankCD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FailedBankCD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B7AB8BC151D932E00FB21FA /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		4B7AB8BE151D932E00FB21FA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -90,8 +88,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3E89356117257F4E00EF5BAC /* libcrypto.a in Frameworks */,
-				3E89356217257F4E00EF5BAC /* libsqlcipher.a in Frameworks */,
 				4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */,
 				4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */,
 				4B7AB8C1151D932E00FB21FA /* CoreGraphics.framework in Frameworks */,
@@ -102,38 +98,38 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3E89355117257F1C00EF5BAC /* Products */ = {
+		3E1F9A171799EB650057E202 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3E89355617257F1C00EF5BAC /* libsqlcipher.a */,
+				3E1F9A1B1799EB650057E202 /* libcrypto.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		3E89355817257F2C00EF5BAC /* Products */ = {
+		3E1F9A1D1799EB700057E202 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3E89355C17257F2D00EF5BAC /* libcrypto.a */,
+				3E1F9A221799EB710057E202 /* libsqlcipher.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		3EC3C5E517340EEA00A53E38 /* Incremental Store */ = {
+		3E1F9A231799EB870057E202 /* Incremental Store */ = {
 			isa = PBXGroup;
 			children = (
-				3EC3C5E617340EEA00A53E38 /* EncryptedStore.h */,
-				3EC3C5E717340EEA00A53E38 /* EncryptedStore.m */,
+				3E1F9A241799EB870057E202 /* EncryptedStore.h */,
+				3E1F9A251799EB870057E202 /* EncryptedStore.m */,
 			);
 			name = "Incremental Store";
-			path = "FailedBankCD/encrypted-core-data/Incremental Store";
+			path = "../../Incremental Store";
 			sourceTree = "<group>";
 		};
 		4B7AB8AD151D932E00FB21FA = {
 			isa = PBXGroup;
 			children = (
-				3EC3C5E517340EEA00A53E38 /* Incremental Store */,
-				3E89355717257F2C00EF5BAC /* openssl.xcodeproj */,
-				3E89355017257F1C00EF5BAC /* sqlcipher.xcodeproj */,
+				3E1F9A231799EB870057E202 /* Incremental Store */,
+				3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */,
+				3E1F9A161799EB650057E202 /* openssl.xcodeproj */,
 				4B7AB8C4151D932E00FB21FA /* FailedBankCD */,
 				4B7AB8BB151D932E00FB21FA /* Frameworks */,
 				4B7AB8B9151D932E00FB21FA /* Products */,
@@ -257,12 +253,12 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 3E89355817257F2C00EF5BAC /* Products */;
-					ProjectRef = 3E89355717257F2C00EF5BAC /* openssl.xcodeproj */;
+					ProductGroup = 3E1F9A171799EB650057E202 /* Products */;
+					ProjectRef = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
 				},
 				{
-					ProductGroup = 3E89355117257F1C00EF5BAC /* Products */;
-					ProjectRef = 3E89355017257F1C00EF5BAC /* sqlcipher.xcodeproj */;
+					ProductGroup = 3E1F9A1D1799EB700057E202 /* Products */;
+					ProjectRef = 3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -273,18 +269,18 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		3E89355617257F1C00EF5BAC /* libsqlcipher.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libsqlcipher.a;
-			remoteRef = 3E89355517257F1C00EF5BAC /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		3E89355C17257F2D00EF5BAC /* libcrypto.a */ = {
+		3E1F9A1B1799EB650057E202 /* libcrypto.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libcrypto.a;
-			remoteRef = 3E89355B17257F2D00EF5BAC /* PBXContainerItemProxy */;
+			remoteRef = 3E1F9A1A1799EB650057E202 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3E1F9A221799EB710057E202 /* libsqlcipher.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libsqlcipher.a;
+			remoteRef = 3E1F9A211799EB710057E202 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -319,7 +315,7 @@
 				BD1AC6BF156C03DB002F154B /* FailedBankDetails.m in Sources */,
 				BDCE1B3C156E2C820058579F /* SMBankDetailViewController.m in Sources */,
 				BDCE1B49156E40150058579F /* SMTagListViewController.m in Sources */,
-				3EC3C5E817340EEA00A53E38 /* EncryptedStore.m in Sources */,
+				3E1F9A261799EB870057E202 /* EncryptedStore.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
