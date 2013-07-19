@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model name="" userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="2061" systemVersion="12D78" minimumToolsVersion="Automatic" macOSVersion="Automatic" iOSVersion="Automatic">
+    <entity name="FailedBankDetails" representedClassName="FailedBankDetails" syncable="YES">
+        <attribute name="closeDate" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="updateDate" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="zip" optional="YES" attributeType="Integer 32" defaultValueString="0" syncable="YES"/>
+        <attribute name="zzz" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="info" optional="YES" minCount="1" maxCount="1" deletionRule="Cascade" destinationEntity="FailedBankInfo" inverseName="details" inverseEntity="FailedBankInfo" syncable="YES"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tag" inverseName="detail" inverseEntity="Tag" syncable="YES"/>
+    </entity>
+    <entity name="FailedBankInfo" representedClassName="FailedBankInfo" syncable="YES">
+        <attribute name="city" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="state" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="details" optional="YES" minCount="1" maxCount="1" deletionRule="Cascade" destinationEntity="FailedBankDetails" inverseName="info" inverseEntity="FailedBankDetails" syncable="YES"/>
+    </entity>
+    <entity name="Tag" representedClassName="Tag" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="detail" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FailedBankDetails" inverseName="tags" inverseEntity="FailedBankDetails" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="FailedBankDetails" positionX="-74" positionY="69" width="128" height="133"/>
+        <element name="FailedBankInfo" positionX="-270" positionY="-0" width="128" height="105"/>
+        <element name="Tag" positionX="126" positionY="186" width="128" height="75"/>
+    </elements>
+</model>
