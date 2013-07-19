@@ -51,6 +51,18 @@ If there are issues you can add `-com.apple.CoreData.SQLDebug 1` to see all stat
 
 Missing features and known bugs are maintained on the [issue tracker](https://github.com/project-imas/encrypted-core-data/issues?state=open)
 
+# Diagram
+
+Below is a diagram showing the differences between NSSQLiteStore and EncryptedStore.  Note that actual the SQLite calls are coupled fairly strongly with the layer wrapping it:
+<img src="diagram.jpg" />
+
+
+# Strings Comparison
+
+Below is the output of doing the unix *strings* command on a sample applications .sqlite file.  As you can see, the default persistence store leaves all information in plaintext:
+<img src="stringOutput.jpg" />
+
+
 ## License
 
 Copyright 2012 The MITRE Corporation, All Rights Reserved.
