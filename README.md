@@ -48,6 +48,7 @@ If there are issues you can add `-com.apple.CoreData.SQLDebug 1` to see all stat
 - One-to-many relationships
 - Many-to-many relationships
 - Predicates
+- Inherited entities (Thanks to [NachoMan](https://github.com/NachoMan/)) 
 
 Missing features and known bugs are maintained on the [issue tracker](https://github.com/project-imas/encrypted-core-data/issues?state=open)
 
