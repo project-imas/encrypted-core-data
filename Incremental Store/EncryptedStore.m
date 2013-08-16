@@ -774,6 +774,13 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     
     // create new table
+    // TODO - add some tests around this. I think with a child entity
+    // this won't actually create a table and the above initialized
+    // destinationTableName will be wrong. It should be the table name
+    // of the root entity in the inheritance tree.
+    // Some work should be done to ensure that we work with the
+    // correct table even if the migration only involves child
+    // entities.
     if (![self createTableForEntity:destinationEntity error:error]) {
         return NO;
     }
@@ -883,7 +890,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         // prepare statement
         NSString *string = nil;
-        if (entity.subentities.count > 0) {
+        if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
                       @"INSERT INTO %@ (_entityType, %@) VALUES(%u, %@);",
                       [self tableNameForEntity:entity],
