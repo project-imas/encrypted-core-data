@@ -1169,9 +1169,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // with.
         NSString *tableName = [self tableNameForEntity:fetchRequest.entity];
         if ([desc.key rangeOfString:@"."].location != NSNotFound) {
-            NSRelationshipDescription *rel = [self relationshipForEntity:fetchRequest.entity
-                                                                    name:[[desc.key componentsSeparatedByString:@"."] objectAtIndex:0]];
-            tableName = [self joinedTableNameForRelationship:rel];
+            tableName = [self joinedTableNameForComponents:[desc.key componentsSeparatedByString:@"."]];
         }
         [columns addObject:[NSString stringWithFormat:
                             @"%@.%@ %@",
@@ -1187,67 +1185,71 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 - (NSString *) getJoinClause: (NSFetchRequest *) fetchRequest {
     NSEntityDescription *entity = [fetchRequest entity];
-    NSMutableArray *keysArray = [NSMutableArray array];
+    // We use a set to only add one join table per relationship.
+    NSMutableSet *joinStatementsSet = [NSMutableSet set];
+    // We use an array to ensure the order of join statements
+    NSMutableArray *joinStatementsArray = [NSMutableArray array];
     // First look at all sort descriptor keys
     NSArray *descs = [fetchRequest sortDescriptors];
     for (NSSortDescriptor *sd in descs) {
         NSString *sortKey = [sd key];
         if ([sortKey rangeOfString:@"."].location != NSNotFound) {
-            [keysArray addObject:sortKey];
+            [self maybeAddJoinStatementsForKey:sortKey toStatementArray:joinStatementsArray withExistingStatementSet:joinStatementsSet rootEntity:entity];
         }
     }
     NSString *predicateString = [fetchRequest predicate].predicateFormat;
     if (predicateString == nil) {
         return @"";
     }
-    NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\S+?\\.\\S+?)\\b" options:0 error:nil];
+    NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\w+\\.[^= ]+)\\b" options:0 error:nil];
     NSArray* matches = [regex matchesInString:predicateString options:0 range:NSMakeRange(0, [predicateString length])];
     for ( NSTextCheckingResult* match in matches )
     {
         NSString* matchText = [predicateString substringWithRange:[match range]];
-        [keysArray addObject:matchText];
+        [self maybeAddJoinStatementsForKey:matchText toStatementArray:joinStatementsArray withExistingStatementSet:joinStatementsSet rootEntity:entity];
     }
-    // now we find all the relationships for the keys. We use a set to only add
-    // one join table per relationship.
-    NSMutableSet *relationships = [NSMutableSet setWithCapacity:keysArray.count];
-    for (NSString *key in keysArray) {
-        NSMutableArray *array = [NSMutableArray arrayWithArray:[key componentsSeparatedByString:@"."]];
-        // TODO - support nested relationships.
-        // For now we only permit direct relationship keys (e.g. child.name ...).
-        // We could have deeper relationships (e.g. child.parent.name ) if we bracketed the
-        // intermediate tables and updated the key in the WHERE or ORDERBY to use the bracketed
-        // table: EG
-        // child.parent.name -> [child.parent].name and we would have a double join
-        // JOIN childTable as child on mainTable.child_id = child.ID
-        // JOIN parentTable as [child.parent] on child.parent_id = [child.parent].ID
-        // For now we don't go downt that rabbit hole....
-        // Doing that would mean having a while loop here to traverse the relationship chain
-        // and passing the right context into joinTableNameForRelationship [such as an array of relationships].
-        // Care must be taken to ensure unique join table names so that a WHERE clause like:
-        // child.name == %@ AND child.parent.name == %@ doesn't add the child relationship twice
-        // Not terrribly difficult, but not a priority at the moment.
-        NSAssert(array.count < 3,
-                  @"Only direct relationship keys permitted in fetch request. BAD KEY: %@", key);
-        if ([array count] > 1) {
-            NSString *relName = [array objectAtIndex:0];
-            NSRelationshipDescription *rel = [[entity relationshipsByName]
-                                             objectForKey:relName];
-            [relationships addObject:rel];
-        }
+    if (joinStatementsArray.count > 0) {
+        return [joinStatementsArray componentsJoinedByString:@", "];
     }
-    if (relationships.count > 0) {
-        NSMutableArray *joinStatements = [NSMutableArray arrayWithCapacity:relationships.count];
-        for (NSRelationshipDescription *rel in relationships) {
-            [joinStatements addObject:
-             [NSString stringWithFormat:@"JOIN %@ ON %@",
-              [self joinTableClauseForRelationship:rel],
-              [NSString stringWithFormat: @"%@.%@ = %@.ID",
-               [self tableNameForEntity:rel.entity], [self foreignKeyColumnForRelationship:rel],
-               [self joinedTableNameForRelationship:rel]]]];
-        }
-        return [joinStatements componentsJoinedByString:@", "];
-    }
+     
     return @"";
+}
+
+- (void) maybeAddJoinStatementsForKey: (NSString *) key
+          toStatementArray: (NSMutableArray *) statementArray
+          withExistingStatementSet: (NSMutableSet *) statementsSet
+                           rootEntity: (NSEntityDescription *) rootEntity {
+    // We support have deeper relationships (e.g. child.parent.name ) by bracketing the
+    // intermediate tables and updating the keys in the WHERE or ORDERBY to use the bracketed
+    // table: EG
+    // child.parent.name -> [child.parent].name and we generate a double join
+    // JOIN childTable as child on mainTable.child_id = child.ID
+    // JOIN parentTable as [child.parent] on child.parent_id = [child.parent].ID
+    // Care must be taken to ensure unique join table names so that a WHERE clause like:
+    // child.name == %@ AND child.parent.name == %@ doesn't add the child relationship twice
+    NSArray *keysArray = [key componentsSeparatedByString:@"."];
+    
+    // We terminate when there is one item left since that is the field of interest
+    NSEntityDescription *currentEntity = rootEntity;
+    NSString *lastTableName = [self tableNameForEntity:currentEntity];
+    for (int i = 0 ; i < keysArray.count - 1; i++) {
+        NSString *nextTableName = [self joinedTableNameForComponents:
+                                   [keysArray subarrayWithRange: NSMakeRange(0, i+2)]];
+        NSRelationshipDescription *rel = [[currentEntity relationshipsByName]
+                                          objectForKey:[keysArray objectAtIndex:i]];
+        // We bracket all join table names so that periods are ok.
+        NSString *joinTableAsClause = [NSString stringWithFormat:@"%@ AS %@",
+                                     [self tableNameForEntity:rel.entity],
+                                     nextTableName];
+        NSString *joinTableOnClause = [NSString stringWithFormat: @"%@.%@ = %@.ID",
+                                       lastTableName, [self foreignKeyColumnForRelationship:rel],
+                                       nextTableName];
+        NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
+        if (![statementsSet containsObject:fullJoinClause]) {
+            [statementArray addObject:fullJoinClause];
+            
+        }
+    }
 }
 
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
@@ -1647,6 +1649,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         if ([property isKindOfClass:[NSRelationshipDescription class]]) {
             value = [self foreignKeyColumnForRelationship:property];
         }
+        if (property == nil && [value rangeOfString:@"."].location != NSNotFound) {
+            // We have a join table property, we need to rewrite the query.
+            NSArray *pathComponents = [value componentsSeparatedByString:@"."];
+            value = [NSString stringWithFormat:@"%@.%@",
+                     [self joinedTableNameForComponents:pathComponents],
+                     [pathComponents lastObject]];
+            
+        }
         *operand = value;
     }
     else if (type == NSEvaluatedObjectExpressionType) {
@@ -1708,14 +1718,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [NSString stringWithFormat:@"%@_id", [relationship name]];
 }
 
-- (NSString *) joinedTableNameForRelationship: (NSRelationshipDescription *) relationship {
-    return [relationship name];
-}
-
-- (NSString *) joinTableClauseForRelationship: (NSRelationshipDescription *) relationship {
-    return [NSString stringWithFormat:@"%@ AS %@",
-            [self tableNameForEntity:[relationship entity]],
-            [relationship name]];
+- (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray {
+    //assert([key rangeOfString:@"."].location != NSNotFound);
+    //NSArray *componentsArray = [key componentsSeparatedByString:@"."];
+    assert(componentsArray.count > 0);
+    NSString *tableName = [[componentsArray subarrayWithRange:NSMakeRange(0, componentsArray.count - 1)] componentsJoinedByString:@"."];
+    return [NSString stringWithFormat: @"[%@]", tableName];
 }
 
 // First degree relationship by name
