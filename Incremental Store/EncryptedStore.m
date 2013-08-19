@@ -1246,8 +1246,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                        nextTableName];
         NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
         if (![statementsSet containsObject:fullJoinClause]) {
+            [statementsSet addObject:fullJoinClause];
             [statementArray addObject:fullJoinClause];
-            
         }
     }
 }
@@ -1719,8 +1719,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 - (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray {
-    //assert([key rangeOfString:@"."].location != NSNotFound);
-    //NSArray *componentsArray = [key componentsSeparatedByString:@"."];
     assert(componentsArray.count > 0);
     NSString *tableName = [[componentsArray subarrayWithRange:NSMakeRange(0, componentsArray.count - 1)] componentsJoinedByString:@"."];
     return [NSString stringWithFormat: @"[%@]", tableName];
