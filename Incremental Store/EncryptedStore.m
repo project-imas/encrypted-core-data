@@ -1200,7 +1200,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (predicateString == nil) {
         return @"";
     }
-    NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\S+?\\.\\S+?)\\b" options:0 error:nil];
+    NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\w+\\.[^= ]+)\\b" options:0 error:nil];
     NSArray* matches = [regex matchesInString:predicateString options:0 range:NSMakeRange(0, [predicateString length])];
     for ( NSTextCheckingResult* match in matches )
     {
