@@ -11,7 +11,7 @@ extern NSString * const EncryptedStoreErrorMessageKey;
 @interface EncryptedStore : NSIncrementalStore
 
 
-+ (NSPersistentStoreCoordinator *)makeStoreWithDatabaseURL:(NSURL *)databaseURL managedObjectModel:(NSManagedObjectModel *)objModel:(NSString*)passcode;
++ (NSPersistentStoreCoordinator *)makeStoreWithDatabaseURL:(NSURL *)databaseURL managedObjectModel:(NSManagedObjectModel *)objModel :(NSString*)passcode;
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
                                            :(NSString *) passcode;
 
