@@ -1168,13 +1168,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // We do need to detect the relationship though to know what table to prefix the key
         // with.
         NSString *tableName = [self tableNameForEntity:fetchRequest.entity];
+        NSString *key = [desc key];
         if ([desc.key rangeOfString:@"."].location != NSNotFound) {
-            tableName = [self joinedTableNameForComponents:[desc.key componentsSeparatedByString:@"."]];
+            NSArray *components = [desc.key componentsSeparatedByString:@"."];
+            tableName = [self joinedTableNameForComponents:components];
+            key = [components lastObject];
         }
         [columns addObject:[NSString stringWithFormat:
                             @"%@.%@ %@",
                             tableName,
-                            [desc key],
+                            key,
                             ([desc ascending]) ? @"ASC" : @"DESC"]];
     }];
     if (columns.count) {
@@ -1198,15 +1201,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
     }
     NSString *predicateString = [fetchRequest predicate].predicateFormat;
-    if (predicateString == nil) {
-        return @"";
-    }
-    NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\w+\\.[^= ]+)\\b" options:0 error:nil];
-    NSArray* matches = [regex matchesInString:predicateString options:0 range:NSMakeRange(0, [predicateString length])];
-    for ( NSTextCheckingResult* match in matches )
-    {
-        NSString* matchText = [predicateString substringWithRange:[match range]];
-        [self maybeAddJoinStatementsForKey:matchText toStatementArray:joinStatementsArray withExistingStatementSet:joinStatementsSet rootEntity:entity];
+    if (predicateString != nil ) {
+        NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\w+\\.[^= ]+)\\b" options:0 error:nil];
+        NSArray* matches = [regex matchesInString:predicateString options:0 range:NSMakeRange(0, [predicateString length])];
+        for ( NSTextCheckingResult* match in matches )
+        {
+            NSString* matchText = [predicateString substringWithRange:[match range]];
+            [self maybeAddJoinStatementsForKey:matchText toStatementArray:joinStatementsArray withExistingStatementSet:joinStatementsSet rootEntity:entity];
+        }
     }
     if (joinStatementsArray.count > 0) {
         return [joinStatementsArray componentsJoinedByString:@", "];
@@ -1239,7 +1241,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                           objectForKey:[keysArray objectAtIndex:i]];
         // We bracket all join table names so that periods are ok.
         NSString *joinTableAsClause = [NSString stringWithFormat:@"%@ AS %@",
-                                     [self tableNameForEntity:rel.entity],
+                                     [self tableNameForEntity:rel.destinationEntity],
                                      nextTableName];
         NSString *joinTableOnClause = [NSString stringWithFormat: @"%@.%@ = %@.ID",
                                        lastTableName, [self foreignKeyColumnForRelationship:rel],
