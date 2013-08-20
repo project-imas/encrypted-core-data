@@ -62,18 +62,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
 }
 
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel
-                                           :(NSString*)passcode
++ (NSPersistentStoreCoordinator *)makeStoreWithDatabaseURL:(NSURL *)databaseURL managedObjectModel:(NSManagedObjectModel *)objModel:(NSString*)passcode
 {
-    NSString *dbName = NSBundle.mainBundle.infoDictionary  [@"CFBundleDisplayName"];
     NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
-    NSFileManager *fileManager = [NSFileManager defaultManager];
     NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
     
-    NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
-    [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
-    NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-
     NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
                                 addPersistentStoreWithType:EncryptedStoreType
@@ -83,6 +76,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 error:&error];
     NSAssert(store, @"Unable to add persistent store\n%@", error);
     return persistentCoordinator;
+}
+
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel :(NSString *)passcode
+{
+    NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
+    [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
+    NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
+    
+    return [self makeStoreWithDatabaseURL:databaseURL managedObjectModel:objModel:passcode];
 }
 
 + (void)load {
