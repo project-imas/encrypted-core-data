@@ -1202,7 +1202,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     NSString *predicateString = [fetchRequest predicate].predicateFormat;
     if (predicateString != nil ) {
-        NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b(\\w+\\.[^= ]+)\\b" options:0 error:nil];
+        NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:@"\\b([a-zA-Z]\\w*\\.[^= ]+)\\b" options:0 error:nil];
         NSArray* matches = [regex matchesInString:predicateString options:0 range:NSMakeRange(0, [predicateString length])];
         for ( NSTextCheckingResult* match in matches )
         {
@@ -1239,19 +1239,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                    [keysArray subarrayWithRange: NSMakeRange(0, i+2)]];
         NSRelationshipDescription *rel = [[currentEntity relationshipsByName]
                                           objectForKey:[keysArray objectAtIndex:i]];
-        // We bracket all join table names so that periods are ok.
-        NSString *joinTableAsClause = [NSString stringWithFormat:@"%@ AS %@",
-                                     [self tableNameForEntity:rel.destinationEntity],
-                                     nextTableName];
-        NSString *joinTableOnClause = [NSString stringWithFormat: @"%@.%@ = %@.ID",
-                                       lastTableName, [self foreignKeyColumnForRelationship:rel],
-                                       nextTableName];
-        NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
-        if (![statementsSet containsObject:fullJoinClause]) {
-            [statementsSet addObject:fullJoinClause];
-            [statementArray addObject:fullJoinClause];
+        if (rel != nil) {
+            // We bracket all join table names so that periods are ok.
+            NSString *joinTableAsClause = [NSString stringWithFormat:@"%@ AS %@",
+                                           [self tableNameForEntity:rel.destinationEntity],
+                                           nextTableName];
+            NSString *joinTableOnClause = [NSString stringWithFormat: @"%@.%@ = %@.ID",
+                                           lastTableName, [self foreignKeyColumnForRelationship:rel],
+                                           nextTableName];
+            NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
+            if (![statementsSet containsObject:fullJoinClause]) {
+                [statementsSet addObject:fullJoinClause];
+                [statementArray addObject:fullJoinClause];
+            }
         }
-    }
 }
 
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
