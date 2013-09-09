@@ -1253,6 +1253,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [statementArray addObject:fullJoinClause];
             }
         }
+    }
 }
 
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
