@@ -696,10 +696,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSMutableSet *columns = [NSMutableSet setWithCapacity:entity.properties.count];
 
     NSArray *attributeNames = [[entity attributesByName] allKeys];
-    [columns addObjectsFromArray:attributeNames];
+    
+    for (NSString *attributeName in attributeNames) {
+            [columns addObject:[NSString stringWithFormat:@"'%@'", attributeName]];
+    }
+    
     [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         // handle one-to-many and one-to-one
-        NSString *column = [self foreignKeyColumnForRelationship:obj];
+        NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:obj]];
         [columns addObject:column];
     }];
 
@@ -718,14 +722,13 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 
     // prepare columns
-    NSMutableArray *columns = [NSMutableArray arrayWithObject:@"id integer primary key"];
-
+    NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'id' integer primary key"];
     if (entity.subentities.count > 0) {
         // NOTE: Will use '-[NSString hash]' to determine the entity type so we can use
         //       faster integer-indexed queries.  Any string greater than 96-chars is
         //       not guaranteed to produce a unique hash value, but for entity names that
         //       shouldn't be a problem.
-        [columns addObject:@"_entityType integer"];
+        [columns addObject:@"'_entityType' integer"];
     }
 
     [columns addObjectsFromArray:[self columnNamesForEntity:entity]];
@@ -800,7 +803,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSExpression *expression = [obj valueExpression];
         if (expression != nil) {
-            [destinationColumns addObject:[obj name]];
+            [destinationColumns addObject:[NSString stringWithFormat:@"'%@'", [obj name]]];
             NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
             [sourceColumns addObject:source];
         }
@@ -819,7 +822,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // copy data
     if (destinationEntity.subentities.count > 0) {
         string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ (_entityType, %@)"
+                  @"INSERT INTO %@ ('_entityType', %@)"
                   @"SELECT %u, %@ "
                   @"FROM %@",
                   destinationTableName,
@@ -877,12 +880,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // get values
         NSEntityDescription *entity = [object entity];
         NSMutableArray *keys = [NSMutableArray array];
-        NSMutableArray *columns = [NSMutableArray arrayWithObject:@"id"];
+        NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'id'"];
         NSDictionary *properties = [entity propertiesByName];
         [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
             if ([obj isKindOfClass:[NSAttributeDescription class]]) {
                 [keys addObject:key];
-                [columns addObject:key];
+                [columns addObject:[NSString stringWithFormat:@"'%@'", key]];
             }
             else if ([obj isKindOfClass:[NSPropertyDescription class]]) {
                 NSRelationshipDescription *inverse = [obj inverseRelationship];
@@ -890,7 +893,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 // one side of both one-to-one and one-to-many
                 if (![obj isToMany] || [inverse isToMany]){
                     [keys addObject:key];
-                    NSString *column = [self foreignKeyColumnForRelationship:obj];
+                    NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:obj]];
                     [columns addObject:column];
                 }
 
@@ -901,7 +904,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSString *string = nil;
         if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
-                      @"INSERT INTO %@ (_entityType, %@) VALUES(%u, %@);",
+                      @"INSERT INTO %@ ('_entityType', %@) VALUES(%u, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
                       entity.name.hash,
