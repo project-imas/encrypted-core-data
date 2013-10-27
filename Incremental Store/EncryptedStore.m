@@ -1240,7 +1240,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     // We terminate when there is one item left since that is the field of interest
     NSEntityDescription *currentEntity = rootEntity;
-    NSString *lastTableName = [self tableNameForEntity:currentEntity];
     for (int i = 0 ; i < keysArray.count - 1; i++) {
         NSString *nextTableName = [self joinedTableNameForComponents:
                                    [keysArray subarrayWithRange: NSMakeRange(0, i+2)]];
@@ -1252,9 +1251,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                            [self tableNameForEntity:rel.destinationEntity],
                                            nextTableName];
             NSString *joinTableOnClause = [NSString stringWithFormat: @"%@.%@ = %@.ID",
-                                           lastTableName, [self foreignKeyColumnForRelationship:rel],
+                                           [self tableNameForEntity:currentEntity], [self foreignKeyColumnForRelationship:rel],
                                            nextTableName];
             NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
+            currentEntity = rel.destinationEntity;
             if (![statementsSet containsObject:fullJoinClause]) {
                 [statementsSet addObject:fullJoinClause];
                 [statementArray addObject:fullJoinClause];
