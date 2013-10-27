@@ -1218,7 +1218,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
     }
     if (joinStatementsArray.count > 0) {
-        return [joinStatementsArray componentsJoinedByString:@", "];
+        return [joinStatementsArray componentsJoinedByString:@" "];
     }
      
     return @"";
