@@ -1490,6 +1490,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
         // build query
         switch (compoundPredicate.compoundPredicateType) {
+            case NSNotPredicateType:
+                assert(queries.count == 1);
+                query = [NSString stringWithFormat:@"(NOT %@)", queries[0]];
+                break;
+                
             case NSAndPredicateType:
                 query = [NSString stringWithFormat:@"(%@)",
                          [queries componentsJoinedByString:@" AND "]];
