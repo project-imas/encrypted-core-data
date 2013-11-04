@@ -156,11 +156,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
         NSDictionary *ordering = [self orderClause:fetchRequest:entity];
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
+        BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
 
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT %@.ID FROM %@ %@%@%@%@;",
+                                @"SELECT %@%@.ID FROM %@ %@%@%@%@;",
+                                (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 table,
                                 table,
                                 joinStatement,
@@ -1525,6 +1527,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSComparisonPredicate *comparisonPredicate = (NSComparisonPredicate*)predicate;
 
         NSNumber *type = @(comparisonPredicate.predicateOperatorType);
+        NSComparisonPredicateModifier predicateModifier = comparisonPredicate.comparisonPredicateModifier;
+        if (predicateModifier == NSAnyPredicateModifier) {
+            [request setReturnsDistinctResults:YES];
+        }
         NSDictionary *operator = [operators objectForKey:type];
 
         // left expression
