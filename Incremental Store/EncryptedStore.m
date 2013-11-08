@@ -1557,7 +1557,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSMutableArray *comparisonBindings = [NSMutableArray arrayWithCapacity:2];
         if (leftBindings)  [comparisonBindings addObject:leftBindings];
         if (rightBindings) [comparisonBindings addObject:rightBindings];
-        query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
+        if (rightOperand && !rightBindings) {
+            query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
+        } else {
+            query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
+        }
         bindings = [[comparisonBindings cmdFlatten] mutableCopy];
     }
 
