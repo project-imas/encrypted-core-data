@@ -1558,7 +1558,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         if (leftBindings)  [comparisonBindings addObject:leftBindings];
         if (rightBindings) [comparisonBindings addObject:rightBindings];
         if (rightOperand && !rightBindings) {
-            query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
+            if([[operator objectForKey:@"operator"] isEqualToString:@"!="]) {
+                query = [@[leftOperand, @"IS NOT", rightOperand] componentsJoinedByString:@" "];
+            } else {
+                query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
+            }
         } else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
         }
