@@ -1684,6 +1684,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         if (value == nil) {
             value = [expression keyPath];
         }
+        BOOL foundPredicate = NO;
         NSEntityDescription *entity = [request entity];
         NSDictionary *properties = [entity propertiesByName];
         id property = [properties objectForKey:value];
@@ -1693,10 +1694,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         if (property == nil && [value rangeOfString:@"."].location != NSNotFound) {
             // We have a join table property, we need to rewrite the query.
             NSArray *pathComponents = [value componentsSeparatedByString:@"."];
-            value = [NSString stringWithFormat:@"%@.%@",
-                     [self joinedTableNameForComponents:pathComponents],
-                     [pathComponents lastObject]];
+            NSString *lastComponent = [pathComponents lastObject];
             
+            // Test if the last component is actually a predicate
+            if ([pathComponents count] >= 3){
+                if ([lastComponent isEqualToString:@"length"]){
+                    NSLog(@"HERE");
+                    value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+                    foundPredicate = YES;
+                }
+            }
+            
+            if(!foundPredicate)
+               value = [NSString stringWithFormat:@"%@.%@",
+                       [self joinedTableNameForComponents:pathComponents], lastComponent];
         }
         *operand = value;
     }
@@ -1736,8 +1747,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                              [operator objectForKey:@"format"],
                              value];
             }
-        }
-        else {
+        } else {
             *bindings = value;
             *operand = @"?";
         }
