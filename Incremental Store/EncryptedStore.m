@@ -1355,7 +1355,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
             }
 
-            // NSDecimalAttributeType
+            else if (type == NSDecimalAttributeType) {
+                NSString *decimalString = [value stringValue];
+                sqlite3_bind_text(statement, index, [decimalString UTF8String], -1, SQLITE_TRANSIENT);
+            }
+
             // NSObjectIDAttributeType
 
         }
@@ -1421,7 +1425,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
 
-        // NSDecimalAttributeType
+        else if (type == NSDecimalAttributeType) {
+            const char *string = (char *)sqlite3_column_text(statement, index);
+            return [NSDecimalNumber decimalNumberWithString:@(string)];
+        }
+
         // NSObjectIDAttributeType
 
     }
