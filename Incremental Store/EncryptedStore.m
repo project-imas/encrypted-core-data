@@ -1351,11 +1351,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             else if (type == NSTransformableAttributeType) {
                 NSString *name = ([(id)property valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
                 NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
-                NSData *data = [transformer reverseTransformedValue:value];
+                NSData *data = [transformer transformedValue:value];
                 sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
             }
 
-            // NSDecimalAttributeType
+            else if (type == NSDecimalAttributeType) {
+                NSString *decimalString = [value stringValue];
+                sqlite3_bind_text(statement, index, [decimalString UTF8String], -1, SQLITE_TRANSIENT);
+            }
+
             // NSObjectIDAttributeType
 
         }
@@ -1417,11 +1421,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             unsigned int length = sqlite3_column_bytes(statement, index);
             if (length > 0) {
                 NSData *data = [NSData dataWithBytes:bytes length:length];
-                return [transformer transformedValue:data];
+                return [transformer reverseTransformedValue:data];
             }
         }
 
-        // NSDecimalAttributeType
+        else if (type == NSDecimalAttributeType) {
+            const char *string = (char *)sqlite3_column_text(statement, index);
+            return [NSDecimalNumber decimalNumberWithString:@(string)];
+        }
+
         // NSObjectIDAttributeType
 
     }
