@@ -85,7 +85,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
     [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
     NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-    
+    // NSLog([databaseURL absoluteString]);
     return [self makeStoreWithDatabaseURL:databaseURL managedObjectModel:objModel:passcode];
 }
 
@@ -1151,7 +1151,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     while ([targetEntity superentity] != nil) {
         targetEntity = [targetEntity superentity];
     }
-    return [targetEntity name];
+    return [NSString stringWithFormat:@"ecd%@",[targetEntity name]];
 }
 
 - (sqlite3_stmt *)preparedStatementForQuery:(NSString *)query {
