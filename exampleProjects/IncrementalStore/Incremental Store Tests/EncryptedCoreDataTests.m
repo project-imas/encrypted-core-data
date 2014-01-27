@@ -1,9 +1,72 @@
 #import <SenTestingKit/SenTestingKit.h>
 #import "EncryptedStore.h"
 
+@interface ECDTestObject : NSObject
+
+@property (nonatomic, assign) float floatValue;
+@property (nonatomic, assign) uint64_t uint64Value;
+
+- (id)initWithData:(NSData *)data;
+
+- (NSData *)toData;
+
+@end
+
+@implementation  ECDTestObject
+
+- (id)initWithData:(NSData *)data
+{
+    self = [super init];
+
+    if (self)
+    {
+        NSRange valueRange = { 0, sizeof(float) };
+        [data getBytes:&_floatValue range:valueRange];
+
+        valueRange.location += valueRange.length;
+        valueRange.length = sizeof(uint64_t);
+        [data getBytes:&_uint64Value range:valueRange];
+    }
+
+    return self;
+}
+
+- (NSData *)toData
+{
+    NSMutableData *const mutableData = [NSMutableData new];
+    [mutableData appendBytes:&_floatValue length:sizeof(float)];
+    [mutableData appendBytes:&_uint64Value length:sizeof(uint64_t)];
+
+    return [mutableData copy];
+}
+
+- (BOOL)isEqual:(id)object
+{
+    if (self == object)
+    {
+        return YES;
+    }
+    else if ([self class] != [object class])
+    {
+        return NO;
+    }
+
+    ECDTestObject *const otherObject = object;
+    return self.floatValue == otherObject.floatValue && self.uint64Value == otherObject.uint64Value;
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"Test object <float=%f, uint64=%llu", self.floatValue, self.uint64Value];
+}
+
+@end
+
 @interface ECDAccount : NSManagedObject
 
 @property (nonatomic, retain) NSString *name;
+@property (nonatomic, retain) NSArray *subTypes;
+@property (nonatomic, retain) ECDTestObject *testObject;
 @property (nonatomic, retain) NSSet *transactions;
 
 @end
@@ -11,6 +74,8 @@
 @implementation ECDAccount
 
 @dynamic name;
+@dynamic subTypes;
+@dynamic testObject;
 @dynamic transactions;
 
 @end
@@ -28,6 +93,33 @@
 @dynamic amount;
 @dynamic date;
 @dynamic account;
+
+@end
+
+@interface ECDTestObjectTransformer : NSValueTransformer
+@end
+
+@implementation ECDTestObjectTransformer
+
++ (Class)transformedValueClass
+{
+    return [NSData class];
+}
+
++ (BOOL)allowsReverseTransformation
+{
+    return YES;
+}
+
+- (id)transformedValue:(id)value
+{
+    return [value toData];
+}
+
+- (id)reverseTransformedValue:(id)value
+{
+    return [[ECDTestObject alloc] initWithData:value];
+}
 
 @end
 
@@ -112,6 +204,18 @@
     accountNameDescription.name = @"name";
     accountNameDescription.attributeType = NSStringAttributeType;
     accountNameDescription.optional = YES;
+
+    NSAttributeDescription *const accountSubTypesDescription = [NSAttributeDescription new];
+    accountSubTypesDescription.name = @"subTypes";
+    accountSubTypesDescription.attributeType = NSTransformableAttributeType;
+    accountSubTypesDescription.optional = YES;
+
+    NSAttributeDescription *const accountTestObjectDescription = [NSAttributeDescription new];
+    accountTestObjectDescription.name = @"testObject";
+    accountTestObjectDescription.attributeType = NSTransformableAttributeType;
+    accountTestObjectDescription.valueTransformerName = NSStringFromClass([ECDTestObjectTransformer class]);
+    accountTestObjectDescription.attributeValueClassName = NSStringFromClass([ECDTestObject class]);
+    accountTestObjectDescription.optional = YES;
     
     NSRelationshipDescription *const accountTransactionsDescription = [NSRelationshipDescription new];
     accountTransactionsDescription.name = @"transactions";
@@ -122,6 +226,8 @@
     
     accountEntity.properties = @[
                                  accountNameDescription,
+                                 accountSubTypesDescription,
+                                 accountTestObjectDescription,
                                  accountTransactionsDescription
                                  ];
     
@@ -141,7 +247,7 @@
     transactionDateDescription.name = @"date";
     transactionDateDescription.optional = YES;
     transactionDateDescription.attributeType = NSDateAttributeType;
-    
+
     NSAttributeDescription *const transactionIndexDescription = [NSAttributeDescription new];
     transactionIndexDescription.name = @"index";
     transactionIndexDescription.optional = YES;
@@ -244,6 +350,73 @@
     [super tearDown];
 }
 
+- (void)testDefaultTransformer
+{
+    ECDCoreDataStack *const coreDataStack = [self newCoreDataStackUsingECD:YES];
+    NSManagedObjectModel *const managedObjectModel = coreDataStack.managedObjectModel;
+
+    NSEntityDescription *const accountEntity = managedObjectModel.entitiesByName[@"Account"];
+
+    NSManagedObjectContext *const mainContext = coreDataStack.mainContext;
+
+    NSArray *const subTypes = @[@"Cash", @"Savings"];
+
+    ECDAccount *const account0 = [[ECDAccount alloc] initWithEntity:accountEntity
+                                     insertIntoManagedObjectContext:mainContext];
+    account0.subTypes = subTypes;
+
+    NSError * __autoreleasing error;
+    const BOOL saved = [mainContext save:&error];
+    STAssertTrue(saved, @"Failed to save: %@", error);
+
+    NSManagedObjectID *const objectID = account0.objectID;
+
+    NSManagedObjectContext *const privateQueueContext =
+    [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+    privateQueueContext.persistentStoreCoordinator = mainContext.persistentStoreCoordinator;
+
+    [privateQueueContext performBlockAndWait:^ {
+        ECDAccount *const queriedAccount = (ECDAccount *)[privateQueueContext objectWithID:objectID];
+        STAssertNotNil(queriedAccount, @"Should have retrieved the ECDTestObject");
+        STAssertEqualObjects(queriedAccount.subTypes, subTypes, @"The two NSArray should be equal");
+    }];
+}
+
+- (void)testCustomTransformer
+{
+    ECDCoreDataStack *const coreDataStack = [self newCoreDataStackUsingECD:YES];
+    NSManagedObjectModel *const managedObjectModel = coreDataStack.managedObjectModel;
+
+    NSEntityDescription *const accountEntity = managedObjectModel.entitiesByName[@"Account"];
+
+    NSManagedObjectContext *const mainContext = coreDataStack.mainContext;
+
+    ECDTestObject *const sourceObject = [ECDTestObject new];
+    sourceObject.floatValue = M_PI;
+    sourceObject.uint64Value = INT32_MAX * 2;
+
+    ECDAccount *const account0 = [[ECDAccount alloc] initWithEntity:accountEntity
+                                     insertIntoManagedObjectContext:mainContext];
+    account0.testObject = sourceObject;
+
+    NSError * __autoreleasing error;
+    const BOOL saved = [mainContext save:&error];
+    STAssertTrue(saved, @"Failed to save: %@", error);
+
+    NSManagedObjectID *const objectID = account0.objectID;
+
+    NSManagedObjectContext *const privateQueueContext =
+    [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+    privateQueueContext.persistentStoreCoordinator = mainContext.persistentStoreCoordinator;
+
+    [privateQueueContext performBlockAndWait:^ {
+        ECDAccount *const queriedAccount = (ECDAccount *)[privateQueueContext objectWithID:objectID];
+        STAssertNotNil(queriedAccount, @"Should have retrieved the ECDTestObject");
+        STAssertEqualObjects(queriedAccount.testObject, sourceObject,
+                             @"The two ECDTestObject instances should be equal");
+    }];
+}
+
 - (void)testFetchObjectWithTemporaryID
 {
     ECDCoreDataStack *const coreDataStack = [self newCoreDataStackUsingECD:YES];
@@ -290,7 +463,7 @@
                                                      insertIntoManagedObjectContext:mainContext];
         transaction0.date = [NSDate date];
         transaction0.account = account0;
-        
+
         const BOOL saved = [mainContext save:&error];
         STAssertTrue(saved, @"Failed to save context: %@", error);
     }
