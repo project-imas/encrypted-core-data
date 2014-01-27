@@ -252,7 +252,10 @@
     transactionIndexDescription.name = @"index";
     transactionIndexDescription.optional = YES;
     transactionIndexDescription.attributeType = NSInteger64AttributeType;
-    
+
+    transactionAccountDescription.inverseRelationship = accountTransactionsDescription;
+    accountTransactionsDescription.inverseRelationship = transactionAccountDescription;
+
     transactionEntity.properties = @[
                                      transactionAmountDescription,
                                      transactionDateDescription,
