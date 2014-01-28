@@ -46,7 +46,6 @@ If there are issues you can add `-com.apple.CoreData.SQLDebug 1` to see all stat
 
 - One-to-one relationships
 - One-to-many relationships
-- Many-to-many relationships
 - Predicates
 - Inherited entities (Thanks to [NachoMan](https://github.com/NachoMan/)) 
 
