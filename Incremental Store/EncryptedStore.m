@@ -161,7 +161,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT %@%@.ID FROM %@ %@%@%@%@;",
+                                @"SELECT %@%@.ecdID FROM %@ %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 table,
                                 table,
@@ -273,7 +273,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSDictionary *properties = [entity propertiesByName];
     [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         if ([obj isKindOfClass:[NSAttributeDescription class]]) {
-            [columns addObject:key];
+            [columns addObject:[NSString stringWithFormat:@"'ecd%@'", key]];
             [keys addObject:key];
         }
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
@@ -281,7 +281,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
             // Handle one-to-many and one-to-one
             if (![obj isToMany] || [inverse isToMany]) {
-                NSString *column = [self foreignKeyColumnForRelationship:obj];
+                NSString *column = [NSString stringWithFormat:@"'ecd%@'", [self foreignKeyColumnForRelationship:obj]];
                 [columns addObject:column];
                 [keys addObject:key];
             }
@@ -291,7 +291,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
     // prepare query
     NSString *string = [NSString stringWithFormat:
-                        @"SELECT %@ FROM %@ WHERE ID=?;",
+                        @"SELECT %@ FROM %@ WHERE ecdID=?;",
                         [columns componentsJoinedByString:@", "],
                         [self tableNameForEntity:entity]];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
@@ -337,14 +337,14 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     // one side of a one-to-many and one-to-one
     if (![relationship isToMany] || [inverseRelationship isToMany]) {
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT %@ FROM %@ WHERE ID=?",
+                            @"SELECT %@ FROM %@ WHERE ecdID=?",
                             [self foreignKeyColumnForRelationship:relationship],
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
     } else {
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT ID FROM %@ WHERE %@=?",
+                            @"SELECT ecdID FROM %@ WHERE %@=?",
                             [self tableNameForEntity:destinationEntity],
                             [self foreignKeyColumnForRelationship:inverseRelationship]];
         statement = [self preparedStatementForQuery:string];
@@ -700,12 +700,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSArray *attributeNames = [[entity attributesByName] allKeys];
     
     for (NSString *attributeName in attributeNames) {
-            [columns addObject:[NSString stringWithFormat:@"'%@'", attributeName]];
+            [columns addObject:[NSString stringWithFormat:@"'ecd%@'", attributeName]];
     }
     
     [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         // handle one-to-many and one-to-one
-        NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:obj]];
+        NSString *column = [NSString stringWithFormat:@"'ecd%@'", [self foreignKeyColumnForRelationship:obj]];
         [columns addObject:column];
     }];
 
@@ -724,7 +724,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 
     // prepare columns
-    NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'id' integer primary key"];
+    NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'ecdid' integer primary key"];
     if (entity.subentities.count > 0) {
         // NOTE: Will use '-[NSString hash]' to determine the entity type so we can use
         //       faster integer-indexed queries.  Any string greater than 96-chars is
@@ -805,7 +805,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSExpression *expression = [obj valueExpression];
         if (expression != nil) {
-            [destinationColumns addObject:[NSString stringWithFormat:@"'%@'", [obj name]]];
+            [destinationColumns addObject:[NSString stringWithFormat:@"'ecd%@'", [obj name]]];
             NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
             [sourceColumns addObject:source];
         }
@@ -882,12 +882,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // get values
         NSEntityDescription *entity = [object entity];
         NSMutableArray *keys = [NSMutableArray array];
-        NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'id'"];
+        NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'ecdid'"];
         NSDictionary *properties = [entity propertiesByName];
         [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
             if ([obj isKindOfClass:[NSAttributeDescription class]]) {
                 [keys addObject:key];
-                [columns addObject:[NSString stringWithFormat:@"'%@'", key]];
+                [columns addObject:[NSString stringWithFormat:@"'ecd%@'", key]];
             }
             else if ([obj isKindOfClass:[NSPropertyDescription class]]) {
                 NSRelationshipDescription *inverse = [obj inverseRelationship];
@@ -895,7 +895,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 // one side of both one-to-one and one-to-many
                 if (![obj isToMany] || [inverse isToMany]){
                     [keys addObject:key];
-                    NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:obj]];
+                    NSString *column = [NSString stringWithFormat:@"'ecd%@'", [self foreignKeyColumnForRelationship:obj]];
                     [columns addObject:column];
                 }
 
@@ -991,7 +991,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [changedAttributes enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
             id property = [properties objectForKey:key];
             if ([property isKindOfClass:[NSAttributeDescription class]]) {
-                [columns addObject:[NSString stringWithFormat:@"%@=?", key]];
+                [columns addObject:[NSString stringWithFormat:@"ecd%@=?", key]];
                 [keys addObject:key];
             }
             else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
@@ -1014,7 +1014,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
         // prepare statement
         NSString *string = [NSString stringWithFormat:
-                            @"UPDATE %@ SET %@ WHERE ID=?;",
+                            @"UPDATE %@ SET %@ WHERE ecdID=?;",
                             [self tableNameForEntity:entity],
                             [columns componentsJoinedByString:@", "]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
@@ -1070,7 +1070,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
         // delete object
         NSString *string = [NSString stringWithFormat:
-                            @"DELETE FROM %@ WHERE ID=?;",
+                            @"DELETE FROM %@ WHERE ecdID=?;",
                             [self tableNameForEntity:entity]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, [objectID unsignedLongLongValue]);
@@ -1151,7 +1151,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     while ([targetEntity superentity] != nil) {
         targetEntity = [targetEntity superentity];
     }
-    return [NSString stringWithFormat:@"ecd%@",[targetEntity name]];
+    NSString* possibleEcd = @"";
+    NSString* targetName = [targetEntity name];
+    if([targetName rangeOfString:@"["].location == NSNotFound)
+        possibleEcd = @"ecd";
+    return [NSString stringWithFormat:@"%@%@", possibleEcd, targetName];
 }
 
 - (sqlite3_stmt *)preparedStatementForQuery:(NSString *)query {
@@ -1260,7 +1264,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                      nextTableName,
                                      [self foreignKeyColumnForRelationship:rel.inverseRelationship]];
             } else {
-                joinTableOnClause = [NSString stringWithFormat:@"%@.%@ = %@.ID",
+                joinTableOnClause = [NSString stringWithFormat:@"%@.%@ = %@.ecdID",
                                      lastTableName,
                                      [self foreignKeyColumnForRelationship:rel],
                                      nextTableName];
@@ -1293,7 +1297,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (NSNumber *)maximumObjectIDInTable:(NSString *)table {
     NSNumber *value = [objectIDCache objectForKey:table];
     if (value == nil) {
-        NSString *string = [NSString stringWithFormat:@"SELECT MAX(ID) FROM %@;", table];
+        NSString *string = [NSString stringWithFormat:@"SELECT MAX(ecdID) FROM %@;", table];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         if (sqlite3_step(statement) == SQLITE_ROW) {
             value = @(sqlite3_column_int64(statement, 0));
@@ -1350,9 +1354,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             // optimus prime
             else if (type == NSTransformableAttributeType) {
                 NSString *name = ([(id)property valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
-                const BOOL isDefaultTransformer = [name isEqualToString:NSKeyedUnarchiveFromDataTransformerName];
                 NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
-                NSData *data = isDefaultTransformer ? [transformer reverseTransformedValue:value] : [transformer transformedValue:value];
+                NSData *data = [transformer transformedValue:value];
                 sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
             }
 
@@ -1421,9 +1424,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             const void *bytes = sqlite3_column_blob(statement, index);
             unsigned int length = sqlite3_column_bytes(statement, index);
             if (length > 0) {
-                const BOOL isDefaultTransformer = [name isEqualToString:NSKeyedUnarchiveFromDataTransformerName];
                 NSData *data = [NSData dataWithBytes:bytes length:length];
-                return isDefaultTransformer ? [transformer transformedValue:data] : [transformer reverseTransformedValue:data];
+                return [transformer reverseTransformedValue:data];
             }
         }
 
@@ -1573,8 +1575,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             } else {
                 query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
             }
-        } else if([rightBindings class] != [NSManagedObject class] && [[operator objectForKey:@"operator"] isEqualToString:@"="]) {
-            query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
+      //  } else if([[operator objectForKey:@"operator"] isEqualToString:@"="]) {
+      //      query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
         } else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
         }
@@ -1721,6 +1723,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                value = [NSString stringWithFormat:@"%@.%@",
                        [self joinedTableNameForComponents:pathComponents], lastComponent];
         }
+        value = [NSString stringWithFormat:@"ecd%@", value];
         *operand = value;
     }
     else if (type == NSEvaluatedObjectExpressionType) {
