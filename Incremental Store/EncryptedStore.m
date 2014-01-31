@@ -1573,8 +1573,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             } else {
                 query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
             }
-      //  } else if([[operator objectForKey:@"operator"] isEqualToString:@"="]) {
-      //      query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
+        } else if([rightBindings class] != [NSManagedObject class] && [[operator objectForKey:@"operator"] isEqualToString:@"="]) {
+            query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
         } else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
         }
