@@ -1709,13 +1709,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             NSString *lastComponent = [pathComponents lastObject];
             
             // Test if the last component is actually a predicate
-            if ([pathComponents count] >= 3){
-                if ([lastComponent isEqualToString:@"length"]){
-                    NSLog(@"HERE");
-                    value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
-                    foundPredicate = YES;
-                }
+            // TODO: Conflict if the model has an attribute named length?
+            if ([lastComponent isEqualToString:@"length"]){                    
+                value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+                foundPredicate = YES;
             }
+        
             
             if(!foundPredicate)
                 value = [NSString stringWithFormat:@"%@.%@",
