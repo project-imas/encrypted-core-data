@@ -169,7 +169,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
-            
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
@@ -1705,12 +1704,22 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
         if (property == nil && [value rangeOfString:@"."].location != NSNotFound) {
             // We have a join table property, we need to rewrite the query.
-            NSArray *pathComponents = [value componentsSeparatedByString:@"."];
+            NSMutableArray *pathComponents = [[value componentsSeparatedByString:@"."] mutableCopy];
             NSString *lastComponent = [pathComponents lastObject];
             
             // Test if the last component is actually a predicate
             // TODO: Conflict if the model has an attribute named length?
-            if ([lastComponent isEqualToString:@"length"]){                    
+            if ([lastComponent isEqualToString:@"length"]){
+                                
+                // We terminate when there is one item left since that is the field of interest
+                for (int i = 0 ; i < pathComponents.count - 1; i++) {
+                    NSRelationshipDescription *rel = [[entity relationshipsByName]
+                                                      objectForKey:[pathComponents objectAtIndex:i]];
+                    if(rel != nil) {
+                        NSString* asComponent = [NSString stringWithFormat:@"[%@]", [pathComponents objectAtIndex:0]];
+                        [pathComponents replaceObjectAtIndex:0 withObject:asComponent];
+                    }
+                }
                 value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
                 foundPredicate = YES;
             }
