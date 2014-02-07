@@ -15,6 +15,7 @@ NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
+
 #pragma mark - category interfaces
 
 @interface NSArray (EncryptedStoreAdditions)
@@ -169,6 +170,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
+            NSLog(string);
 
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
@@ -1188,7 +1190,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             key = [components lastObject];
         }
         [columns addObject:[NSString stringWithFormat:
-                            @"%@.%@ %@",
+                            @"%@.ecd%@ %@",
                             tableName,
                             key,
                             ([desc ascending]) ? @"ASC" : @"DESC"]];
@@ -1777,11 +1779,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship {
     NSEntityDescription *destination = [relationship destinationEntity];
     NSLog(@"%@",[destination name]);
-    return [NSString stringWithFormat:@"%@.id", [destination name]];
+    return [NSString stringWithFormat:@"%@.ecdid", [destination name]];
 }
 
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
-    return [NSString stringWithFormat:@"%@_id", [relationship name]];
+    return [NSString stringWithFormat:@"ecd%@_id", [relationship name]];
 }
 
 - (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray {
