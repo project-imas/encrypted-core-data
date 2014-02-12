@@ -794,9 +794,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                             error:(NSError**)error {
     NSString *string;
     sqlite3_stmt *statement;
-    NSString *sourceEntityName = [sourceEntity name];
+    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [sourceEntity name]];
     NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
-    NSString *destinationTableName = [destinationEntity name];
+    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [destinationEntity name]];
     
     // move existing table to temporary new table
     string = [NSString stringWithFormat:
