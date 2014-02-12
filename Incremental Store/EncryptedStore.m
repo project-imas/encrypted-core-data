@@ -80,12 +80,28 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel :(NSString *)passcode
 {
+    NSPersistentStoreCoordinator* ret = nil;
+    @try {
+        ret = [self makeStoreAlt:objModel:passcode:NO];
+    } @catch(NSException* e) {
+        ret = [self makeStoreAlt:objModel:passcode:YES];
+    }
+    return ret;
+}
+
++ (NSPersistentStoreCoordinator *)makeStoreAlt:(NSManagedObjectModel *)objModel :(NSString *)passcode :(BOOL) altPath
+{
     NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
+
+    if(altPath) applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+    
     [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
+
+  //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];  
+        
     NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-    // NSLog([databaseURL absoluteString]);
     return [self makeStoreWithDatabaseURL:databaseURL managedObjectModel:objModel:passcode];
 }
 
