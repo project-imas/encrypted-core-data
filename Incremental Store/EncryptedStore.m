@@ -169,6 +169,30 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
+            //NSLog(@"%@", string);
+            NSRange endHavingRange = [string rangeOfString:@"END_HAVING"];
+            if(endHavingRange.location != NSNotFound) { // String manipulation to handle SUM
+                // Between HAVING and END_HAVING
+                NSRange havingRange = [string rangeOfString:@"HAVING"];
+                int length = endHavingRange.location - havingRange.location;
+                int location = havingRange.location;
+                NSRange substrRange = NSMakeRange(location,length);
+                
+                NSInteger endHavingEnd = endHavingRange.location + endHavingRange.length;
+                NSString *groupHaving = [NSString stringWithFormat: @" GROUP BY %@.ID %@ %@", table, [string substringWithRange:substrRange], [string substringWithRange:NSMakeRange(endHavingEnd, [string length] - endHavingEnd)]];
+                
+                // Rebuild entirey SQL string
+                string = [NSString stringWithFormat:
+                          @"SELECT %@%@.ID FROM %@ %@%@%@%@;",
+                          (isDistinctFetchEnabled)?@"DISTINCT ":@"",
+                          table,
+                          table,
+                          joinStatement,
+                          groupHaving,
+                          [ordering objectForKey:@"order"],
+                          limit];
+            }
+
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
@@ -1707,6 +1731,30 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             NSMutableArray *pathComponents = [[value componentsSeparatedByString:@"."] mutableCopy];
             NSString *lastComponent = [pathComponents lastObject];
             
+            NSMutableString *sumBuilder = [NSMutableString stringWithString:@"HAVING SUM("];
+            // Check if this is a sum, we assume it is and discard the results if not
+            for (int i = 0 ; i < pathComponents.count; i++) {
+                NSString* part = [pathComponents objectAtIndex:i];
+                if([part isEqualToString:@"@sum"]) {
+                    foundPredicate = YES;
+                } else {
+                    // Check if it is a relation
+                    NSRelationshipDescription *rel = [[entity relationshipsByName]
+                                                  objectForKey:[pathComponents objectAtIndex:i]];
+                    if(rel != nil) {
+                        [sumBuilder appendString:[NSString stringWithFormat:@"[%@].", [pathComponents objectAtIndex:i]]];
+                    } else {
+                        [sumBuilder appendString:[pathComponents objectAtIndex:i]];
+                        [sumBuilder appendString:@")END_HAVING"];
+                        if(foundPredicate) { // Was a SUM
+                            value = [NSString stringWithString:sumBuilder];
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            
             // Test if the last component is actually a predicate
             // TODO: Conflict if the model has an attribute named length?
             if ([lastComponent isEqualToString:@"length"]){
@@ -1716,7 +1764,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     NSRelationshipDescription *rel = [[entity relationshipsByName]
                                                       objectForKey:[pathComponents objectAtIndex:i]];
                     if(rel != nil) {
-                        NSString* asComponent = [NSString stringWithFormat:@"[%@]", [pathComponents objectAtIndex:0]];
+                        // TODO: This should probably be objectAtIndex:i, need to retest now that changed
+                        NSString* asComponent = [NSString stringWithFormat:@"[%@]", [pathComponents objectAtIndex:i]];
                         [pathComponents replaceObjectAtIndex:0 withObject:asComponent];
                     }
                 }
