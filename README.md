@@ -81,4 +81,4 @@ limitations under the License.
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/50cf88b71d3c78a0268ae42ea79d8951 "githalytics.com")](http://githalytics.com/project-imas/encrypted-core-data)
 
-
+[![test_analytics](http://www.google-analytics.com/collect?v=1&_v=j16&a=1278072855&t=pageview&_s=1&dl=http%3A%2F%2Fwhitealice.org%2FiMAS%2F&ul=en-us&de=ISO-8859-1&sd=24-bit&sr=1440x900&vp=1425x478&je=1&fl=12.0%20r0&_u=MAC~&cid=1757014354.1393964045&tid=UA-48661703-1&z=316919698)]()
