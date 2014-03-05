@@ -1,4 +1,4 @@
-# Encrypted Core Data SQLite Store [![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=https%3A%2F%2Fgithub.com%2Fproject-imas%2Fencrypted-core-data%2F&_u=MAC~&cid=1757014354.1393964045&tid=UA-38868530-1]()
+# Encrypted Core Data SQLite Store [![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=https%3A%2F%2Fgithub.com%2Fproject-imas%2Fencrypted-core-data%2F&_u=MAC~&cid=1757014354.1393964045&tid=UA-38868530-1)]()
 
 Provides a Core Data store that encrypts all data that is persisted.  Besides the initial setup, the usage is exactly the same as Core Data and can be used in existing projects that use Core Data.
 
