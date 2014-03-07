@@ -5,6 +5,9 @@
  [![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=http%3A%2F%2Fgithub.com%2F&_u=MAC~&cid=1757014354.1393964045&tid=UA-48661703-2)]()
 
 
+ [![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=http%3A%2F%2Ffazbaz1.com%2F&_u=MAC~&cid=1757014354.1393964045&tid=UA-48781053-1)]()
+
+
 Provides a Core Data store that encrypts all data that is persisted.  Besides the initial setup, the usage is exactly the same as Core Data and can be used in existing projects that use Core Data.
 
 # Vulnerabilities Addressed
