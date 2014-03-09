@@ -1204,6 +1204,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (debug) { NSLog(@"SQL DEBUG: %@", query); }
     sqlite3_stmt *statement = NULL;
     if (sqlite3_prepare_v2(database, [query UTF8String], -1, &statement, NULL) == SQLITE_OK) { return statement; }
+    if(debug) {NSLog(@"could not prepare statemnt: %s\n", sqlite3_errmsg(database));}
     return NULL;
 }
 
