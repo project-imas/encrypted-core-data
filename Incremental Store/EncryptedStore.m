@@ -1878,6 +1878,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                              [operator objectForKey:@"format"],
                              value];
             }
+        } else if ([value isKindOfClass:[NSManagedObject class]]) {
+            *operand = @"?";
+            unsigned long long key = [[self referenceObjectForObjectID:[value objectID]] unsignedLongLongValue];
+            *bindings = [NSString stringWithFormat:@"%llu",key];
         }
         else if (!value) {
             *bindings = value;
