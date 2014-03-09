@@ -1745,9 +1745,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSDictionary *properties = [entity propertiesByName];
         id property = [properties objectForKey:value];
         if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-            value = [self foreignKeyColumnForRelationship:property];
+            value = [NSString stringWithFormat:@"%@.%@",
+                     [self tableNameForEntity:entity],
+                     [self foreignKeyColumnForRelationship:property]];
+        } else if (property != nil) {
+            value = [NSString stringWithFormat:@"%@.%@",
+                     [self tableNameForEntity:entity],
+                     value];
         }
-        if (property == nil && [value rangeOfString:@"."].location != NSNotFound) {
+        else if ([value rangeOfString:@"."].location != NSNotFound) {
             // We have a join table property, we need to rewrite the query.
             NSMutableArray *pathComponents = [[value componentsSeparatedByString:@"."] mutableCopy];
             NSString *lastComponent = [pathComponents lastObject];
