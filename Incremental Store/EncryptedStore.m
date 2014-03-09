@@ -1608,20 +1608,26 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                      bindings:&rightBindings];
         
         // build result and return
-        NSMutableArray *comparisonBindings = [NSMutableArray arrayWithCapacity:2];
-        if (leftBindings)  [comparisonBindings addObject:leftBindings];
-        if (rightBindings) [comparisonBindings addObject:rightBindings];
         if (rightOperand && !rightBindings) {
             if([[operator objectForKey:@"operator"] isEqualToString:@"!="]) {
                 query = [@[leftOperand, @"IS NOT", rightOperand] componentsJoinedByString:@" "];
             } else {
                 query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
             }
-        } else if([rightBindings class] != [NSManagedObject class] && [[operator objectForKey:@"operator"] isEqualToString:@"="]) {
+        }
+        else if([rightBindings class] != [NSManagedObject class] && [[operator objectForKey:@"operator"] isEqualToString:@"="]) {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
-        } else {
+            // If we're including the right bindings directly in the query string, it should not be included
+            // in the returned bindings. Otherwise, the indices passed to sqlite will be off and it *will* break stuff
+            rightBindings = nil;
+        }
+        else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
         }
+        
+        NSMutableArray *comparisonBindings = [NSMutableArray arrayWithCapacity:2];
+        if (leftBindings)  [comparisonBindings addObject:leftBindings];
+        if (rightBindings) [comparisonBindings addObject:rightBindings];
         bindings = [[comparisonBindings cmdFlatten] mutableCopy];
     }
     
