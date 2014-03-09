@@ -59,6 +59,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSMutableDictionary *objectIDCache;
     NSMutableDictionary *nodeCache;
     NSMutableDictionary *objectCountCache;
+    NSMutableDictionary *entityTypeCache;
     
 }
 
@@ -124,6 +125,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         objectIDCache = [NSMutableDictionary dictionary];
         objectCountCache = [NSMutableDictionary dictionary];
         nodeCache = [NSMutableDictionary dictionary];
+        entityTypeCache = [NSMutableDictionary dictionary];
+        for (NSEntityDescription * entity in root.managedObjectModel.entities) {
+            if (entity.superentity || entity.subentities.count > 0) {
+                [entityTypeCache setObject:entity forKey:@(entity.name.hash)];
+            }
+        }
         database = NULL;
     }
     return self;
@@ -174,12 +181,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
         BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
         
+        // NOTE: this would probably clash with DISTINCT
+        // Disable the combination for now until we can figure out a way to handle both and
+        // have a proper test case
+        BOOL shouldFetchEntityType = (entity.subentities.count > 0 || entity.superentity) && !isDistinctFetchEnabled;
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT %@%@.__objectID FROM %@ %@%@%@%@;",
+                                @"SELECT %@%@.__objectID%@ FROM %@ %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 table,
+                                (shouldFetchEntityType)?[NSString stringWithFormat:@", %@._entityType", table]:@"",
                                 table,
                                 joinStatement,
                                 [condition objectForKey:@"query"],
@@ -199,9 +211,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 
                 // Rebuild entirey SQL string
                 string = [NSString stringWithFormat:
-                          @"SELECT %@%@.__objectID FROM %@ %@%@%@%@;",
+                          @"SELECT %@%@.__objectID%@ FROM %@ %@%@%@%@;",
                           (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                           table,
+                          (shouldFetchEntityType)?[NSString stringWithFormat:@", %@._entityType", table]:@"",
                           table,
                           joinStatement,
                           groupHaving,
@@ -213,7 +226,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
                 unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
-                NSManagedObjectID *objectID = [self newObjectIDForEntity:entity referenceObject:@(primaryKey)];
+                NSEntityDescription * entityToFecth = nil;
+                if (shouldFetchEntityType) {
+                    NSUInteger entityType = sqlite3_column_int(statement, 1);
+                    entityToFecth = [entityTypeCache objectForKey:@(entityType)];
+                }
+                if (!entityToFecth) {
+                    entityToFecth = entity;
+                }
+                NSManagedObjectID *objectID = [self newObjectIDForEntity:entityToFecth referenceObject:@(primaryKey)];
                 if (type == NSManagedObjectIDResultType) { [results addObject:objectID]; }
                 else {
                     id object = [context objectWithID:objectID];
