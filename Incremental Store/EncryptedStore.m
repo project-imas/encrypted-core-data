@@ -233,14 +233,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
             
             // TODO: Need a test case to reach here, or remove it entirely
-            // NOTE - this must run on only one table (no joins) we can select individual
-            // properties of a specific table. To support joins we would need to know
-            // that propertiesToFetch could somehow specific a field in a relationship table.
+            // NOTE - this now supports joins but in a limited fashion. It will successfully
+            // retrieve properties that are to-one relationships
+            
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT %@%@ FROM %@%@%@%@;",
+                                @"SELECT %@%@ FROM %@ %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 propertiesToFetchString,
                                 table,
+                                joinStatement,
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
@@ -1323,10 +1324,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[properties count]];
     [properties enumerateObjectsUsingBlock:^(NSPropertyDescription *prop, NSUInteger idx, BOOL *stop) {
-        [columns addObject:[NSString stringWithFormat:
-                            @"%@",
-                            prop.name
-                            ]];
+        if ([prop isKindOfClass:[NSRelationshipDescription class]]) {
+            [columns addObject:[self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]];
+        } else {
+            [columns addObject:[NSString stringWithFormat:
+                                @"%@",
+                                prop.name
+                                ]];
+        }
     }];
     if ([columns count]) {
         return [NSString stringWithFormat:@"%@", [columns componentsJoinedByString:@", "]];
