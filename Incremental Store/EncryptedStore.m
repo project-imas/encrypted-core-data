@@ -1837,9 +1837,29 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
 
             
-            if(!foundPredicate)
+            if(!foundPredicate) {
+                NSString * lastComponentName = lastComponent;
+                
+                // Handle the case where the last component points to a relationship rather than a simple attribute
+                __block NSDictionary * subProperties = properties;
+                __block id property = nil;
+                [pathComponents enumerateObjectsUsingBlock:^(NSString * comp, NSUInteger idx, BOOL * stop) {
+                    property = [subProperties objectForKey:comp];
+                    if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+                        NSEntityDescription * entity = [property destinationEntity];
+                        subProperties = entity.propertiesByName;
+                    } else {
+                        property = nil;
+                        *stop = YES;
+                    }
+                }];
+                
+                if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+                    lastComponentName = [self foreignKeyColumnForRelationship:property];
+                }
                 value = [NSString stringWithFormat:@"%@.%@",
-                         [self joinedTableNameForComponents:pathComponents], lastComponent];
+                         [self joinedTableNameForComponents:pathComponents], lastComponentName];
+            }
         }
         *operand = value;
     }
