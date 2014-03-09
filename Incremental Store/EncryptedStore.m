@@ -266,8 +266,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // return a count
         else if (type == NSCountResultType) {
             NSString *string = [NSString stringWithFormat:
-                                @"SELECT COUNT(*) FROM %@%@%@;",
+                                @"SELECT COUNT(*) FROM %@ %@%@%@;",
                                 table,
+                                joinStatement,
                                 [condition objectForKey:@"query"],
                                 limit];
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
