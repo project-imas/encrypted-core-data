@@ -1922,8 +1922,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         } else if ([value isKindOfClass:[NSManagedObject class]]) {
             *operand = @"?";
-            unsigned long long key = [[self referenceObjectForObjectID:[value objectID]] unsignedLongLongValue];
-            *bindings = [NSString stringWithFormat:@"%llu",key];
+            // We're not going to be able to look up an object with a temporary id, it hasn't been inserted yet
+            if ([[value objectID] isTemporaryID]) {
+                // Just look for an id we know will never match
+                *bindings = @"-1";
+            } else {
+                unsigned long long key = [[self referenceObjectForObjectID:[value objectID]] unsignedLongLongValue];
+                *bindings = [NSString stringWithFormat:@"%llu",key];
+            }
         }
         else if (!value) {
             *bindings = value;
