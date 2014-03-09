@@ -1832,7 +1832,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                              [operator objectForKey:@"format"],
                              value];
             }
-        } else {
+        }
+        else if (!value) {
+            *bindings = value;
+            *operand = @"NULL";
+        }
+        else {
             *bindings = value;
             *operand = @"?";
         }
