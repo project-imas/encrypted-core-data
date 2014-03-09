@@ -1256,6 +1256,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         for ( NSTextCheckingResult* match in matches )
         {
             NSString* matchText = [predicateString substringWithRange:[match range]];
+            if ([matchText hasSuffix:@".@count"]) {
+                // @count queries should be handled by sub-expressions rather than joins
+                continue;
+            }
             [self maybeAddJoinStatementsForKey:matchText toStatementArray:joinStatementsArray withExistingStatementSet:joinStatementsSet rootEntity:entity];
         }
     }
@@ -1789,7 +1793,31 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
                 foundPredicate = YES;
             }
-        
+
+            // We should probably provide for @count on nested relationships
+            // This will do for now though
+            if ([lastComponent isEqualToString:@"@count"] && pathComponents.count == 2){
+                NSRelationshipDescription *rel = [self relationshipForEntity:entity
+                                                                        name:[pathComponents objectAtIndex:0]];
+                NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
+                NSString * entityTableName = [self tableNameForEntity:entity];
+                value = [NSString stringWithFormat:@"(SELECT COUNT(distinct [%@].__objectid) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
+                         rel.name,
+                         destinationName,
+                         rel.name,
+                         rel.name,
+                         [self foreignKeyColumnForRelationship:rel.inverseRelationship],
+                         entityTableName];
+                if (rel.destinationEntity.superentity != nil) {
+                    value = [value stringByAppendingString:
+                             [NSString stringWithFormat:@" AND [%@]._entityType = %u",
+                              rel.name,
+                              rel.destinationEntity.name.hash]];
+                }
+                value = [value stringByAppendingString:@")"];
+                foundPredicate = YES;
+            }
+
             
             if(!foundPredicate)
                 value = [NSString stringWithFormat:@"%@.%@",
