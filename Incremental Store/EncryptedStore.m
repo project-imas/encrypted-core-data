@@ -372,7 +372,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                         initWithObjectID:objectID
                                         withValues:dictionary
                                         version:1];
-        [nodeCache setObject:node forKey:objectID];
+//        [nodeCache setObject:node forKey:objectID];
         return node;
     }
     else {
@@ -461,7 +461,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSUInteger newValue = ([value unsignedIntegerValue] - 1);
             if (newValue == 0) {
                 [objectCountCache removeObjectForKey:obj];
-                [nodeCache removeObjectForKey:obj];
+//                [nodeCache removeObjectForKey:obj];
             }
             else { [objectCountCache setObject:@(newValue) forKey:obj]; }
         }
@@ -1032,7 +1032,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
          Default: 0
          
          */
-#define USE_MANUAL_NODE_CACHE 1
+#define USE_MANUAL_NODE_CACHE 0
         
         // cache stuff
         NSManagedObjectID *objectID = [object objectID];
