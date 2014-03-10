@@ -48,6 +48,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @interface CMDIncrementalStoreNode : NSIncrementalStoreNode
 
+@property (nonatomic) NSArray * allProperties;
+
+- (id)initWithObjectID:(NSManagedObjectID *)objectID
+            withValues:(NSDictionary *)values version:(uint64_t)version
+        withProperties:(NSArray *)properties;
+
+- (void)updateWithChangedValues:(NSDictionary *)changedValues;
+
+
 @end
 
 @implementation EncryptedStore {
@@ -362,17 +371,22 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     sqlite3_bind_int64(statement, 1, primaryKey);
     if (sqlite3_step(statement) == SQLITE_ROW) {
         NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+        NSMutableArray * allProperties = [NSMutableArray new];
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
             id value = [self valueForProperty:property inStatement:statement atIndex:idx];
-            if (value) { [dictionary setObject:value forKey:obj]; }
+            if (value) {
+                [dictionary setObject:value forKey:obj];
+                [allProperties addObject:property];
+            }
         }];
         sqlite3_finalize(statement);
         NSIncrementalStoreNode *node = [[CMDIncrementalStoreNode alloc]
                                         initWithObjectID:objectID
                                         withValues:dictionary
-                                        version:1];
-//        [nodeCache setObject:node forKey:objectID];
+                                        version:1
+                                        withProperties:allProperties];
+        [nodeCache setObject:node forKey:objectID];
         return node;
     }
     else {
@@ -461,7 +475,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSUInteger newValue = ([value unsignedIntegerValue] - 1);
             if (newValue == 0) {
                 [objectCountCache removeObjectForKey:obj];
-//                [nodeCache removeObjectForKey:obj];
+                [nodeCache removeObjectForKey:obj];
             }
             else { [objectCountCache setObject:@(newValue) forKey:obj]; }
         }
@@ -1032,14 +1046,13 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
          Default: 0
          
          */
-#define USE_MANUAL_NODE_CACHE 0
+#define USE_MANUAL_NODE_CACHE 1
         
         // cache stuff
         NSManagedObjectID *objectID = [object objectID];
 #if USE_MANUAL_NODE_CACHE
         NSMutableDictionary *cacheChanges = [NSMutableDictionary dictionary];
-        NSIncrementalStoreNode *node = [cache objectForKey:objectID];
-        uint64_t version = ([node version] + 1);
+        CMDIncrementalStoreNode *node = [cache objectForKey:objectID];
 #endif
         
         // prepare values
@@ -1069,7 +1082,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // return if nothing needs updating
         if ([keys count] == 0) {
 #if USE_MANUAL_NODE_CACHE
-            [node updateWithValues:cacheChanges version:version];
+            [node updateWithChangedValues:cacheChanges];
 #endif
             return;
         }
@@ -1109,7 +1122,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // finish up
         if (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK) {
 #if USE_MANUAL_NODE_CACHE
-            [node updateWithValues:cacheChanges version:version];
+            [node updateWithChangedValues:cacheChanges];
 #endif
         }
         else {
@@ -2011,9 +2024,28 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 @implementation CMDIncrementalStoreNode
 
-- (void)updateWithValues:(NSDictionary *)values version:(uint64_t)version {
-    [super updateWithValues:values version:version];
-    NSLog(@"%s", __PRETTY_FUNCTION__);
+- (id)initWithObjectID:(NSManagedObjectID *)objectID withValues:(NSDictionary *)values version:(uint64_t)version withProperties:(NSArray *)properties
+{
+    self = [super initWithObjectID:objectID withValues:values version:version];
+    if (self) {
+        self.allProperties = properties;
+    }
+    return self;
+    
+}
+
+- (void)updateWithChangedValues:(NSDictionary *)changedValues
+{
+    NSMutableDictionary * updateValues = [NSMutableDictionary dictionaryWithCapacity:self.allProperties.count];
+    for (NSPropertyDescription * key in self.allProperties) {
+        id newValue = [changedValues objectForKey:key.name];
+        if (newValue) {
+            [updateValues setObject:newValue forKey:key.name];
+        } else {
+            [updateValues setObject:[self valueForPropertyDescription:key] forKey:key.name];
+        }
+    }
+    [self updateWithValues:updateValues version:self.version+1];
 }
 
 @end
