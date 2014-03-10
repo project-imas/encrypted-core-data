@@ -1345,7 +1345,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                      [self foreignKeyColumnForRelationship:rel],
                                      nextTableName];
             }
-            NSString *fullJoinClause = [NSString stringWithFormat:@"JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
+            // NOTE: we use an outer join instead of an inner one because the where clause might also
+            // be explicitely looking for cases where the relationship is null or has a specific value
+            // consider the following predicate: "entity.rel = null || entity.rel.field = 'something'".
+            // If we were to use an inner join the first part of the or clause would never work because
+            // those objects would get discarded by the join.
+            // Also, note that NSSQLiteStoreType correctly generates an outer join for this case but regular
+            // joins for others. That's obviously better for performance but for now, correctness should
+            // take precedence over performance. This should obviously be revisited at some point.
+            NSString *fullJoinClause = [NSString stringWithFormat:@"LEFT OUTER JOIN %@ ON %@", joinTableAsClause, joinTableOnClause];
             currentEntity = rel.destinationEntity;
             lastTableName = nextTableName;
             if (![statementsSet containsObject:fullJoinClause]) {
