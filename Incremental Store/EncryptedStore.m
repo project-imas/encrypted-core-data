@@ -1908,8 +1908,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                                                         name:[pathComponents objectAtIndex:0]];
                 NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
                 NSString * entityTableName = [self tableNameForEntity:entity];
-                value = [NSString stringWithFormat:@"(SELECT COUNT(distinct [%@].__objectid) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
-                         rel.name,
+                value = [NSString stringWithFormat:@"(SELECT COUNT(*) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
                          destinationName,
                          rel.name,
                          rel.name,
