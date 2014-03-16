@@ -7,7 +7,7 @@
 
 #import <SenTestingKit/SenTestingKit.h>
 #import <CoreData/CoreData.h>
-#import <EncryptedStore.h>
+#import "EncryptedStore.h"
 
 /*
  

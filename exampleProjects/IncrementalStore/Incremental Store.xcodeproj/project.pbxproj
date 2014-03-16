@@ -463,9 +463,7 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"\"$PROJECT_DIR/../Incremental Store\"/**",
-				);
+				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -477,9 +475,7 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"\"$PROJECT_DIR/../Incremental Store\"/**",
-				);
+				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -495,9 +491,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"\"$PROJECT_DIR/../Incremental Store\"/**",
-				);
+				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = octest;
@@ -513,9 +507,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"\"$PROJECT_DIR/../Incremental Store\"/**",
-				);
+				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = octest;
