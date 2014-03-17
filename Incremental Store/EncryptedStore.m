@@ -566,7 +566,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             
             // this is a new store
             else {
-                
                 // create table
                 NSString *string = [NSString stringWithFormat:
                                     @"CREATE TABLE %@(plist);",
@@ -770,23 +769,43 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return entityIds;
 }
 
-- (NSArray*)columnNamesForEntity:(NSEntityDescription*)entity {
+- (NSArray*)columnNamesForEntity:(NSEntityDescription*)entity
+                     indexedOnly:(BOOL)indexedOnly
+                     quotedNames:(BOOL)quotedNames {
+    
     NSMutableSet *columns = [NSMutableSet setWithCapacity:entity.properties.count];
     
-    NSArray *attributeNames = [[entity attributesByName] allKeys];
+    [[entity attributesByName] enumerateKeysAndObjectsUsingBlock:^(NSString * name, NSAttributeDescription * description, BOOL * stop) {
+        if (!indexedOnly || description.isIndexed) {
+            if (quotedNames) {
+                [columns addObject:[NSString stringWithFormat:@"'%@'", name]];
+            } else {
+                [columns addObject:name];
+            }
+        }
+    }];
     
-    for (NSString *attributeName in attributeNames) {
-        [columns addObject:[NSString stringWithFormat:@"'%@'", attributeName]];
-    }
-    
-    [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        // handle one-to-many and one-to-one
-        NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:obj]];
+    [[entity relationshipsByName] enumerateKeysAndObjectsUsingBlock:^(NSString * name, NSRelationshipDescription * description, BOOL *stop) {
+        // NOTE: all joins get indexed
+        // handle *-to-one
+        // NOTE: hack - include many to many because we generate erroneous where clauses
+        // for those that will fail if we don't include them here
+        if ((description.isToMany && !description.inverseRelationship.isToMany)) {
+            return;
+        }
+        NSString * column;
+        if (quotedNames) {
+            column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:description]];
+        } else {
+            column = [self foreignKeyColumnForRelationship:description];
+        }
         [columns addObject:column];
     }];
     
     for (NSEntityDescription *subentity in entity.subentities) {
-        [columns addObjectsFromArray:[self columnNamesForEntity:subentity]];
+        [columns addObjectsFromArray:[self columnNamesForEntity:subentity
+                                                    indexedOnly:indexedOnly
+                                                    quotedNames:quotedNames]];
     }
     
     return [columns allObjects];
@@ -809,7 +828,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [columns addObject:@"'_entityType' integer"];
     }
     
-    [columns addObjectsFromArray:[self columnNamesForEntity:entity]];
+    [columns addObjectsFromArray:[self columnNamesForEntity:entity indexedOnly:NO quotedNames:YES]];
     
     // create table
     NSString *string = [NSString stringWithFormat:
@@ -822,9 +841,37 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
     if (!result) {
         *error = [self databaseError];
+        return result;
     }
     
-    return result;
+    
+    return [self createIndicesForEntity:entity error:error];
+}
+
+- (BOOL)createIndicesForEntity:(NSEntityDescription *)entity error:(NSError **)error
+{
+    if (entity.superentity) {
+        return YES;
+    }
+    
+    NSArray * indexedColumns = [self columnNamesForEntity:entity indexedOnly:YES quotedNames:NO];
+    NSString * tableName = [self tableNameForEntity:entity];
+    for (NSString * column in indexedColumns) {
+        NSString * query = [NSString stringWithFormat:
+                            @"CREATE INDEX %@_%@_INDEX ON %@ (%@)",
+                            tableName,
+                            column,
+                            tableName,
+                            column];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:query];
+        sqlite3_step(statement);
+        BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
+        if (!result) {
+            *error = [self databaseError];
+            return result;
+        }
+    }
+    return YES;
 }
 
 - (BOOL)dropTableForEntity:(NSEntityDescription *)entity {
@@ -1861,8 +1908,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                                                         name:[pathComponents objectAtIndex:0]];
                 NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
                 NSString * entityTableName = [self tableNameForEntity:entity];
-                value = [NSString stringWithFormat:@"(SELECT COUNT(distinct [%@].__objectid) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
-                         rel.name,
+                value = [NSString stringWithFormat:@"(SELECT COUNT(*) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
                          destinationName,
                          rel.name,
                          rel.name,
