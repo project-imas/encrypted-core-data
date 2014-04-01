@@ -543,7 +543,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                                       mergedModelFromBundles:bundles
                                                       forStoreMetadata:metadata];
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
-                    if (![oldModel isEqual:newModel]) {
+                    if (oldModel && newModel && ![oldModel isEqual:newModel]) {
                         
                         // run migrations
                         if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
@@ -559,7 +559,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             return NO;
                         }
                         
-                    }
+                    } else {
+						NSLog(@"Failed to create NSManagedObject models for migration.");
+						return NO;
+					}
                 }
                 
             }
