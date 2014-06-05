@@ -20,6 +20,7 @@
 		4B7AB8D2151D932E00FB21FA /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4B7AB8D0151D932E00FB21FA /* MainStoryboard.storyboard */; };
 		4B7AB8D5151D932E00FB21FA /* FailedBankCD.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4B7AB8D3151D932E00FB21FA /* FailedBankCD.xcdatamodeld */; };
 		4B7AB8E3151D993A00FB21FA /* FBCDMasterViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B7AB8E2151D993A00FB21FA /* FBCDMasterViewController.m */; };
+		66599C28193F629000AA2731 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 66599C27193F629000AA2731 /* Default-568h@2x.png */; };
 		BD1AC66C156BAF4B002F154B /* SMSearchViewControllerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1AC66A156BAF4B002F154B /* SMSearchViewControllerViewController.m */; };
 		BD1AC66D156BAF4B002F154B /* SMSearchViewControllerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BD1AC66B156BAF4B002F154B /* SMSearchViewControllerViewController.xib */; };
 		BD1AC6B9156C03DA002F154B /* FailedBankInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1AC6B8156C03DA002F154B /* FailedBankInfo.m */; };
@@ -46,6 +47,20 @@
 			remoteGlobalIDString = D2AAC046055464E500DB518D;
 			remoteInfo = sqlcipher;
 		};
+		66599C20193F617200AA2731 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		66599C22193F617200AA2731 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +83,7 @@
 		4B7AB8D4151D932E00FB21FA /* FailedBankCD.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FailedBankCD.xcdatamodel; sourceTree = "<group>"; };
 		4B7AB8E1151D993A00FB21FA /* FBCDMasterViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCDMasterViewController.h; sourceTree = "<group>"; };
 		4B7AB8E2151D993A00FB21FA /* FBCDMasterViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCDMasterViewController.m; sourceTree = "<group>"; };
+		66599C27193F629000AA2731 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		BD1AC669156BAF4B002F154B /* SMSearchViewControllerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SMSearchViewControllerViewController.h; sourceTree = "<group>"; };
 		BD1AC66A156BAF4B002F154B /* SMSearchViewControllerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SMSearchViewControllerViewController.m; sourceTree = "<group>"; };
 		BD1AC66B156BAF4B002F154B /* SMSearchViewControllerViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SMSearchViewControllerViewController.xib; sourceTree = "<group>"; };
@@ -131,6 +147,7 @@
 		4B7AB8AD151D932E00FB21FA = {
 			isa = PBXGroup;
 			children = (
+				66599C27193F629000AA2731 /* Default-568h@2x.png */,
 				3E1F9A231799EB870057E202 /* Incremental Store */,
 				3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */,
 				3E1F9A161799EB650057E202 /* openssl.xcodeproj */,
@@ -229,6 +246,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				66599C21193F617200AA2731 /* PBXTargetDependency */,
+				66599C23193F617200AA2731 /* PBXTargetDependency */,
 			);
 			name = FailedBankCD;
 			productName = FailedBankCD;
@@ -242,7 +261,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = FBCD;
-				LastUpgradeCheck = 0430;
+				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Adam Burkepile";
 			};
 			buildConfigurationList = 4B7AB8B2151D932E00FB21FA /* Build configuration list for PBXProject "FailedBankCD" */;
@@ -299,6 +318,7 @@
 				BD1AC66D156BAF4B002F154B /* SMSearchViewControllerViewController.xib in Resources */,
 				BDCE1B3D156E2C820058579F /* SMBankDetailViewController.xib in Resources */,
 				BDCE1B4A156E40150058579F /* SMTagListViewController.xib in Resources */,
+				66599C28193F629000AA2731 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +345,19 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		66599C21193F617200AA2731 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = sqlcipher;
+			targetProxy = 66599C20193F617200AA2731 /* PBXContainerItemProxy */;
+		};
+		66599C23193F617200AA2731 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 66599C22193F617200AA2731 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
 		4B7AB8C7151D932E00FB21FA /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
@@ -349,8 +382,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -362,11 +400,16 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				VALID_ARCHS = armv7;
 			};
 			name = Debug;
 		};
@@ -374,19 +417,28 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
+				VALID_ARCHS = armv7;
 			};
 			name = Release;
 		};
