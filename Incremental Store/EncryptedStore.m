@@ -1414,18 +1414,47 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 }
 
+
+- (NSString *)expressionDescriptionTypeString:(NSExpressionDescription *)expressionDescription {
+    
+    switch (expressionDescription.expressionResultType) {
+        case NSObjectIDAttributeType:
+            return @"__objectID";
+            break;
+        
+            /*  NSUndefinedAttributeType
+             *  NSInteger16AttributeType
+             *  NSInteger32AttributeType
+             *  NSInteger64AttributeType
+             *  NSDecimalAttributeType
+             *  NSDoubleAttributeType
+             *  NSFloatAttributeType
+             *  NSStringAttributeType
+             *  NSBooleanAttributeType
+             *  NSDateAttributeType
+             *  NSBinaryDataAttributeType
+             *  NSTransformableAttributeType
+             */
+            
+        default:
+            return @"";
+            break;
+    }
+}
+
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties {
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[properties count]];
+    
     [properties enumerateObjectsUsingBlock:^(NSPropertyDescription *prop, NSUInteger idx, BOOL *stop) {
         if ([prop isKindOfClass:[NSRelationshipDescription class]]) {
             [columns addObject:[self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]];
+        } else if ([prop isKindOfClass:[NSExpressionDescription class]]) {
+            [columns addObject:[self expressionDescriptionTypeString:(NSExpressionDescription *)prop]];
         } else {
-            [columns addObject:[NSString stringWithFormat:
-                                @"%@",
-                                prop.name
-                                ]];
+            [columns addObject:[NSString stringWithFormat:@"%@",prop.name]];
         }
     }];
+    
     if ([columns count]) {
         return [NSString stringWithFormat:@"%@", [columns componentsJoinedByString:@", "]];
     }
@@ -1516,7 +1545,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (id)valueForProperty:(NSPropertyDescription *)property
            inStatement:(sqlite3_stmt *)statement
                atIndex:(int)index {
+    
     if (sqlite3_column_type(statement, index) == SQLITE_NULL) { return nil; }
+    
     if ([property isKindOfClass:[NSAttributeDescription class]]) {
         NSAttributeType type = [(id)property attributeType];
         
@@ -1577,14 +1608,48 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // NSObjectIDAttributeType
         
     }
+    
     else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
         NSEntityDescription *target = [(id)property destinationEntity];
         NSNumber *number = @(sqlite3_column_int64(statement, index));
         return [self newObjectIDForEntity:target referenceObject:number];
     }
+    
+    else if ([property isKindOfClass:[NSExpressionDescription class]]) {
+        NSNumber *number = @(sqlite3_column_int64(statement, index));
+        return [self expressionDescriptionTypeValue:(NSExpressionDescription *)property withReferenceNumber:number];
+    }
+    
     return nil;
 }
 
+-(id)expressionDescriptionTypeValue:(NSExpressionDescription *)expressionDescription
+                withReferenceNumber:(NSNumber *)number {
+    
+    switch ([expressionDescription expressionResultType]) {
+        case NSObjectIDAttributeType:
+            return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
+            break;
+            
+            /*  NSUndefinedAttributeType
+             *  NSInteger16AttributeType
+             *  NSInteger32AttributeType
+             *  NSInteger64AttributeType
+             *  NSDecimalAttributeType
+             *  NSDoubleAttributeType
+             *  NSFloatAttributeType
+             *  NSStringAttributeType
+             *  NSBooleanAttributeType
+             *  NSDateAttributeType
+             *  NSBinaryDataAttributeType
+             *  NSTransformableAttributeType
+             */
+            
+        default:
+            return nil;
+            break;
+    }
+}
 
 /*
  
@@ -1882,7 +1947,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                             break;
                         }
                     }
-                }
+                }//
             }
             
             
