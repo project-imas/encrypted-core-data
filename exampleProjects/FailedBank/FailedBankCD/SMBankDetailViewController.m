@@ -147,6 +147,7 @@
     self.bankInfo.city = self.cityField.text;
     self.bankInfo.details.zip = [NSNumber numberWithInt:[self.zipField.text intValue]];
     self.bankInfo.state = self.stateField.text;
+    self.bankInfo.details.closeDate = self.datePicker.date;
     
     NSError *error;
     if ([self.bankInfo.managedObjectContext hasChanges] && ![self.bankInfo.managedObjectContext save:&error]) {
