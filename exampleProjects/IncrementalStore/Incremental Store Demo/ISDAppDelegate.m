@@ -15,7 +15,7 @@
     static NSPersistentStoreCoordinator *coordinator = nil;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
-        
+    
         // get the model
         NSManagedObjectModel *model = [NSManagedObjectModel mergedModelFromBundles:nil];
         
@@ -27,19 +27,22 @@
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
         NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:@"database.sqlite"];
+        NSError *error = nil;
+        
+        [[NSFileManager defaultManager] removeItemAtURL:databaseURL error:&error];
+        
         NSDictionary *options = @{
             EncryptedStorePassphraseKey : @"DB_KEY_HERE",
             NSMigratePersistentStoresAutomaticallyOption : @YES,
             NSInferMappingModelAutomaticallyOption : @YES
         };
-        NSError *error = nil;
         NSPersistentStore *store = [coordinator
                                     addPersistentStoreWithType:EncryptedStoreType
                                     configuration:nil
                                     URL:databaseURL
                                     options:options
                                     error:&error];
-        NSAssert(store, @"Unable to add persistent store\n%@", error);
+        NSAssert(store, @"Unable to add persistent store!\n%@", error);
         
     });
     return coordinator;
