@@ -206,7 +206,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
-            //NSLog(@"%@", string);
+            NSLog(@"%@", string);
             NSRange endHavingRange = [string rangeOfString:@"END_HAVING"];
             if(endHavingRange.location != NSNotFound) { // String manipulation to handle SUM
                 // Between HAVING and END_HAVING
@@ -1796,6 +1796,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         NSMutableArray *comparisonBindings = [NSMutableArray arrayWithCapacity:2];
         if (leftBindings)  [comparisonBindings addObject:leftBindings];
+        
+        
+        if ( [comparisonPredicate.rightExpression expressionType] == NSConstantValueExpressionType
+            && [[comparisonPredicate.rightExpression constantValue] isKindOfClass:[NSDate class]]) {
+            
+            leftOperand = [NSString stringWithFormat:@"%@", leftOperand];
+            NSLog(@"DATE:: %@", leftOperand);
+        }
+        
         if (rightBindings) [comparisonBindings addObject:rightBindings];
         bindings = [[comparisonBindings cmdFlatten] mutableCopy];
     }
@@ -1818,6 +1827,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             query = entityWhere;
         }
     }
+    
+    NSLog(@"%@", query);
+    NSLog(@"%@",bindings);
     
     return @{ @"query": query,
               @"bindings": bindings };
@@ -2039,6 +2051,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             *operand = [NSString stringWithFormat:
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
+        }
+        else if ([value isKindOfClass:[NSDate class]]) {
+            value = [NSString stringWithFormat:@"%f", [value timeIntervalSince1970]];
+            NSLog(@"DATE:: %@",value);
+            *bindings = value;
+            *operand = @"?";
         }
         else if ([value isKindOfClass:[NSArray class]]) {
             NSUInteger count = [value count];
