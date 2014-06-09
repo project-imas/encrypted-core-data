@@ -1521,6 +1521,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             // optimus prime
             else if (type == NSTransformableAttributeType) {
                 NSString *name = ([(id)property valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
+                if ([name isEqualToString:@""]) {
+                    name = NSKeyedUnarchiveFromDataTransformerName;
+                }
                 const BOOL isDefaultTransformer = [name isEqualToString:NSKeyedUnarchiveFromDataTransformerName];
                 NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
                 NSData *data = isDefaultTransformer ? [transformer reverseTransformedValue:value] : [transformer transformedValue:value];
@@ -1590,6 +1593,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // transformable
         else if (type == NSTransformableAttributeType) {
             NSString *name = ([(id)property valueTransformerName] ?: NSKeyedUnarchiveFromDataTransformerName);
+            if ([name isEqualToString:@""]) {
+                name = NSKeyedUnarchiveFromDataTransformerName;
+            }
             NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
             const void *bytes = sqlite3_column_blob(statement, index);
             unsigned int length = sqlite3_column_bytes(statement, index);
