@@ -80,7 +80,7 @@
     // insert posts and save
     for (NSUInteger i = 0; i < count; i++) {
         id object = [NSEntityDescription insertNewObjectForEntityForName:@"Post" inManagedObjectContext:context];
-        [object setValue:@"Test Title" forKey:@"title"];
+        [object setValue:@"Test title" forKey:@"title"];
         [object setValue:@"Test body." forKey:@"body"];
         [object setValue:user forKey:@"user"];
     }
@@ -416,7 +416,7 @@
     
     // fetch users
     NSArray *predicates = @[
-    [NSPredicate predicateWithFormat:@"posts.title like[c] %@", @"title"],
+    [NSPredicate predicateWithFormat:@"posts.title like[c] %@", @"%title"],
     [NSPredicate predicateWithFormat:@"posts.title contains[c] %@", @"title"],
     [NSPredicate predicateWithFormat:@"posts.title endswith[c] %@", @"title"]
     ];
