@@ -128,8 +128,7 @@
 
     SMSearchViewControllerViewController *searchViewController = [[SMSearchViewControllerViewController alloc] init];
     searchViewController.managedObjectContext = managedObjectContext;
-    [self.navigationController presentModalViewController:searchViewController 
-                                                 animated:YES];
+    [self.navigationController presentViewController:searchViewController animated:YES completion:nil];
     
 }
 
