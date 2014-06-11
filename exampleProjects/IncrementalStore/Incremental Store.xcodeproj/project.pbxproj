@@ -29,6 +29,9 @@
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		3EB644031799EE7E00392BFF /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643F71799EDEE00392BFF /* libcrypto.a */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
+		661A2D071948D26D00C3C74E /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643F71799EDEE00392BFF /* libcrypto.a */; };
+		661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +48,34 @@
 			proxyType = 2;
 			remoteGlobalIDString = D2AAC046055464E500DB518D;
 			remoteInfo = sqlcipher;
+		};
+		661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		661A2D011948D24B00C3C74E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
+		661A2D031948D26300C3C74E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = sqlcipher;
+		};
+		661A2D051948D26300C3C74E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -98,6 +129,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				661A2D071948D26D00C3C74E /* libcrypto.a in Frameworks */,
+				661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */,
 				3BD5F06615EE62EC00333320 /* CoreData.framework in Frameworks */,
 				3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */,
 				3BD5F02715EE5E7200333320 /* UIKit.framework in Frameworks */,
@@ -238,6 +271,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				661A2D001948D24B00C3C74E /* PBXTargetDependency */,
+				661A2D021948D24B00C3C74E /* PBXTargetDependency */,
 			);
 			name = "Incremental Store Demo";
 			productName = "Incremental Store Demo";
@@ -256,6 +291,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				661A2D041948D26300C3C74E /* PBXTargetDependency */,
+				661A2D061948D26300C3C74E /* PBXTargetDependency */,
 			);
 			name = "Incremental Store Tests";
 			productName = "Incremental Store Tests";
@@ -372,12 +409,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */,
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
 				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		661A2D001948D24B00C3C74E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = sqlcipher;
+			targetProxy = 661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */;
+		};
+		661A2D021948D24B00C3C74E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 661A2D011948D24B00C3C74E /* PBXContainerItemProxy */;
+		};
+		661A2D041948D26300C3C74E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = sqlcipher;
+			targetProxy = 661A2D031948D26300C3C74E /* PBXContainerItemProxy */;
+		};
+		661A2D061948D26300C3C74E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 661A2D051948D26300C3C74E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		3BD5F00215EE5DDF00333320 /* InfoPlist.strings */ = {
