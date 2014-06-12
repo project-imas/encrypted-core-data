@@ -53,13 +53,34 @@
     [manager removeItemAtURL:[IncrementalStoreTests databaseURL] error:nil];
 }
 
+- (void)createTags:(NSUInteger)count {
+    NSError *error;
+    
+    //insert and save tags
+    for (NSUInteger i=0; i<count; i++) {
+        id obj = [NSEntityDescription insertNewObjectForEntityForName:@"Tag" inManagedObjectContext:context];
+        [obj setValue:[NSString stringWithFormat:@"%lu tagname",(unsigned long)i] forKey:@"name"];
+    }
+    error = nil;
+    BOOL save = [context save:&error];
+    STAssertTrue(save, @"Unable to perform save.\n%@",error);
+    
+    // test count
+    error = nil;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
+    NSUInteger testCount = [context countForFetchRequest:request error:&error];
+    STAssertNil(error, @"Could not execute fetch request.");
+    STAssertEquals(testCount, count, @"The number of tags is wrong.");
+
+}
+
 - (void)createUsers:(NSUInteger)count {
     NSError *error;
     
     // insert users and save
     for (NSUInteger i = 0; i < count; i++) {
         id object = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
-        [object setValue:@"Test Name" forKey:@"name"];
+        [object setValue:[NSString stringWithFormat:@"%lu username",(unsigned long)i] forKey:@"name"];
     }
     error = nil;
     BOOL save = [context save:&error];
@@ -377,7 +398,7 @@
     
     // fetch users
     NSArray *predicates = @[
-        [NSPredicate predicateWithFormat:@"name like[c] %@", @"test name"],
+        [NSPredicate predicateWithFormat:@"name like[c] %@", @"%username"],
         [NSPredicate predicateWithFormat:@"name contains[c] %@", @"name"],
         [NSPredicate predicateWithFormat:@"name endswith[c] %@", @"name"]
     ];
@@ -416,9 +437,9 @@
     
     // fetch users
     NSArray *predicates = @[
-    [NSPredicate predicateWithFormat:@"posts.title like[c] %@", @"%title"],
-    [NSPredicate predicateWithFormat:@"posts.title contains[c] %@", @"title"],
-    [NSPredicate predicateWithFormat:@"posts.title endswith[c] %@", @"title"]
+    [NSPredicate predicateWithFormat:@"posts.title like %@", @"%title"],
+    [NSPredicate predicateWithFormat:@"posts.title contains %@", @"title"],
+    [NSPredicate predicateWithFormat:@"posts.title endswith %@", @"title"]
     ];
     [predicates enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         errorBlock = nil;
@@ -430,6 +451,54 @@
         NSManagedObject *user = [users lastObject];
         STAssertNotNil(user, @"No object found.");
     }];
+}
+
+/*
+ * Test many-to-many relations (Users to Tags)
+ */
+- (void)test_createUsersWithTags_OneToOne {
+    NSUInteger count = 3;
+    [self createUsers:count];
+    [self createTags:count];
+    
+    NSError *error;
+    NSFetchRequest *request;
+    
+    // fetch all users
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSArray *users = [context executeFetchRequest:request error:&error];
+    STAssertNil(error, @"Unable to perform fetch request.");
+    STAssertEquals([users count], count, @"Invalid number of results.");
+    NSManagedObject *user = [users lastObject];
+    STAssertNotNil(user, @"No object found.");
+    
+    // fetch all tags
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
+    NSArray *tags = [context executeFetchRequest:request error:&error];
+    STAssertNil(error, @"Unable to perform fetch request.");
+    STAssertEquals([tags count], count, @"Invalid number of results.");
+    NSManagedObject *tag = [tags lastObject];
+    STAssertNotNil(tag, @"No object found.");
+    
+    // add one user-tag relation per object
+    for (NSUInteger i = 0; i < count; i++) {
+        [[users objectAtIndex:i] setValue:[NSMutableSet setWithObject:[tags objectAtIndex:i]] forKey:@"hasTags"];
+        [[tags objectAtIndex:i] setValue:[NSMutableSet setWithObject:[users objectAtIndex:i]] forKey:@"hasUsers"];
+    }
+    BOOL success = [context save:&error];
+    STAssertTrue(success, @"Unable to perform save.\n%@",error);
+    
+    // check for successful persistant store changes
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"hasTags.name contains %@",@"tagname"];
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    [request setPredicate:predicate];
+    NSArray *retval = [context executeFetchRequest:request error:&error];
+    STAssertNil(error, @"Unable to perform fetch request.");
+    STAssertEquals([retval count], count, @"Invalid number of results.");
+    
 }
 
 @end
