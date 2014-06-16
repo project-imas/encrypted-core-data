@@ -19,7 +19,7 @@ extern NSString * const EncryptedStoreErrorMessageKey;
 - (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request;
 - (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_stmt *)statement;
 - (NSString *)columnsClauseWithProperties:(NSArray *)properties;
-- (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray;
+- (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray forRelationship:(BOOL)forRelationship;
 - (id)valueForProperty:(NSPropertyDescription *)property
            inStatement:(sqlite3_stmt *)statement
                atIndex:(int)index;
