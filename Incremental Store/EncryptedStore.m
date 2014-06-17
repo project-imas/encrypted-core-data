@@ -206,7 +206,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 [condition objectForKey:@"query"],
                                 [ordering objectForKey:@"order"],
                                 limit];
-            NSLog(@"%@", string);
             NSRange endHavingRange = [string rangeOfString:@"END_HAVING"];
             if(endHavingRange.location != NSNotFound) { // String manipulation to handle SUM
                 // Between HAVING and END_HAVING
@@ -1053,21 +1052,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // bind properties
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
-            @try {
                 [self
                  bindProperty:property
                  withValue:[object valueForKey:obj]
                  forKey:obj
                  toStatement:statement
                  atIndex:(idx + 2)];
-            }
-            @catch (NSException *exception) {
-                // TODO: Something is off the previous statement will die on some
-                //       Many-to-many statements.  But ignoring it still works.
-                //       Warrants specific testing, and figuring out where it went wrong
-                NSLog(@"Exception: %@", exception.description);
-                NSLog(@"Trace: %@", [exception callStackSymbols]);
-            }
         }];
         
         // execute
@@ -1539,8 +1529,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             
         }
         else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-            NSNumber *number = [self referenceObjectForObjectID:[value objectID]];
-            sqlite3_bind_int64(statement, index, [number unsignedLongLongValue]);
+            NSRelationshipDescription *desc = (NSRelationshipDescription *)property;
+            
+            if (![desc isToMany]) {
+                NSNumber *number = [self referenceObjectForObjectID:[value objectID]];
+                sqlite3_bind_int64(statement, index, [number unsignedLongLongValue]);
+            }
         }
     }
 }
@@ -1802,7 +1796,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             && [[comparisonPredicate.rightExpression constantValue] isKindOfClass:[NSDate class]]) {
             
             leftOperand = [NSString stringWithFormat:@"%@", leftOperand];
-            NSLog(@"DATE:: %@", leftOperand);
         }
         
         if (rightBindings) [comparisonBindings addObject:rightBindings];
@@ -1827,9 +1820,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             query = entityWhere;
         }
     }
-    
-    NSLog(@"%@", query);
-    NSLog(@"%@",bindings);
     
     return @{ @"query": query,
               @"bindings": bindings };
@@ -2054,7 +2044,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
         else if ([value isKindOfClass:[NSDate class]]) {
             value = [NSString stringWithFormat:@"%f", [value timeIntervalSince1970]];
-            NSLog(@"DATE:: %@",value);
             *bindings = value;
             *operand = @"?";
         }
@@ -2109,7 +2098,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 - (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship {
     NSEntityDescription *destination = [relationship destinationEntity];
-    NSLog(@"%@",[destination name]);
     return [NSString stringWithFormat:@"%@.__objectid", [destination name]];
 }
 
