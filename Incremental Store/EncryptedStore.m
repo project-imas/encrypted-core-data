@@ -13,6 +13,9 @@ NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
+NSString * const DatabaseLocation = @"DatabaseLocation";
+NSString * const CacheSize = @"CacheSize";
+
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 #pragma mark - category interfaces
@@ -72,10 +75,23 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
 }
 
-+ (NSPersistentStoreCoordinator *)makeStoreWithDatabaseURL:(NSURL *)databaseURL managedObjectModel:(NSManagedObjectModel *)objModel :(NSString*)passcode
++ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel
 {
-    NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
     NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
+    
+    //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    
+    NSURL *databaseURL;
+    if([options objectForKey:DatabaseLocation] != nil) {
+        databaseURL = [databaseURL initFileURLWithPath:[options objectForKey:DatabaseLocation]];
+    } else {
+        NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+        [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
+        databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
+        NSLog(@"%@", databaseURL);
+    }
     
     NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
@@ -90,29 +106,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel :(NSString *)passcode
 {
-    NSPersistentStoreCoordinator* ret = nil;
-    @try {
-        ret = [self makeStoreAlt:objModel:passcode:NO];
-    } @catch(NSException* e) {
-        ret = [self makeStoreAlt:objModel:passcode:YES];
-    }
-    return ret;
-}
-
-+ (NSPersistentStoreCoordinator *)makeStoreAlt:(NSManagedObjectModel *)objModel :(NSString *)passcode :(BOOL) altPath
-{
-    NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
-
-    if(altPath) applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+    NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
     
-    [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
-
-  //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];  
-        
-    NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-    return [self makeStoreWithDatabaseURL:databaseURL managedObjectModel:objModel:passcode];
+    return [self makeStoreWithOptions:options managedObjectModel:objModel];
 }
 
 + (void)load {
@@ -646,15 +642,39 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (BOOL)configureDatabasePassphrase {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
-    if (passphrase) {
-        const char *string = [passphrase UTF8String];
-        int status = sqlite3_key(database, string, strlen(string));
-        string = NULL;
-        passphrase = nil;
-        return (status == SQLITE_OK);
-    }
+    NSNumber *cacheSize = [[self options] objectForKey:CacheSize];
+    
+    if (passphrase == nil) return NO;
+    const char *string = [passphrase UTF8String];
+    int status = sqlite3_key(database, string, strlen(string));
+    string = NULL;
     passphrase = nil;
-    return YES;
+    if(cacheSize != nil){
+        NSString *string = [NSString stringWithFormat:@"PRAGMA cache_size = %d;", [cacheSize intValue]];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+        sqlite3_step(statement);
+        
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK){
+            // TO-DO: handle error with statement
+            NSLog(@"Error: statement is NULL or could not be finalized");
+            return NO;
+        } else {
+            // prepare another pragma cache_size statement and compare actual cache size
+            NSString *string = @"PRAGMA cache_size;";
+            sqlite3_stmt *checkStatement = [self preparedStatementForQuery:string];
+            sqlite3_step(checkStatement);
+            int actualCacheSize = sqlite3_column_int(checkStatement,0);
+            if(actualCacheSize == [cacheSize intValue]) {
+                // succeeded
+                NSLog(@"Cache size successfully set to %d", actualCacheSize);
+            } else {
+                // failed...
+                NSLog(@"Error: cache size set to %d, not %d", actualCacheSize, [cacheSize intValue]);
+                return NO;
+            }
+        }
+    }
+    return (status == SQLITE_OK);
 }
 
 #pragma mark - user functions
