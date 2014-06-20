@@ -277,6 +277,11 @@
 				CLASSPREFIX = ISD;
 				LastUpgradeCheck = 0440;
 				ORGANIZATIONNAME = "Caleb Davenport";
+				TargetAttributes = {
+					3BD5EFF415EE5DDF00333320 = {
+						DevelopmentTeam = M9BLEU3LFV;
+					};
+				};
 			};
 			buildConfigurationList = 3BD5EFEF15EE5DDF00333320 /* Build configuration list for PBXProject "Incremental Store" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -470,11 +475,14 @@
 		3BD5F01415EE5DDF00333320 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -482,11 +490,14 @@
 		3BD5F01515EE5DDF00333320 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

@@ -28,13 +28,22 @@
     
     // Test listing all FailedBankInfos from the store
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
-    NSEntityDescription *entity = [NSEntityDescription entityForName:@"FailedBankDetails"
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"FailedBankInfo"
                                               inManagedObjectContext:self.managedObjectContext];
     [fetchRequest setEntity:entity];
     NSArray *fetchedObjects = [self.managedObjectContext executeFetchRequest:fetchRequest error:&error];
-    for (FailedBankDetails *info in fetchedObjects) {
-//        NSLog(@"tags: %@", [fetchedObjects valueForKey:@"tags"]);
+    for (NSManagedObject *info in fetchedObjects) {
+        [[info dictionaryWithValuesForKeys:@[@"name",@"city",@"state"]] enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
+            NSLog(@"%@: %@\n",key,obj);
+        }];
         
+        [[((FailedBankInfo *)info).details dictionaryWithValuesForKeys:@[@"zip",@"updateDate",@"closeDate"]] enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
+            NSLog(@"%@: %@\n",key,obj);
+        }];
+        
+        for (Tag *tag in ((FailedBankInfo*)info).details.tags) {
+            NSLog(@"Tag name: %@",tag.name);
+        }
     }
     
     // Override point for customization after application launch.

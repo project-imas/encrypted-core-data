@@ -1483,7 +1483,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static dispatch_once_t token;
     dispatch_once(&token, ^{
         debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
-        debug = YES;
     });
     if (debug) {NSLog(@"SQL DEBUG: %@", query); }
     sqlite3_stmt *statement = NULL;
@@ -1598,10 +1597,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSRelationshipDescription *rel = [[currentEntity relationshipsByName]
                                           objectForKey:[keysArray objectAtIndex:i]];
         NSRelationshipDescription *inverse = [rel inverseRelationship];
+        
         if (rel != nil) {
+            
+            retval = YES;
+            
             if ([rel isToMany] && [inverse isToMany]) {
-                
-                retval = YES;
                 
                 // source entity table to relation table join
                 NSUInteger index;
