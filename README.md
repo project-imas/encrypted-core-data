@@ -14,6 +14,7 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 # Project Setup
   * When creating the project make sure **Use Core Data** is selected
   * Follow the [SQLCipher for iOS](http://sqlcipher.net/ios-tutorial/) setup guide
+    * __Encrypted Core Data no longer uses OpenSSL for SQLCipher's encryption mechanism.__ (See below)
   * Switch into your project's root directory and checkout the encrypted-core-data project code
 ```
     cd ~/Documents/code/YourApp
@@ -22,6 +23,13 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 ```
   * Click on the top level Project item and add files ("option-command-a")
   * Navigate to **encrypted-core-data**, highlight **Incremental Store**, and click **Add**
+
+  * SQLCipher is added as a git submodule within ECD. A `git submodule init` and `git submodule update` should populate the sqlcipher submodule directory, where the `sqlcipher.xcodeproj` can be found and added to your project.
+  * To use CommonCrypto with SQLCipher in Xcode:
+    - add the compiler flag `-DSQLCIPHER_CRYPTO_CC` under the sqlcipher project settings > Build Settings > Custom Compiler Flags > Other C Flags
+    - Under your application's project settings > Build Phases, add `sqlcipher` to Target Dependencies, and `libsqlcipher.a` and `Security.framework` to Link Binary With Libraries.
+    
+* _Note:_ Along with the move to CommonCrypto, we've updated the version of SQLCipher included as a submodule from v2.0.6 to v3.1.0. Databases created with v2.0.6 will not be able to be read directly by v3.1.0, and support for legacy database migration is not yet supported by ECD.
 
 # Using EncryptedStore
 
@@ -53,8 +61,9 @@ If there are issues you can add `-com.apple.CoreData.SQLDebug 1` to see all stat
 
 - One-to-one relationships
 - One-to-many relationships
+- Many-to-Many relationships (NEW)
 - Predicates
-- Inherited entities (Thanks to [NachoMan](https://github.com/NachoMan/)) 
+- Inherited entities (Thanks to [NachoMan](https://github.com/NachoMan/))
 
 Missing features and known bugs are maintained on the [issue tracker](https://github.com/project-imas/encrypted-core-data/issues?state=open)
 
