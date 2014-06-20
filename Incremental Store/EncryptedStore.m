@@ -90,7 +90,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
         databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-        NSLog(@"%@", databaseURL);
     }
     
     NSError *error = nil;
