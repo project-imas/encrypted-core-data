@@ -410,16 +410,30 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSEntityDescription *destinationEntity = [relationship destinationEntity];
     sqlite3_stmt *statement = NULL;
     
-    
-    // one side of a one-to-many and one-to-one
-    if (![relationship isToMany] || [inverseRelationship isToMany]) {
+    if (![relationship isToMany]) {
+        // to-one relationship, foreign key exists in source entity table
+        
         NSString *string = [NSString stringWithFormat:
                             @"SELECT %@ FROM %@ WHERE __objectID=?",
                             [self foreignKeyColumnForRelationship:relationship],
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
+        
+    } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
+        // many-to-many relationship, foreign key exists in relation table
+        
+        NSString *string = [NSString stringWithFormat:
+                            @"SELECT %@__objectid FROM %@ WHERE %@__objectid=?",
+                            [destinationEntity name],
+                            [self tableNameForRelationship:relationship],
+                            [sourceEntity name]];
+        statement = [self preparedStatementForQuery:string];
+        sqlite3_bind_int64(statement, 1, key);
+        
     } else {
+        // one-to-many relationship, foreign key exists in desination entity table
+        
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID FROM %@ WHERE %@=?",
                             [self tableNameForEntity:destinationEntity],
@@ -1459,6 +1473,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static dispatch_once_t token;
     dispatch_once(&token, ^{
         debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
+        debug = YES;
     });
     if (debug) {NSLog(@"SQL DEBUG: %@", query); }
     sqlite3_stmt *statement = NULL;

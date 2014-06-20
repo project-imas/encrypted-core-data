@@ -12,6 +12,8 @@
 #import "FailedBankDetails.h"
 #import "EncryptedStore.h"
 
+#define USE_ENCRYPTED_STORE 1
+
 @implementation FBCDAppDelegate
 
 @synthesize window = _window;
@@ -26,14 +28,13 @@
     
     // Test listing all FailedBankInfos from the store
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
-    NSEntityDescription *entity = [NSEntityDescription entityForName:@"FailedBankInfo"
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"FailedBankDetails"
                                               inManagedObjectContext:self.managedObjectContext];
     [fetchRequest setEntity:entity];
     NSArray *fetchedObjects = [self.managedObjectContext executeFetchRequest:fetchRequest error:&error];
-    for (FailedBankInfo *info in fetchedObjects) {
-        NSLog(@"Name: %@", info.name);
-        FailedBankDetails *details = info.details;
-        NSLog(@"Zip: %@", details.zip);
+    for (FailedBankDetails *info in fetchedObjects) {
+//        NSLog(@"tags: %@", [fetchedObjects valueForKey:@"tags"]);
+        
     }
     
     // Override point for customization after application launch.
@@ -94,8 +95,13 @@
     if (__managedObjectContext != nil) {
         return __managedObjectContext;
     }
-    //
-    NSPersistentStoreCoordinator *coordinator = [EncryptedStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+
+    NSPersistentStoreCoordinator *coordinator;
+#if USE_ENCRYPTED_STORE
+    coordinator = [EncryptedStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+#else
+    coordinator = [self persistentStoreCoordinator];
+#endif
     
 
     if (coordinator != nil) {
