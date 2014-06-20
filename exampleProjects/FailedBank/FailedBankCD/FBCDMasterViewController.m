@@ -30,11 +30,13 @@
 		exit(-1);  // Fail
 	}
     
-    if (self.fetchedResultsController.fetchedObjects.count == 0) {
-    
-        //[self populateDB];
-        
-    }
+//    if (self.fetchedResultsController.fetchedObjects.count != 0) {
+//    
+//        for (FailedBankInfo *info in self.fetchedResultsController.fetchedObjects) {
+//                NSLog(@"%@", info.details.tags);
+//        }
+//        
+//    }
     
     self.title = @"Failed Banks";
     

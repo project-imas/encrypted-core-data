@@ -27,21 +27,14 @@
 		3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05D15EE616E00333320 /* ISDUserListViewController.m */; };
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
-		3EB644031799EE7E00392BFF /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643F71799EDEE00392BFF /* libcrypto.a */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
 		661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
-		661A2D071948D26D00C3C74E /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643F71799EDEE00392BFF /* libcrypto.a */; };
 		661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		661D95AF1954821900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
+		661D95B11954854900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		3EB643F61799EDEE00392BFF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
 		3EB643FD1799EE0000392BFF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
@@ -56,26 +49,12 @@
 			remoteGlobalIDString = D2AAC045055464E500DB518D;
 			remoteInfo = sqlcipher;
 		};
-		661A2D011948D24B00C3C74E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
 		661A2D031948D26300C3C74E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = D2AAC045055464E500DB518D;
 			remoteInfo = sqlcipher;
-		};
-		661A2D051948D26300C3C74E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
-			remoteInfo = crypto;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -105,10 +84,10 @@
 		3BD5F06015EE61A700333320 /* ISDEditPostViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDEditPostViewController.h; sourceTree = "<group>"; };
 		3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDEditPostViewController.m; sourceTree = "<group>"; };
 		3BD5F06515EE62EC00333320 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
-		3EB643F21799EDEE00392BFF /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = ../../vendor/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
 		3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3EB644001799EE1E00392BFF /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3EB644011799EE1E00392BFF /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
+		661D95AE1954821900581737 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,7 +95,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3EB644031799EE7E00392BFF /* libcrypto.a in Frameworks */,
+				661D95AF1954821900581737 /* Security.framework in Frameworks */,
 				3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */,
 				3BD5F06715EE62F300333320 /* CoreData.framework in Frameworks */,
 				3BD5EFFA15EE5DDF00333320 /* UIKit.framework in Frameworks */,
@@ -129,7 +108,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				661A2D071948D26D00C3C74E /* libcrypto.a in Frameworks */,
+				661D95B11954854900581737 /* Security.framework in Frameworks */,
 				661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */,
 				3BD5F06615EE62EC00333320 /* CoreData.framework in Frameworks */,
 				3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */,
@@ -146,7 +125,6 @@
 			children = (
 				3EB643FF1799EE1E00392BFF /* Incremental Store */,
 				3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */,
-				3EB643F21799EDEE00392BFF /* openssl.xcodeproj */,
 				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
 				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
@@ -167,6 +145,7 @@
 		3BD5EFF815EE5DDF00333320 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				661D95AE1954821900581737 /* Security.framework */,
 				3BD5F06515EE62EC00333320 /* CoreData.framework */,
 				3BD5EFF915EE5DDF00333320 /* UIKit.framework */,
 				3BD5EFFB15EE5DDF00333320 /* Foundation.framework */,
@@ -231,14 +210,6 @@
 			name = "View Controllers";
 			sourceTree = "<group>";
 		};
-		3EB643F31799EDEE00392BFF /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				3EB643F71799EDEE00392BFF /* libcrypto.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		3EB643F91799EDFF00392BFF /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -272,7 +243,6 @@
 			);
 			dependencies = (
 				661A2D001948D24B00C3C74E /* PBXTargetDependency */,
-				661A2D021948D24B00C3C74E /* PBXTargetDependency */,
 			);
 			name = "Incremental Store Demo";
 			productName = "Incremental Store Demo";
@@ -292,7 +262,6 @@
 			);
 			dependencies = (
 				661A2D041948D26300C3C74E /* PBXTargetDependency */,
-				661A2D061948D26300C3C74E /* PBXTargetDependency */,
 			);
 			name = "Incremental Store Tests";
 			productName = "Incremental Store Tests";
@@ -308,6 +277,11 @@
 				CLASSPREFIX = ISD;
 				LastUpgradeCheck = 0440;
 				ORGANIZATIONNAME = "Caleb Davenport";
+				TargetAttributes = {
+					3BD5EFF415EE5DDF00333320 = {
+						DevelopmentTeam = M9BLEU3LFV;
+					};
+				};
 			};
 			buildConfigurationList = 3BD5EFEF15EE5DDF00333320 /* Build configuration list for PBXProject "Incremental Store" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -320,10 +294,6 @@
 			productRefGroup = 3BD5EFF615EE5DDF00333320 /* Products */;
 			projectDirPath = "";
 			projectReferences = (
-				{
-					ProductGroup = 3EB643F31799EDEE00392BFF /* Products */;
-					ProjectRef = 3EB643F21799EDEE00392BFF /* openssl.xcodeproj */;
-				},
 				{
 					ProductGroup = 3EB643F91799EDFF00392BFF /* Products */;
 					ProjectRef = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
@@ -338,13 +308,6 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		3EB643F71799EDEE00392BFF /* libcrypto.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libcrypto.a;
-			remoteRef = 3EB643F61799EDEE00392BFF /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		3EB643FE1799EE0000392BFF /* libsqlcipher.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -423,20 +386,10 @@
 			name = sqlcipher;
 			targetProxy = 661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */;
 		};
-		661A2D021948D24B00C3C74E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = crypto;
-			targetProxy = 661A2D011948D24B00C3C74E /* PBXContainerItemProxy */;
-		};
 		661A2D041948D26300C3C74E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = sqlcipher;
 			targetProxy = 661A2D031948D26300C3C74E /* PBXContainerItemProxy */;
-		};
-		661A2D061948D26300C3C74E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = crypto;
-			targetProxy = 661A2D051948D26300C3C74E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -522,11 +475,14 @@
 		3BD5F01415EE5DDF00333320 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -534,11 +490,14 @@
 		3BD5F01515EE5DDF00333320 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
 				INFOPLIST_FILE = "Incremental Store Demo/Incremental Store Demo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

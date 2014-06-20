@@ -9,6 +9,9 @@
 
 #import "ISDAppDelegate.h"
 
+// TOGGLE ECD ON = 1 AND OFF = 0
+#define USE_ENCRYPTED_STORE 1
+
 @implementation ISDAppDelegate
 
 + (NSPersistentStoreCoordinator *)persistentStoreCoordinator {
@@ -48,12 +51,31 @@
     return coordinator;
 }
 
++ (NSPersistentStoreCoordinator *)persistentStoreCoordinator_CoreData {
+    NSError *error = nil;
+    NSURL *storeURL = [[[[NSFileManager defaultManager]
+                         URLsForDirectory:NSDocumentDirectory
+                         inDomains:NSUserDomainMask]
+                            lastObject]
+                                URLByAppendingPathComponent:@"cleardb.sqlite"];
+    
+    NSPersistentStoreCoordinator *coordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[NSManagedObjectModel mergedModelFromBundles:nil]];
+    [coordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error];
+    
+    return coordinator;
+    
+}
+
 + (NSManagedObjectContext *)managedObjectContext {
     static NSManagedObjectContext *context = nil;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
         context = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+#if USE_ENCRYPTED_STORE
         [context setPersistentStoreCoordinator:[self persistentStoreCoordinator]];
+#else
+        [context setPersistentStoreCoordinator:[self persistentStoreCoordinator_CoreData]];
+#endif
     });
     return context;
 }
