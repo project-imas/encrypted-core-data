@@ -86,13 +86,11 @@
     self.cityField.text = self.bankInfo.city;
     self.zipField.text = [self.bankInfo.details.zip stringValue];
     self.stateField.text = self.bankInfo.state;
-    NSSet *tags = self.bankInfo.details.tags;
+    NSArray *tags = [self.bankInfo.details.tags allObjects];
     NSMutableArray *tagNamesArray = [[NSMutableArray alloc] initWithCapacity:tags.count];
     
     for (Tag *tag in tags) {
-        
         [tagNamesArray addObject:tag.name];
-        
     }
     
     self.tagsLabel.text = [tagNamesArray componentsJoinedByString:@","];

@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		3E1F9A261799EB870057E202 /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1F9A251799EB870057E202 /* EncryptedStore.m */; };
-		3EB6440A1799EEF300392BFF /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E1F9A1B1799EB650057E202 /* libcrypto.a */; };
 		3EB6440B1799EEF300392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E1F9A221799EB710057E202 /* libsqlcipher.a */; };
 		4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BC151D932E00FB21FA /* UIKit.framework */; };
 		4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B7AB8BE151D932E00FB21FA /* Foundation.framework */; };
@@ -20,6 +19,7 @@
 		4B7AB8D2151D932E00FB21FA /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4B7AB8D0151D932E00FB21FA /* MainStoryboard.storyboard */; };
 		4B7AB8D5151D932E00FB21FA /* FailedBankCD.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4B7AB8D3151D932E00FB21FA /* FailedBankCD.xcdatamodeld */; };
 		4B7AB8E3151D993A00FB21FA /* FBCDMasterViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B7AB8E2151D993A00FB21FA /* FBCDMasterViewController.m */; };
+		6654FC3C19546306005C4ADC /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6654FC3B19546306005C4ADC /* Security.framework */; };
 		BD1AC66C156BAF4B002F154B /* SMSearchViewControllerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1AC66A156BAF4B002F154B /* SMSearchViewControllerViewController.m */; };
 		BD1AC66D156BAF4B002F154B /* SMSearchViewControllerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BD1AC66B156BAF4B002F154B /* SMSearchViewControllerViewController.xib */; };
 		BD1AC6B9156C03DA002F154B /* FailedBankInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1AC6B8156C03DA002F154B /* FailedBankInfo.m */; };
@@ -32,13 +32,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		3E1F9A1A1799EB650057E202 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
 		3E1F9A211799EB710057E202 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */;
@@ -53,17 +46,9 @@
 			remoteGlobalIDString = D2AAC045055464E500DB518D;
 			remoteInfo = sqlcipher;
 		};
-		66599C22193F617200AA2731 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3E1F9A161799EB650057E202 /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = ../../vendor/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
 		3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3E1F9A241799EB870057E202 /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3E1F9A251799EB870057E202 /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
@@ -82,6 +67,7 @@
 		4B7AB8D4151D932E00FB21FA /* FailedBankCD.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FailedBankCD.xcdatamodel; sourceTree = "<group>"; };
 		4B7AB8E1151D993A00FB21FA /* FBCDMasterViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCDMasterViewController.h; sourceTree = "<group>"; };
 		4B7AB8E2151D993A00FB21FA /* FBCDMasterViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCDMasterViewController.m; sourceTree = "<group>"; };
+		6654FC3B19546306005C4ADC /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		BD1AC669156BAF4B002F154B /* SMSearchViewControllerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SMSearchViewControllerViewController.h; sourceTree = "<group>"; };
 		BD1AC66A156BAF4B002F154B /* SMSearchViewControllerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SMSearchViewControllerViewController.m; sourceTree = "<group>"; };
 		BD1AC66B156BAF4B002F154B /* SMSearchViewControllerViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SMSearchViewControllerViewController.xib; sourceTree = "<group>"; };
@@ -104,7 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3EB6440A1799EEF300392BFF /* libcrypto.a in Frameworks */,
+				6654FC3C19546306005C4ADC /* Security.framework in Frameworks */,
 				3EB6440B1799EEF300392BFF /* libsqlcipher.a in Frameworks */,
 				4B7AB8BD151D932E00FB21FA /* UIKit.framework in Frameworks */,
 				4B7AB8BF151D932E00FB21FA /* Foundation.framework in Frameworks */,
@@ -116,14 +102,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3E1F9A171799EB650057E202 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				3E1F9A1B1799EB650057E202 /* libcrypto.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		3E1F9A1D1799EB700057E202 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -147,7 +125,6 @@
 			children = (
 				3E1F9A231799EB870057E202 /* Incremental Store */,
 				3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */,
-				3E1F9A161799EB650057E202 /* openssl.xcodeproj */,
 				4B7AB8C4151D932E00FB21FA /* FailedBankCD */,
 				4B7AB8BB151D932E00FB21FA /* Frameworks */,
 				4B7AB8B9151D932E00FB21FA /* Products */,
@@ -165,6 +142,7 @@
 		4B7AB8BB151D932E00FB21FA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				6654FC3B19546306005C4ADC /* Security.framework */,
 				4B7AB8BC151D932E00FB21FA /* UIKit.framework */,
 				4B7AB8BE151D932E00FB21FA /* Foundation.framework */,
 				4B7AB8C0151D932E00FB21FA /* CoreGraphics.framework */,
@@ -244,7 +222,6 @@
 			);
 			dependencies = (
 				66599C21193F617200AA2731 /* PBXTargetDependency */,
-				66599C23193F617200AA2731 /* PBXTargetDependency */,
 			);
 			name = FailedBankCD;
 			productName = FailedBankCD;
@@ -273,10 +250,6 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 3E1F9A171799EB650057E202 /* Products */;
-					ProjectRef = 3E1F9A161799EB650057E202 /* openssl.xcodeproj */;
-				},
-				{
 					ProductGroup = 3E1F9A1D1799EB700057E202 /* Products */;
 					ProjectRef = 3E1F9A1C1799EB700057E202 /* sqlcipher.xcodeproj */;
 				},
@@ -289,13 +262,6 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		3E1F9A1B1799EB650057E202 /* libcrypto.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libcrypto.a;
-			remoteRef = 3E1F9A1A1799EB650057E202 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		3E1F9A221799EB710057E202 /* libsqlcipher.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -346,11 +312,6 @@
 			isa = PBXTargetDependency;
 			name = sqlcipher;
 			targetProxy = 66599C20193F617200AA2731 /* PBXContainerItemProxy */;
-		};
-		66599C23193F617200AA2731 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = crypto;
-			targetProxy = 66599C22193F617200AA2731 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

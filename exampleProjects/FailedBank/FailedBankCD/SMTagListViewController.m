@@ -63,7 +63,7 @@
     self.bankDetails.tags = pickedTags;
     
     NSError *error = nil;
-    if (![self.bankDetails.managedObjectContext save:&error]) {        
+    if (![self.bankDetails.managedObjectContext save:&error]) {
         NSLog(@"Core data error %@, %@", error, [error userInfo]);
         abort();
     }         
