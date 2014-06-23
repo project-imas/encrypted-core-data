@@ -36,9 +36,9 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 If you wish to set a custom cache size and/or custom database URL:
 create an NSDictionary to set the options for your EncryptedStore, replacing customPasscode, customCacheSize, and/or customDatabaseURL:
 ```objc
-NSDictionary *options = @{ EncryptedStorePassphraseKey : customPasscode,
-                           CacheSize: customCacheSize,
-                           DatabaseLocation: customDatabaseURL
+NSDictionary *options = @{ EncryptedStorePassphraseKey: (NSString *) customPasscode,
+                           EncryptedStoreCacheSize: (NSNumber *) customCacheSize,
+                           EncryptedStoreDatabaseLocation: (NSURL *) customDatabaseURL
                            };
 ```
 
