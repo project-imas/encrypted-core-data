@@ -1497,9 +1497,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[descriptors count]];
     [descriptors enumerateObjectsUsingBlock:^(NSSortDescriptor *desc, NSUInteger idx, BOOL *stop) {
-        // We throw and exception in the join if the key is more than one relationship deep.
+        // We throw an exception in the join if the key is more than one relationship deep.
         // We do need to detect the relationship though to know what table to prefix the key
         // with.
+        
         NSString *tableName = [self tableNameForEntity:fetchRequest.entity];
         NSString *key = [desc key];
         if ([desc.key rangeOfString:@"."].location != NSNotFound) {
@@ -1507,14 +1508,23 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             tableName = [self joinedTableNameForComponents:components forRelationship:NO];
             key = [components lastObject];
         }
+        
+        NSString *collate = @"";
+        // search for InsensitiveCompare instead of caseSensitiveCompare b/c could also be localizedCaseInsensitiveCompare
+        if([NSStringFromSelector([desc selector]) rangeOfString:@"InsensitiveCompare"].location != NSNotFound) {
+            collate = @"COLLATE NOCASE";
+        }
+        
         [columns addObject:[NSString stringWithFormat:
-                            @"%@.%@ %@",
+                            @"%@.%@ %@ %@",
                             tableName,
                             key,
+                            collate,
                             ([desc ascending]) ? @"ASC" : @"DESC"]];
     }];
     if (columns.count) {
-        order = [NSString stringWithFormat:@" ORDER BY %@", [columns componentsJoinedByString:@", "]];
+        order = [NSString stringWithFormat:@" ORDER BY %@",
+                 [columns componentsJoinedByString:@", "]];
     }
     return @{ @"order": order };
 }
