@@ -33,7 +33,8 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 
 # Using EncryptedStore
 
-Create an NSDictionary to set the options for your EncryptedStore, replacing customPasscode with a passcode of your own. If desired, you can also set customCacheSize and customDatabaseURL:
+If you wish to set a custom cache size and/or custom database URL:
+create an NSDictionary to set the options for your EncryptedStore, replacing customPasscode, customCacheSize, and/or customDatabaseURL:
 ```objc
 NSDictionary *options = @{ EncryptedStorePassphraseKey : customPasscode,
                            CacheSize: customCacheSize,
@@ -45,10 +46,16 @@ In your application delegate source file (i.e. AppDelegate.m) you should see
 ```objc
 NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 ```
-replace that line with
+If you created an NSDictionary with custom options, replace that line with
 ```objc
 NSPersistentStoreCoordinator *coordinator = [EncryptedStore makeStoreWithOptions:options managedObjectModel:[self managedObjectModel]];
 ```
+
+Otherwise, replace that line with:
+```objc
+NSPersistentStoreCoordinator *coordinator = [EncryptedStore makeStore:[self managedObjectModel]:@"SOME_PASSCODE"];
+```
+making sure to replace "SOME_PASSCODE" with a passcode of your own.
 
 Also in the same file add an import for EncryptedStore.h:
 ```objc
