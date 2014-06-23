@@ -13,8 +13,8 @@ NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
-NSString * const DatabaseLocation = @"DatabaseLocation";
-NSString * const CacheSize = @"CacheSize";
+NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocation";
+NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
@@ -82,8 +82,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
     
     NSURL *databaseURL;
-    if([options objectForKey:DatabaseLocation] != nil) {
-        databaseURL = [databaseURL initFileURLWithPath:[options objectForKey:DatabaseLocation]];
+    if([options objectForKey:EncryptedStoreDatabaseLocation] != nil) {
+        databaseURL = [databaseURL initFileURLWithPath:[options objectForKey:EncryptedStoreDatabaseLocation]];
     } else {
         NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -657,7 +657,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (BOOL)configureDatabasePassphrase {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
-    NSNumber *cacheSize = [[self options] objectForKey:CacheSize];
+    NSNumber *cacheSize = [[self options] objectForKey:EncryptedStoreCacheSize];
     
     if (passphrase == nil) return NO;
     const char *string = [passphrase UTF8String];

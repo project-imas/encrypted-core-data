@@ -8,8 +8,8 @@ extern NSString * const EncryptedStoreType;
 extern NSString * const EncryptedStorePassphraseKey;
 extern NSString * const EncryptedStoreErrorDomain;
 extern NSString * const EncryptedStoreErrorMessageKey;
-extern NSString * const DatabaseLocation;
-extern NSString * const CacheSize;
+extern NSString * const EncryptedStoreDatabaseLocation;
+extern NSString * const EncryptedStoreCacheSize;
 
 @interface EncryptedStore : NSIncrementalStore
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
