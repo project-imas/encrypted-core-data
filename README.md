@@ -3,6 +3,12 @@
 
 Provides a Core Data store that encrypts all data that is persisted.  Besides the initial setup, the usage is exactly the same as Core Data and can be used in existing projects that use Core Data.
 
+# What's New in ECD 2.0 (as of 6/20/14)
+- Many to Many relationship support 
+- Upgraded to SqlCipher v3.1.0 
+- Moved away from OpenSSL to Apple's, FIPS compliant, CommonCrypto
+- Better unit test support
+
 # Vulnerabilities Addressed
 
 1. SQLite database is not encrypted, contents are in plain text
