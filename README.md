@@ -94,7 +94,7 @@ Below is the output of doing the unix *strings* command on a sample applications
 
 ## License
 
-Copyright 2012 The MITRE Corporation, All Rights Reserved.
+Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
