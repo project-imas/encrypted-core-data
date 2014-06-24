@@ -2,7 +2,7 @@
 //  ISDEditPostViewController.h
 //  Incremental Store Demo
 //
-//  Created by Caleb Davenport on 8/1/12.
+// Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 //
 
 #import <UIKit/UIKit.h>

@@ -2,7 +2,7 @@
 //  ISDAppDelegate.m
 //  Incremental Store Demo
 //
-//  Created by Caleb Davenport on 8/29/12.
+// Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 //
 
 #import "EncryptedStore.h"
@@ -88,7 +88,7 @@
         NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
         NSUInteger count = [context countForFetchRequest:request error:nil];
         if (count == 0) {
-            NSArray *array = [NSArray arrayWithObjects:@"Caleb", @"Jon", @"Andrew", @"Marshall", nil];
+            NSArray *array = [NSArray arrayWithObjects:@"Gregg", @"Jon", @"Jase", @"Gavin", nil];
             [array enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
                 NSManagedObject *user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
                 [user setValue:obj forKey:@"name"];

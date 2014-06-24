@@ -1,4 +1,9 @@
-//  Copyright (c) 2012 The MITRE Corporation.
+// 
+// EncryptedStore.h
+//
+// Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
+//
+//
 
 #import <sqlite3.h>
 #import <objc/runtime.h>

@@ -1,4 +1,8 @@
-//  Copyright (c) 2012 The MITRE Corporation.
+//
+// EncryptedStore.m
+//
+// Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
+//
 
 #if !__has_feature(objc_arc)
 #error This class requires ARC.

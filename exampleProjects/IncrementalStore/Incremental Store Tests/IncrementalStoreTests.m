@@ -2,7 +2,7 @@
 //  IncrementalStoreTests.m
 //  Incremental Store Tests
 //
-//  Created by Caleb Davenport on 8/7/12.
+// Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 //
 
 #import <SenTestingKit/SenTestingKit.h>
