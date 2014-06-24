@@ -151,6 +151,30 @@
     return retval;
 }
 
+- (NSArray *)createUnsortedUserArray:(NSUInteger)count {
+    NSMutableArray *users = [NSMutableArray array];
+    char a = 'a';
+    
+    for (NSUInteger i = 0; i < count; i++) {
+        id user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+        if(arc4random_uniform(2) == 1) a = 'A';
+        [user setValue:[NSString stringWithFormat:@"%cusername",(char)(arc4random_uniform(26) + a)] forKey:@"name"];
+        [users addObject:user];
+    }
+    
+    NSError *error = nil;
+    BOOL save = [context save:&error];
+    STAssertTrue(save, @"Error saving context.\n%@",error);
+    
+    // test count (is it necessary?)
+    error = nil;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSUInteger testCount = [context countForFetchRequest:request error:&error];
+    STAssertNil(error, @"Could not execute fetch request.");
+    STAssertEquals(testCount, count, @"The number of users is wrong.");
+    
+}
+
 - (void)setUp {
     [super setUp];
     [IncrementalStoreTests deleteDatabase];
@@ -564,6 +588,45 @@
         NSManagedObject *user = [users lastObject];
         STAssertNotNil(user, @"No object found.");
     }];
+}
+
+/*
+ * Test sort descriptors
+ */
+
+- (void)test_sortUserArrayUsingSortDescriptors {
+    NSArray *users = [self createUnsortedUserArray:5];
+    NSSortDescriptor *sortCaseSensitive;
+    NSSortDescriptor *sortCaseInsensitive;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSError *error = nil;
+    
+    // test with case-sensitive (default) sort descriptor
+    sortCaseSensitive = [[NSSortDescriptor alloc]
+            initWithKey:@"name"
+            ascending:YES];
+    // sort array using descriptor in ECD
+    [request setSortDescriptors:[NSArray arrayWithObject:sortCaseSensitive]];
+    users = [context executeFetchRequest:request error:&error];
+    
+    // check if array was sorted by comparing against array sorted w/out ECD
+    NSArray *sortedUsers = [users sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortCaseSensitive]];
+    STAssertTrue([users isEqualToArray:sortedUsers],
+                 @"The array was not sorted properly (case-sensitive).");
+    
+    // test with case-INsensitive sort descriptor
+    sortCaseInsensitive = [[NSSortDescriptor alloc]
+                         initWithKey:@"name"
+                         ascending:YES
+                         selector:@selector(caseInsensitiveCompare:)];
+    // sort array using descriptor in ECD
+    [request setSortDescriptors:[NSArray arrayWithObject:sortCaseInsensitive]];
+    users = [context executeFetchRequest:request error:&error];
+    
+    // check if array was sorted by comparing against array sorted w/out ECD
+    sortedUsers = [users sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortCaseInsensitive]];
+    STAssertTrue([users isEqualToArray:sortedUsers],
+                 @"The array was not sorted properly (case-sensitive).");
 }
 
 @end
