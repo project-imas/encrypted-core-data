@@ -8,6 +8,9 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 - Upgraded to SqlCipher v3.1.0 
 - Moved away from OpenSSL to Apple's, FIPS compliant, CommonCrypto
 - Better unit test support
+- Better SQLite cache support
+- Support for more sort descriptors
+- Closed many of the outstanding issues
 
 # Vulnerabilities Addressed
 
