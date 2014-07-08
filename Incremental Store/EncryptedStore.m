@@ -87,7 +87,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     NSURL *databaseURL;
     if([options objectForKey:EncryptedStoreDatabaseLocation] != nil) {
-        databaseURL = [databaseURL initFileURLWithPath:[options objectForKey:EncryptedStoreDatabaseLocation]];
+        databaseURL = [[NSURL alloc] initFileURLWithPath:[options objectForKey:EncryptedStoreDatabaseLocation]];
     } else {
         NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
