@@ -2407,7 +2407,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
         else if (!value || value == [NSNull null]) {
-            *bindings = value;
+            *bindings = nil;
             *operand = @"NULL";
         }
         else {
