@@ -11,6 +11,7 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 - Better SQLite cache support
 - Support for more sort descriptors
 - Closed many of the outstanding issues
+- Tested working in iOS 6.0 - 7.1
 
 # Vulnerabilities Addressed
 
@@ -41,6 +42,8 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 * _Note:_ Along with the move to CommonCrypto, we've updated the version of SQLCipher included as a submodule from v2.0.6 to v3.1.0. Databases created with v2.0.6 will not be able to be read directly by v3.1.0, and support for legacy database migration is not yet supported by ECD.
 
 # Using EncryptedStore
+
+EncryptedStore is known to work successfully on iOS versions 6.0 through 7.1.
 
 If you wish to set a custom cache size and/or custom database URL:
 create an NSDictionary to set the options for your EncryptedStore, replacing customPasscode, customCacheSize, and/or customDatabaseURL:
