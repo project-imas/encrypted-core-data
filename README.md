@@ -23,8 +23,6 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 
 # Project Setup
   * When creating the project make sure **Use Core Data** is selected
-  * Follow the [SQLCipher for iOS](http://sqlcipher.net/ios-tutorial/) setup guide
-    * __Encrypted Core Data no longer uses OpenSSL for SQLCipher's encryption mechanism.__ (See below)
   * Switch into your project's root directory and checkout the encrypted-core-data project code
 ```
     cd ~/Documents/code/YourApp
