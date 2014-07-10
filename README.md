@@ -35,7 +35,7 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 
   * SQLCipher is added as a git submodule within ECD. A `git submodule init` and `git submodule update` should populate the sqlcipher submodule directory, where the `sqlcipher.xcodeproj` can be found and added to your project.
   * To use CommonCrypto with SQLCipher in Xcode:
-    - add the compiler flag `-DSQLCIPHER_CRYPTO_CC` under the sqlcipher project settings > Build Settings > Custom Compiler Flags > Other C Flags
+    - add the compiler flags `-DSQLCIPHER_CRYPTO_CC` and `-DSQLITE_HAS_CODEC` under the sqlcipher project settings > Build Settings > Custom Compiler Flags > Other C Flags
     - Under your application's project settings > Build Phases, add `sqlcipher` to Target Dependencies, and `libsqlcipher.a` and `Security.framework` to Link Binary With Libraries.
     
 * _Note:_ Along with the move to CommonCrypto, we've updated the version of SQLCipher included as a submodule from v2.0.6 to v3.1.0. Databases created with v2.0.6 will not be able to be read directly by v3.1.0, and support for legacy database migration is not yet supported by ECD.
