@@ -629,4 +629,48 @@
                  @"The array was not sorted properly (case-sensitive).");
 }
 
+-(void)test_predicateForObjectRelation_singleDepth {
+    NSError __block *error = nil;
+    NSUInteger count = 3;
+    NSFetchRequest __block *request = nil;
+    [self createUsersWithTagsDictionary:count];
+    
+    request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
+    NSArray *tags = [context executeFetchRequest:request error:&error];
+    
+    [tags enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        error = nil;
+        request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+        [request setPredicate:
+         [NSPredicate predicateWithFormat:@"ANY hasTags = %@",obj]];
+        NSArray *users = [context executeFetchRequest:request error:&error];
+        STAssertNil(error, @"Unable to perform fetch request.");
+        STAssertEquals([users count], count, @"Invalid number of results.");
+        NSManagedObject *user = [users lastObject];
+        STAssertNotNil(user, @"No object found.");
+    }];
+}
+
+-(void)test_predicateForObjectRelation_multipleDepth {
+    NSError __block *error = nil;
+    NSUInteger count = 3;
+    NSFetchRequest __block *request = nil;
+    [self createUsersWithTagsDictionary:count];
+    
+    request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
+    NSArray *tags = [context executeFetchRequest:request error:&error];
+    
+    [tags enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        error = nil;
+        request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+        [request setPredicate:
+         [NSPredicate predicateWithFormat:@"ANY hasTags.hasUsers.hasTags = %@",obj]];
+        NSArray *users = [context executeFetchRequest:request error:&error];
+        STAssertNil(error, @"Unable to perform fetch request.");
+        STAssertEquals([users count], count, @"Invalid number of results.");
+        NSManagedObject *user = [users lastObject];
+        STAssertNotNil(user, @"No object found.");
+    }];
+}
+
 @end
