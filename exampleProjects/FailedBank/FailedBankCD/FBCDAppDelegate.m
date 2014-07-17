@@ -26,33 +26,13 @@
 
     NSError *error;
     
-    // Test listing all FailedBankInfos from the store
-//    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
-//    NSEntityDescription *entity = [NSEntityDescription entityForName:@"FailedBankInfo"
-//                                              inManagedObjectContext:self.managedObjectContext];
-//    [fetchRequest setEntity:entity];
-//    NSArray *fetchedObjects = [self.managedObjectContext executeFetchRequest:fetchRequest error:&error];
-//    for (NSManagedObject *info in fetchedObjects) {
-//        [[info dictionaryWithValuesForKeys:@[@"name",@"city",@"state"]] enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
-//            NSLog(@"%@: %@\n",key,obj);
-//        }];
-//        
-//        [[((FailedBankInfo *)info).details dictionaryWithValuesForKeys:@[@"zip",@"updateDate",@"closeDate"]] enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
-//            NSLog(@"%@: %@\n",key,obj);
-//        }];
-//        
-//        for (Tag *tag in ((FailedBankInfo*)info).details.tags) {
-//            NSLog(@"Tag name: %@",tag.name);
-//        }
-//    }
-    
     NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"FailedBankDetails"];
     NSArray *fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
-    NSLog(@"%@",fetched);
-    req = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
-    [req setPredicate:[NSPredicate predicateWithFormat:@"ANY detail = %@",[fetched firstObject]]];
+    NSDate *this = [[fetched lastObject] closeDate];
+    
+    [req setPredicate:[NSPredicate predicateWithFormat:@"ANY closeDate < %@",this]];
     fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
-    NSLog(@"%@",fetched);
+    NSLog(@"%d---%@",[this timeIntervalSince1970] == [[[fetched lastObject] closeDate] timeIntervalSince1970],fetched);
     
     // Override point for customization after application launch.
     UINavigationController *navigationController = (UINavigationController *)self.window.rootViewController;

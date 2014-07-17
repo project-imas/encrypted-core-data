@@ -1488,7 +1488,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     dispatch_once(&token, ^{
         debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
     });
-//    if (debug)
+    if (debug)
     {NSLog(@"SQL DEBUG: %@", query); }
     sqlite3_stmt *statement = NULL;
     if (sqlite3_prepare_v2(database, [query UTF8String], -1, &statement, NULL) == SQLITE_OK) { return statement; }
@@ -2110,12 +2110,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
             }
         }
-        else if([rightBindings class] != [NSManagedObject class] && [[operator objectForKey:@"operator"] isEqualToString:@"="]) {
-            query = [@[leftOperand, [operator objectForKey:@"operator"], rightBindings] componentsJoinedByString:@" "];
-            // If we're including the right bindings directly in the query string, it should not be included
-            // in the returned bindings. Otherwise, the indices passed to sqlite will be off and it *will* break stuff
-            rightBindings = nil;
-        }
         else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
         }
@@ -2152,7 +2146,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             query = entityWhere;
         }
     }
-    
     return @{ @"query": query,
               @"bindings": bindings };
 }
@@ -2403,7 +2396,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                         [parameters componentsJoinedByString:@", "]];
         }
         else if ([value isKindOfClass:[NSDate class]]) {
-            value = [NSString stringWithFormat:@"%f", [value timeIntervalSince1970]];
             *bindings = value;
             *operand = @"?";
         }
@@ -2439,8 +2431,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 // Just look for an id we know will never match
                 *bindings = @"-1";
             } else {
-                unsigned long long key = [[self referenceObjectForObjectID:objectId] unsignedLongLongValue];
-                *bindings = [NSString stringWithFormat:@"%llu",key];
+                *bindings = value;
             }
         }
         else if (!value || value == [NSNull null]) {
