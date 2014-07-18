@@ -87,14 +87,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     NSURL *databaseURL;
     if([options objectForKey:EncryptedStoreDatabaseLocation] != nil) {
-        databaseURL = [[NSURL alloc] initFileURLWithPath:[options objectForKey:EncryptedStoreDatabaseLocation]];
+        databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
     } else {
         NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
         databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
+
     }
+    
+        NSLog(@"!!!%@",databaseURL);
     
     NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
@@ -107,7 +110,21 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     return persistentCoordinator;
 }
 
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel :(NSString *)passcode
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel {
+    
+    NSMutableDictionary *newOptions = [NSMutableDictionary dictionary];
+    [newOptions setValue:[NSString stringWithUTF8String:options->passphrase] forKey:EncryptedStorePassphraseKey];
+    
+    if (options->database_location)
+        [newOptions setValue:[NSString stringWithUTF8String:options->database_location] forKey:EncryptedStoreDatabaseLocation];
+    
+    if (options->cache_size)
+        [newOptions setValue:[NSNumber numberWithInt:*(options->cache_size)] forKey:EncryptedStoreCacheSize];
+    
+    return [self makeStoreWithOptions:newOptions managedObjectModel:objModel];
+}
+
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode
 {
     NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
     

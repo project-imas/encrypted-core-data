@@ -9,6 +9,12 @@
 #import <objc/runtime.h>
 #import <CoreData/CoreData.h>
 
+typedef struct _options {
+    char * passphrase;
+    char * database_location;
+    int * cache_size;
+} EncryptedStoreOptions;
+
 extern NSString * const EncryptedStoreType;
 extern NSString * const EncryptedStorePassphraseKey;
 extern NSString * const EncryptedStoreErrorDomain;
@@ -17,9 +23,10 @@ extern NSString * const EncryptedStoreDatabaseLocation;
 extern NSString * const EncryptedStoreCacheSize;
 
 @interface EncryptedStore : NSIncrementalStore
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
-                                           :(NSString *) passcode;
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel;
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel;
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
+                                   passcode:(NSString *) passcode;
 
 
 - (NSNumber *)maximumObjectIDInTable:(NSString *)table;
