@@ -12,7 +12,15 @@
 #import "FailedBankDetails.h"
 #import "EncryptedStore.h"
 
-#define USE_ENCRYPTED_STORE 1
+/*
+ *  USE_ENCRYPTED_STORE
+ *      0 : Core Data
+ *      1 : EncryptedStore makeStore:passcode:
+ *      2 : EncryptedStore makeStoreWithOptions:managedObjectModel:
+ *      3 : EncryptedStore makeStoreWithStructOptions:managedObjectModel:
+ */
+
+#define USE_ENCRYPTED_STORE 3
 
 @implementation FBCDAppDelegate
 
@@ -24,15 +32,17 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
 
-    NSError *error;
     
-    NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"FailedBankDetails"];
-    NSArray *fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
-    NSDate *this = [[fetched lastObject] closeDate];
     
-    [req setPredicate:[NSPredicate predicateWithFormat:@"ANY closeDate < %@",this]];
-    fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
-    NSLog(@"%d---%@",[this timeIntervalSince1970] == [[[fetched lastObject] closeDate] timeIntervalSince1970],fetched);
+//    NSError *error;
+//    
+//    NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"FailedBankDetails"];
+//    NSArray *fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
+//    NSDate *this = [[fetched lastObject] closeDate];
+//    
+//    [req setPredicate:[NSPredicate predicateWithFormat:@"ANY closeDate < %@",this]];
+//    fetched = [[self managedObjectContext] executeFetchRequest:req error:&error];
+//    NSLog(@"%d---%@",[this timeIntervalSince1970] == [[[fetched lastObject] closeDate] timeIntervalSince1970],fetched);
     
     // Override point for customization after application launch.
     UINavigationController *navigationController = (UINavigationController *)self.window.rootViewController;
@@ -94,8 +104,34 @@
     }
 
     NSPersistentStoreCoordinator *coordinator;
-#if USE_ENCRYPTED_STORE
-    coordinator = [EncryptedStore makeStore:[self managedObjectModel]:@"SOME_PASSWORD"];
+    
+#if USE_ENCRYPTED_STORE == 1
+    coordinator = [EncryptedStore makeStore:[self managedObjectModel] passcode:@"SOME_PASSWORD"];
+#elif USE_ENCRYPTED_STORE == 2
+    
+    [[NSFileManager defaultManager] createDirectoryAtURL:[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] withIntermediateDirectories:NO attributes:nil error:nil];
+    
+    NSURL *databaseURL = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] URLByAppendingPathComponent:[NSString stringWithFormat:@"FailedBankCD.sqlite"]];
+    
+    int cache = 2345;
+    EncryptedStoreOptions options;
+    options.passphrase = "SOME_PASSWORD";
+    options.database_location = (char*)[[databaseURL description] UTF8String];
+    options.cache_size = &cache;
+    
+    coordinator = [EncryptedStore makeStoreWithStructOptions:&options managedObjectModel:[self managedObjectModel]];
+
+#elif USE_ENCRYPTED_STORE == 3
+    
+    [[NSFileManager defaultManager] createDirectoryAtURL:[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] withIntermediateDirectories:NO attributes:nil error:nil];
+    
+    NSURL *databaseURL = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] URLByAppendingPathComponent:[NSString stringWithFormat:@"FailedBankCD.sqlite"]];
+    
+    coordinator = [EncryptedStore makeStoreWithOptions:@{
+                    EncryptedStorePassphraseKey : @"SOME_PASSWORD",
+                    EncryptedStoreDatabaseLocation : [databaseURL description],
+                    EncryptedStoreCacheSize : @(2345)}
+                                    managedObjectModel:[self managedObjectModel]];
 #else
     coordinator = [self persistentStoreCoordinator];
 #endif
