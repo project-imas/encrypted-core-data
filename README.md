@@ -39,6 +39,11 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
     
 * _Note:_ Along with the move to CommonCrypto, we've updated the version of SQLCipher included as a submodule from v2.0.6 to v3.1.0. Databases created with v2.0.6 will not be able to be read directly by v3.1.0, and support for legacy database migration is not yet supported by ECD.
 
+# Installation via CocoaPod
+* Add `pod 'EncryptedCoreData', :git => 'https://github.com/project-imas/encrypted-core-data.git'` to your Podfile
+* Run `pod install`
+* In your application delegate source file (AppDelegate.m), add `import "EncryptedStore.h"`
+
 # Using EncryptedStore
 
 EncryptedStore is known to work successfully on iOS versions 6.0 through 7.1.
