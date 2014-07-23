@@ -32,11 +32,12 @@
         NSURL *databaseURL = [applicationSupportURL URLByAppendingPathComponent:@"database.sqlite"];
         NSError *error = nil;
         
-        [[NSFileManager defaultManager] removeItemAtURL:databaseURL error:&error];
+//        [[NSFileManager defaultManager] removeItemAtURL:databaseURL error:&error];
         
         NSDictionary *options = @{
             EncryptedStorePassphraseKey : @"DB_KEY_HERE",
-            NSMigratePersistentStoresAutomaticallyOption : @YES,
+//            EncryptedStoreDatabaseLocation : databaseURL,
+//            NSMigratePersistentStoresAutomaticallyOption : @YES,
             NSInferMappingModelAutomaticallyOption : @YES
         };
         NSPersistentStore *store = [coordinator
@@ -45,6 +46,8 @@
                                     URL:databaseURL
                                     options:options
                                     error:&error];
+//        coordinator = [EncryptedStore makeStoreWithOptions:options managedObjectModel:model];
+        
         NSAssert(store, @"Unable to add persistent store!\n%@", error);
         
     });

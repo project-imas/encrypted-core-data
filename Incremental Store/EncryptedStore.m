@@ -85,10 +85,21 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
     
+    BOOL backup = YES;
     NSURL *databaseURL;
-    if([options objectForKey:EncryptedStoreDatabaseLocation] != nil) {
-        databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
-    } else {
+    id dburl = [options objectForKey:EncryptedStoreDatabaseLocation];
+    if(dburl != nil) {
+        if ([dburl isKindOfClass:[NSString class]]){
+            databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
+            backup = NO;
+        }
+        else if ([dburl isKindOfClass:[NSURL class]]){
+            databaseURL = dburl;
+            backup = NO;
+        }
+    }
+    
+    if (backup){
         NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
@@ -96,8 +107,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
 
     }
-    
-        NSLog(@"!!!%@",databaseURL);
     
     NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
