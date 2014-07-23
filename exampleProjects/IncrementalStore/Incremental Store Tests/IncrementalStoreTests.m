@@ -4,7 +4,6 @@
 //
 // Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 //
-
 #import <SenTestingKit/SenTestingKit.h>
 #import <CoreData/CoreData.h>
 #import "EncryptedStore.h"
@@ -102,8 +101,8 @@
     // insert posts and save
     for (NSUInteger i = 0; i < count; i++) {
         id object = [NSEntityDescription insertNewObjectForEntityForName:@"Post" inManagedObjectContext:context];
-        [object setValue:@"Test title" forKey:@"title"];
-        [object setValue:@"Test body." forKey:@"body"];
+        [object setValue:@"adventures" forKey:@"title"];
+        [object setValue:@"fundamental" forKey:@"body"];
         [object setValue:user forKey:@"user"];
     }
     error = nil;
@@ -671,6 +670,39 @@
         NSManagedObject *user = [users lastObject];
         STAssertNotNil(user, @"No object found.");
     }];
+}
+
+-(void)test_predicateEqualityComparison {
+    NSError __block *error = nil;
+    NSUInteger count = 3;
+    NSFetchRequest __block *req = nil;
+    NSArray __block *results = nil;
+    
+    NSManagedObject *user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+    [user setValue:@"Maggie" forKey:@"name"];
+    [user setValue:@(50) forKey:@"age"];
+    [context save:&error];
+    STAssertNil(error, @"Error saving database.");
+    
+    [self createPosts:count forUser:user];
+    
+    [@[[NSPredicate predicateWithFormat:@"name = %@",@"Maggie"],
+       [NSPredicate predicateWithFormat:@"name == %@",@"Maggie"],
+       [NSPredicate predicateWithFormat:@"age = %@",@(50)],
+       [NSPredicate predicateWithFormat:@"age == %@",@(50)]]
+     enumerateObjectsUsingBlock:^(NSPredicate *pred, NSUInteger idx, BOOL *stop) {
+    
+        req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+        [req setPredicate:pred];
+        results = [context executeFetchRequest:req error:&error];
+        STAssertNil(error, @"Error in fetch request.");
+        STAssertFalse([results count] == 0, @"No results found");
+         NSManagedObject *u = [results firstObject];
+        STAssertEqualObjects([u valueForKey:@"name"], @"Maggie", @"Fetch error.");
+        STAssertEqualObjects([u valueForKey:@"age"], @(50), @"Fetch error.");
+         
+     }];
+    
 }
 
 @end
