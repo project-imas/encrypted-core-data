@@ -1820,6 +1820,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
               forKey:(NSString *)key
          toStatement:(sqlite3_stmt *)statement
              atIndex:(int)index {
+    
     if (value && ![value isKindOfClass:[NSNull class]]) {
         if ([property isKindOfClass:[NSAttributeDescription class]]) {
             NSAttributeType type = [(id)property attributeType];
@@ -2176,11 +2177,18 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_stmt *)statement {
     if (statement == NULL) { return; }
     NSArray *bindings = [clause objectForKey:@"bindings"];
+    
     [bindings enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         
         // string
         if ([obj isKindOfClass:[NSString class]]) {
-            sqlite3_bind_text(statement, (idx + 1), [obj UTF8String], -1, SQLITE_TRANSIENT);
+            const char* str = [obj UTF8String];
+            int len = [obj length];
+            
+            if (str[0] == '\'' && str[len-1] == '\'')
+                sqlite3_bind_text(statement, (idx + 1), [obj UTF8String]+1, [(NSString*)obj length]-2, SQLITE_TRANSIENT);
+            else
+                sqlite3_bind_text(statement, (idx + 1), [obj UTF8String], [(NSString*)obj length], SQLITE_TRANSIENT);
         }
         
         // number
