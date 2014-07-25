@@ -23,13 +23,14 @@ extern NSString * const EncryptedStoreCacheSize;
 
 
 - (NSNumber *)maximumObjectIDInTable:(NSString *)table;
-- (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request;
+- (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request andContext: (NSManagedObjectContext*) context;
 - (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_stmt *)statement;
-- (NSString *)columnsClauseWithProperties:(NSArray *)properties;
+- (NSString *)columnsClauseWithProperties:(NSArray *)properties andTableName: (NSString *) tableName;
 - (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray forRelationship:(BOOL)forRelationship;
 - (id)valueForProperty:(NSPropertyDescription *)property
            inStatement:(sqlite3_stmt *)statement
-               atIndex:(int)index;
+               atIndex:(int)index
+             forEntity:(NSEntityDescription*)entity;
 - (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship;
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship;
 - (void)bindProperty:(NSPropertyDescription *)property
