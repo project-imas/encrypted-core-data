@@ -42,7 +42,7 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 # Installation via CocoaPod
 * Add `pod 'EncryptedCoreData', :git => 'https://github.com/project-imas/encrypted-core-data.git'` to your Podfile
 * Run `pod install`
-* In your application delegate source file (AppDelegate.m), add `import "EncryptedStore.h"`
+* In your application delegate source file (AppDelegate.m), add `#import "EncryptedStore.h"`
 
 # Using EncryptedStore
 
