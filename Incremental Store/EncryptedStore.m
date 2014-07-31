@@ -100,7 +100,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     }
     
     if (backup){
-        NSString *dbName = NSBundle.mainBundle.infoDictionary [@"CFBundleDisplayName"];
+        NSString *dbNameKey = (__bridge NSString *)kCFBundleNameKey;
+        NSString *dbName = NSBundle.mainBundle.infoDictionary[dbNameKey];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
         [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
