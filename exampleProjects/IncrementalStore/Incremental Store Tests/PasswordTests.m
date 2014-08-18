@@ -121,6 +121,7 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     
     STAssertNil(store, @"Nil context");
     STAssertEqualObjects(error.domain, EncryptedStoreErrorDomain, @"Incorrect error domain");
+    STAssertEquals(error.code, EncryptedStoreErrorIncorrectPasscode, @"Incorrect error code");
     
     NSError *sqliteError = error.userInfo[NSUnderlyingErrorKey];
     STAssertNotNil(sqliteError, @"Nil SQLite error");
