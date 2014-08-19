@@ -264,7 +264,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
                 NSEntityDescription * entityToFecth = nil;
                 if (shouldFetchEntityType) {
-                    NSUInteger entityType = sqlite3_column_int(statement, 1);
+                    NSUInteger entityType = sqlite3_column_int64(statement, 1);
                     entityToFecth = [entityTypeCache objectForKey:@(entityType)];
                 }
                 if (!entityToFecth) {
@@ -1035,11 +1035,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (destinationEntity.subentities.count > 0) {
         string = [NSString stringWithFormat:
                   @"INSERT INTO %@ ('_entityType', %@)"
-                  @"SELECT %u, %@ "
+                  @"SELECT %lu, %@ "
                   @"FROM %@",
                   destinationTableName,
                   [destinationColumns componentsJoinedByString:@", "],
-                  destinationEntity.name.hash,
+                  (unsigned long) destinationEntity.name.hash,
                   [sourceColumns componentsJoinedByString:@", "],
                   temporaryTableName];
     } else {
@@ -1173,10 +1173,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSString *string = nil;
         if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
-                      @"INSERT INTO %@ ('_entityType', %@) VALUES(%u, %@);",
+                      @"INSERT INTO %@ ('_entityType', %@) VALUES(%lu, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
-                      entity.name.hash,
+                      (unsigned long) entity.name.hash,
                       [[NSArray cmdArrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
         } else {
             string = [NSString stringWithFormat:
@@ -2163,9 +2163,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                            [self tableNameForEntity:request.entity],
                            [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
         } else {
-            entityWhere = [NSString stringWithFormat:@"%@._entityType = %u",
+            entityWhere = [NSString stringWithFormat:@"%@._entityType = %lu",
                            [self tableNameForEntity:request.entity],
-                           request.entityName.hash];
+                           (unsigned long) request.entityName.hash];
         }
         
         if (query.length > 0) {
@@ -2379,9 +2379,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                          entityTableName];
                 if (rel.destinationEntity.superentity != nil) {
                     value = [value stringByAppendingString:
-                             [NSString stringWithFormat:@" AND [%@]._entityType = %u",
+                             [NSString stringWithFormat:@" AND [%@]._entityType = %lu",
                               rel.name,
-                              rel.destinationEntity.name.hash]];
+                              (unsigned long) rel.destinationEntity.name.hash]];
                 }
                 value = [value stringByAppendingString:@")"];
                 foundPredicate = YES;
