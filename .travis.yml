@@ -1,0 +1,5 @@
+language: objective-c
+xcode_project: exampleProjects/IncrementalStore/Incremental Store.xcodeproj
+xcode_scheme: Incremental Store Demo
+xcode_sdk: iphonesimulator
+
