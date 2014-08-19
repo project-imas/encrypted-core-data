@@ -491,9 +491,9 @@
     
     // fetch users
     NSArray *predicates = @[
-    [NSPredicate predicateWithFormat:@"ANY posts.title like[cd] %@",@"*title"],
-    [NSPredicate predicateWithFormat:@"ANY posts.title contains[cd] %@", @"title"],
-    [NSPredicate predicateWithFormat:@"ANY posts.title endswith[cd] %@", @"title"]
+    [NSPredicate predicateWithFormat:@"ANY posts.title like[cd] %@",@"*adventures"],
+    [NSPredicate predicateWithFormat:@"ANY posts.title contains[cd] %@", @"adventure"],
+    [NSPredicate predicateWithFormat:@"ANY posts.title endswith[cd] %@", @"ventures"]
     ];
     [predicates enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         errorBlock = nil;
