@@ -262,15 +262,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
                 unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
-                NSEntityDescription * entityToFecth = nil;
+                NSEntityDescription * entityToFetch = nil;
                 if (shouldFetchEntityType) {
                     NSUInteger entityType = sqlite3_column_int64(statement, 1);
-                    entityToFecth = [entityTypeCache objectForKey:@(entityType)];
+                    entityToFetch = [entityTypeCache objectForKey:@(entityType)];
                 }
-                if (!entityToFecth) {
-                    entityToFecth = entity;
+                if (!entityToFetch) {
+                    entityToFetch = entity;
                 }
-                NSManagedObjectID *objectID = [self newObjectIDForEntity:entityToFecth referenceObject:@(primaryKey)];
+                NSManagedObjectID *objectID = [self newObjectIDForEntity:entityToFetch referenceObject:@(primaryKey)];
                 if (type == NSManagedObjectIDResultType) { [results addObject:objectID]; }
                 else {
                     id object = [context objectWithID:objectID];
