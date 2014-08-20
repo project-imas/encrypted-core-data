@@ -533,7 +533,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     if (sqlite3_open([[[self URL] path] UTF8String], &database) == SQLITE_OK) {
         
         // passphrase
-        if (![self configureDatabasePassphrase]) {
+        if (![self configureDatabasePassphrase:error]) {
+            sqlite3_close(database);
+            database = NULL;
+            return NO;
+        }
+        if (![self configureDatabaseCacheSize]) {
             if (error) { *error = [self databaseError]; }
             sqlite3_close(database);
             database = NULL;
@@ -686,21 +691,45 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 #pragma mark - passphrase
 
-- (BOOL)configureDatabasePassphrase {
+- (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
-    NSNumber *cacheSize = [[self options] objectForKey:EncryptedStoreCacheSize];
     
     if (passphrase == nil) return NO;
     const char *string = [passphrase UTF8String];
     int status = sqlite3_key(database, string, strlen(string));
     string = NULL;
     passphrase = nil;
-    if(cacheSize != nil){
+    
+    if (status == SQLITE_OK) {
+        // Check if the password is correct as per http://sqlcipher.net/sqlcipher-api/#key section "Testing the Key"
+        status = sqlite3_exec(database, (const char*) "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
+        if (status == SQLITE_OK) {
+            // Correct passcode
+        } else {
+            // Incorrect passcode
+            if (error) {
+                NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"Incorrect passcode"} mutableCopy];
+                // If we have a DB error keep it for extra info
+                NSError *underlyingError = [self databaseError];
+                if (underlyingError) {
+                    userInfo[NSUnderlyingErrorKey] = underlyingError;
+                }
+                *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
+            }
+        }
+    }
+    return (status == SQLITE_OK);
+}
+
+-(BOOL)configureDatabaseCacheSize
+{
+    NSNumber *cacheSize = [[self options] objectForKey:EncryptedStoreCacheSize];
+    if (cacheSize != nil) {
         NSString *string = [NSString stringWithFormat:@"PRAGMA cache_size = %d;", [cacheSize intValue]];
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         sqlite3_step(statement);
         
-        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK){
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
             // TO-DO: handle error with statement
             NSLog(@"Error: statement is NULL or could not be finalized");
             return NO;
@@ -710,7 +739,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             sqlite3_stmt *checkStatement = [self preparedStatementForQuery:string];
             sqlite3_step(checkStatement);
             int actualCacheSize = sqlite3_column_int(checkStatement,0);
-            if(actualCacheSize == [cacheSize intValue]) {
+            if (actualCacheSize == [cacheSize intValue]) {
                 // succeeded
                 NSLog(@"Cache size successfully set to %d", actualCacheSize);
             } else {
@@ -720,7 +749,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             }
         }
     }
-    return (status == SQLITE_OK);
+    return YES;
 }
 
 #pragma mark - user functions

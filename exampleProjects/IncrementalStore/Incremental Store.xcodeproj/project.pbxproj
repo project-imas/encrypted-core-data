@@ -28,6 +28,7 @@
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		443CEAE619A2915200F270FE /* PasswordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 443CEAE519A2915200F270FE /* PasswordTests.m */; };
 		661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
 		661D95AF1954821900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
@@ -87,6 +88,7 @@
 		3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3EB644001799EE1E00392BFF /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3EB644011799EE1E00392BFF /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
+		443CEAE519A2915200F270FE /* PasswordTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PasswordTests.m; sourceTree = "<group>"; };
 		661D95AE1954821900581737 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -181,6 +183,7 @@
 		3BD5F02915EE5E7200333320 /* Incremental Store Tests */ = {
 			isa = PBXGroup;
 			children = (
+				443CEAE519A2915200F270FE /* PasswordTests.m */,
 				3BD5F03015EE5E7200333320 /* IncrementalStoreTests.m */,
 				3BD5F02A15EE5E7200333320 /* Supporting Files */,
 			);
@@ -372,6 +375,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				443CEAE619A2915200F270FE /* PasswordTests.m in Sources */,
 				661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */,
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
 				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
