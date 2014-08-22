@@ -2232,21 +2232,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         // number
         else if ([obj isKindOfClass:[NSNumber class]]) {
-            const char *type = [obj objCType];
-            if (strcmp(type, @encode(BOOL)) == 0 ||
-                strcmp(type, @encode(int)) == 0 ||
-                strcmp(type, @encode(short)) == 0 ||
-                strcmp(type, @encode(long)) == 0 ||
-                strcmp(type, @encode(long long)) == 0 ||
-                strcmp(type, @encode(unsigned short)) == 0 ||
-                strcmp(type, @encode(unsigned int)) == 0 ||
-                strcmp(type, @encode(unsigned long)) == 0 ||
-                strcmp(type, @encode(unsigned long long)) == 0) {
-                sqlite3_bind_int64(statement, (idx + 1), [obj longLongValue]);
-            }
-            else if (strcmp(type, @encode(double)) == 0 ||
-                     strcmp(type, @encode(float)) == 0) {
-                sqlite3_bind_double(statement, (idx + 1), [obj doubleValue]);
+            
+            switch (CFNumberGetType((CFNumberRef)obj)) {
+                case kCFNumberFloat32Type:
+                case kCFNumberFloat64Type:
+                case kCFNumberFloatType:
+                case kCFNumberDoubleType:
+                case kCFNumberCGFloatType:
+                    sqlite3_bind_double(statement, (idx + 1), [obj doubleValue]);
+                    break;
+                    
+                default:
+                    sqlite3_bind_int64(statement, (idx + 1), [obj longLongValue]);
+                    break;
             }
         }
         
