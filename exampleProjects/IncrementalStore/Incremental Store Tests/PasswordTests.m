@@ -126,7 +126,7 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     NSError *sqliteError = error.userInfo[NSUnderlyingErrorKey];
     STAssertNotNil(sqliteError, @"Nil SQLite error");
     STAssertEqualObjects(sqliteError.domain, NSSQLiteErrorDomain, @"Incorrect error SQLite error domain");
-    STAssertEquals(sqliteError.code, SQLITE_NOTADB, @"Incorrect error SQLite error code");
+    STAssertEquals(sqliteError.code, (NSInteger)SQLITE_NOTADB, @"Incorrect error SQLite error code");
     [self cleanUp:store];
     
     // Try again once more to be sure it still opens
