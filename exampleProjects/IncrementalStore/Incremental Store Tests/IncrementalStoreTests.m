@@ -95,6 +95,42 @@
     
 }
 
+- (void)createUsers:(NSUInteger)count adminCount:(NSUInteger)adminCount {
+    NSError *error;
+    
+    // insert users and save
+    for (NSUInteger i = 0; i < count; i++) {
+        id object = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+        [object setValue:[NSString stringWithFormat:@"%lu username",(unsigned long)i] forKey:@"name"];
+    }
+    // insert admin users and save
+    for (NSUInteger i = 0; i < adminCount; i++) {
+        id object = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+        [object setValue:[NSString stringWithFormat:@"%lu username",(unsigned long)i] forKey:@"name"];
+        [object setValue:@(YES) forKeyPath:@"admin"];
+    }
+    error = nil;
+    BOOL save = [context save:&error];
+    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    
+    // test count
+    error = nil;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    request.predicate = [NSPredicate predicateWithFormat:@"admin == NO || admin == nil"];
+    NSUInteger testCount = [context countForFetchRequest:request error:&error];
+    STAssertNil(error, @"Could not execute fetch request.");
+    STAssertEquals(testCount, count, @"The number of users is wrong.");
+    
+    // test admin count
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    request.predicate = [NSPredicate predicateWithFormat:@"admin == YES"];
+    testCount = [context countForFetchRequest:request error:&error];
+    STAssertNil(error, @"Could not execute fetch request.");
+    STAssertEquals(testCount, adminCount, @"The number of admin users is wrong.");
+    
+}
+
 - (void)createPosts:(NSUInteger)count forUser:(NSManagedObject *)user {
     NSError *error;
     
@@ -244,6 +280,22 @@
 
 - (void)test_createMoreUsers {
     [self createUsers:1000];
+}
+
+- (void)test_thereShouldBeNoUsersOrAdminUsers {
+    [self createUsers:0 adminCount:0];
+}
+
+- (void)test_createOneUserAndOneAdminUsers {
+    [self createUsers:1 adminCount:1];
+}
+
+- (void)test_createSomeUsersAndSomeAdminUsers {
+    [self createUsers:10 adminCount:10];
+}
+
+- (void)test_createMoreUsersAndMoreAdminUsers {
+    [self createUsers:1000 adminCount:10];
 }
 
 - (void)test_createAndDeleteSomeUsers {
