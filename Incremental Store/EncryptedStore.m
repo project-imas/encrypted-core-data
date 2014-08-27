@@ -13,7 +13,7 @@
 
 #import "EncryptedStore.h"
 
-NSString * const EncryptedStoreType = @"EncryptedStore";
+  NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
