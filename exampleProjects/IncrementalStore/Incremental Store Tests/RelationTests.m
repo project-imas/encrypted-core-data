@@ -118,39 +118,110 @@
     ISDRoot *root = [ISDRoot insertInManagedObjectContext:context];
     root.name = @"root";
     
-    // Insert child A
-    ISDChildA *childA = [ISDChildA insertInManagedObjectContext:context];
-    childA.attributeA = @"String for child A - 1";
-    childA.oneToManyInverse = root;
+    /////////////////
+    // One-to-many //
+    /////////////////
     
-    childA = [ISDChildA insertInManagedObjectContext:context];
-    childA.attributeA = @"String for child A - 2";
-    childA.oneToManyInverse = root;
+    // Insert child A
+    ISDChildA *childAOneToMany = [ISDChildA insertInManagedObjectContext:context];
+    childAOneToMany.attributeA = @"String for child A - 1";
+    childAOneToMany.oneToManyInverse = root;
+    
+    childAOneToMany = [ISDChildA insertInManagedObjectContext:context];
+    childAOneToMany.attributeA = @"String for child A - 2";
+    childAOneToMany.oneToManyInverse = root;
     
     // Insert child B
-    ISDChildB *childB = [ISDChildB insertInManagedObjectContext:context];
-    childB.attributeB = @"String for child B - 1";
-    childB.oneToManyInverse = root;
+    ISDChildB *childBOneToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBOneToMany.attributeB = @"String for child B - 1";
+    childBOneToMany.oneToManyInverse = root;
+    
+    ////////////////
+    // One-to-one //
+    ////////////////
+    
+    // Insert child A
+    ISDChildA *childAOneToOne = [ISDChildA insertInManagedObjectContext:context];
+    childAOneToOne.attributeA = @"String for child A - 3";
+    childAOneToOne.oneToOneInverse = root;
+    
+    //////////////////
+    // Many-to-Many //
+    //////////////////
+    ISDRoot *manyRoot = [ISDRoot insertInManagedObjectContext:context];
+    manyRoot.name = @"manyRoot";
+    
+    // Insert child A
+    ISDChildA *childAManyToMany = [ISDChildA insertInManagedObjectContext:context];
+    childAManyToMany.attributeA = @"String for child A - 4";
+    [childAManyToMany addManyToManyInverseObject:root];
+    [childAManyToMany addManyToManyInverseObject:manyRoot];
+    
+    childAManyToMany = [ISDChildA insertInManagedObjectContext:context];
+    childAManyToMany.attributeA = @"String for child A - 5";
+    [childAManyToMany addManyToManyInverseObject:root];
+    [childAManyToMany addManyToManyInverseObject:manyRoot];
+    
+    // Insert child B
+    ISDChildB *childBManyToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBManyToMany.attributeB = @"String for child B - 2";
+    [childBManyToMany addManyToManyInverseObject:root];
+    [childBManyToMany addManyToManyInverseObject:manyRoot];
+    
+    childBManyToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBManyToMany.attributeB = @"String for child B - 3";
+    [childBManyToMany addManyToManyInverseObject:root];
+    [childBManyToMany addManyToManyInverseObject:manyRoot];
+    
+    childBManyToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBManyToMany.attributeB = @"String for child B - 4";
+    [childBManyToMany addManyToManyInverseObject:root];
+    [childBManyToMany addManyToManyInverseObject:manyRoot];
+    
     
     // Save
     NSError *error = nil;
     BOOL save = [context save:&error];
     STAssertTrue(save, @"Unable to perform save.\n%@", error);
     
-    // Test from cache
-    NSSet *relations = root.oneToMany;
-    STAssertEquals([relations count], (NSUInteger)3, @"The number of relations is wrong.");
+    // Test one-to-many from cache
+    {
+        NSSet *oneToManyRelations = root.oneToMany;
+        STAssertEquals([oneToManyRelations count], (NSUInteger)3, @"The number of one-to-many relations is wrong.");
+        
+        // Here the counts are correct as the objects are exactly the same as we just inserted
+        NSSet *childrenA = [oneToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
+        NSSet *childrenB = [oneToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
+        
+        // This should be correct as this is how we entered the values in above
+        STAssertEquals([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
+        STAssertEquals([childrenB count], (NSUInteger)1, @"Wrong ChildB count");
+        // Just for fun check the objects
+        STAssertTrue([childrenA containsObject:childAOneToMany], @"Inserted ChildA isn't in the set");
+        STAssertTrue([childrenB anyObject] == childBOneToMany, @"Inserted ChildB object isn't the same");
+    }
     
-    // Here the counts are correct as the objects are exactly the same as we just inserted
-    NSSet *childrenA = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
-    NSSet *childrenB = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
+    // Test one-to-one from cache
+    {
+        STAssertTrue(root.oneToOne == childAOneToOne, @"Inserted one-to-one ChildA isn't the same");
+    }
     
-    // This should be correct as this is how we entered the values in above
-    STAssertEquals([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
-    STAssertEquals([childrenB count], (NSUInteger)1, @"Wrong ChildB count");
-    // JUst for fun check the objects
-    STAssertTrue([childrenA containsObject:childA], @"Inserted ChildA isn't in the set");
-    STAssertTrue([childrenB anyObject] == childB, @"Inserted ChildB object isn't the same");
+    // Test many-to-many from cache
+    {
+        NSSet *manyToManyRelations = root.manyToMany;
+        STAssertEquals([manyToManyRelations count], (NSUInteger)5, @"The number of many-to-many relations is wrong.");
+        
+        // Here the counts are correct as the objects are exactly the same as we just inserted
+        NSSet *childrenA = [manyToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
+        NSSet *childrenB = [manyToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
+        
+        // This should be correct as this is how we entered the values in above
+        STAssertEquals([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
+        STAssertEquals([childrenB count], (NSUInteger)3, @"Wrong ChildB count");
+        // Just for fun check the objects
+        STAssertTrue([childrenA containsObject:childAManyToMany], @"Inserted ChildA isn't in the many-to-many set");
+        STAssertTrue([childrenB containsObject:childBManyToMany], @"Inserted ChildB isn't in the many-to-many set");
+    }
 }
 
 -(ISDRoot *)fetchRootObject
@@ -193,13 +264,72 @@
     [self checkOneToManyWithChildACount:2 childBCount:1];
 }
 
+-(void)testFetchingOneToOneFromCache
+{
+    [self checkOneToOneWithChildA:YES childB:NO];
+}
+
+-(void)testFetchingOneToOneFromDatabase
+{
+    // Make sure we're loading directly from DB
+    [self resetCoordinator];
+    [self createCoordinator];
+    
+    [self checkOneToOneWithChildA:YES childB:NO];
+}
+
+-(void)testFetchingManyToManyFromCache
+{
+    [self checkManyToManyWithChildACount:2 childBCount:3];
+}
+
+-(void)testFetchingManyToManyFromDatabase
+{
+    // Make sure we're loading directly from DB
+    [self resetCoordinator];
+    [self createCoordinator];
+    
+    [self checkManyToManyWithChildACount:2 childBCount:3];
+}
+
 #pragma mark - Check methods
 
-/// Checks that the root object has the correct number of ChildA and ChildB objects
+/// Checks that the root object has the correct number of one-to-many relational ChildA and ChildB objects
 -(void)checkOneToManyWithChildACount:(NSUInteger)childACount childBCount:(NSUInteger)childBCount
 {
     ISDRoot *fetchedRoot = [self fetchRootObject];
     NSSet *relations = fetchedRoot.oneToMany;
+    STAssertEquals([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
+    
+    NSSet *childrenA = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
+    NSSet *childrenB = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
+    
+    STAssertEquals([childrenA count], childACount, @"Wrong ChildA count");
+    STAssertEquals([childrenB count], childBCount, @"Wrong ChildB count");
+}
+
+/// Checks that the root object has the correct one-to-one relational ChildA/ChildB
+-(void)checkOneToOneWithChildA:(BOOL)childA childB:(BOOL)childB
+{
+    ISDRoot *fetchedRoot = [self fetchRootObject];
+    ISDParent *child = fetchedRoot.oneToOne;
+    STAssertNotNil(child, @"Nil one-to-one relation");
+    
+    if (childA) {
+        STAssertTrue([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        STAssertFalse([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+    }
+    if (childB) {
+        STAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        STAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+    }
+}
+
+/// Checks that the root object has the correct number of many-to-many relational ChildA and ChildB objects
+-(void)checkManyToManyWithChildACount:(NSUInteger)childACount childBCount:(NSUInteger)childBCount
+{
+    ISDRoot *fetchedRoot = [self fetchRootObject];
+    NSSet *relations = fetchedRoot.manyToMany;
     STAssertEquals([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
     
     NSSet *childrenA = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
