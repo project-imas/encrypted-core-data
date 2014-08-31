@@ -1145,23 +1145,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 -(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes {
     NSRelationshipDescription *inverse = [relationship inverseRelationship];
     NSArray *names = [@[[relationship name], [inverse name]] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+    NSString *format;
     if (withQuotes) {
-        if ([[names objectAtIndex:0] isEqualToString:[relationship name]]) {
-            return @[[NSString stringWithFormat:@"'%@__objectid'",[[inverse entity] name]],
-                     [NSString stringWithFormat:@"'%@__objectid'",[[relationship entity] name]]];
-        } else {
-            return @[[NSString stringWithFormat:@"'%@__objectid'",[[relationship entity] name]],
-                     [NSString stringWithFormat:@"'%@__objectid'",[[inverse entity] name]]];
-        }
+        static NSString *formatWithQuotes = @"'%@__objectid'";
+        format = formatWithQuotes;
+    } else {
+        static NSString *formatNoQuotes = @"%@__objectid";
+        format = formatNoQuotes;
     }
-    else {
-        if ([[names objectAtIndex:0] isEqualToString:[relationship name]]) {
-            return @[[NSString stringWithFormat:@"%@__objectid",[[inverse entity] name]],
-                     [NSString stringWithFormat:@"%@__objectid",[[relationship entity] name]]];
-        } else {
-            return @[[NSString stringWithFormat:@"%@__objectid",[[relationship entity] name]],
-                     [NSString stringWithFormat:@"%@__objectid",[[inverse entity] name]]];
-        }
+    if ([[names objectAtIndex:0] isEqualToString:[relationship name]]) {
+        return @[[NSString stringWithFormat:format,[[inverse entity] name]],
+                 [NSString stringWithFormat:format,[[relationship entity] name]]];
+    } else {
+        return @[[NSString stringWithFormat:format,[[relationship entity] name]],
+                 [NSString stringWithFormat:format,[[inverse entity] name]]];
     }
 }
 
