@@ -436,6 +436,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSEntityDescription *destinationEntity = [relationship destinationEntity];
     sqlite3_stmt *statement = NULL;
     
+    // NO by default - it might be different between each relationship type
+    BOOL shouldFetchDestinationEntityType = NO;
+    
     if (![relationship isToMany]) {
         // to-one relationship, foreign key exists in source entity table
         
@@ -459,10 +462,16 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         
     } else {
         // one-to-many relationship, foreign key exists in desination entity table
+
+        shouldFetchDestinationEntityType = destinationEntity.subentities.count > 0 || destinationEntity.superentity;
+        
+        NSString *destinationTable = [self tableNameForEntity:destinationEntity];
+        NSString *entityQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@._entityType", destinationTable] : @"";
         
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT __objectID FROM %@ WHERE %@=?",
-                            [self tableNameForEntity:destinationEntity],
+                            @"SELECT __objectID%@ FROM %@ WHERE %@=?",
+                            entityQuery,
+                            destinationTable,
                             [self foreignKeyColumnForRelationship:inverseRelationship]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
@@ -473,7 +482,19 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     while (sqlite3_step(statement) == SQLITE_ROW) {
         if (sqlite3_column_type(statement, 0) != SQLITE_NULL) {
             NSNumber *value = @(sqlite3_column_int64(statement, 0));
-            [objectIDs addObject:[self newObjectIDForEntity:destinationEntity referenceObject:value]];
+           
+            // If we need to get the type of the entity to make sure the eventual entity that gets created is of the correct subentity type
+            NSEntityDescription *resolvedDestinationEntity = nil;
+            if (shouldFetchDestinationEntityType) {
+                NSUInteger entityType = sqlite3_column_int64(statement, 1);
+                resolvedDestinationEntity = [entityTypeCache objectForKey:@(entityType)];
+            }
+            if (!resolvedDestinationEntity) {
+                resolvedDestinationEntity = destinationEntity;
+            }
+            
+            NSManagedObjectID *objectID = [self newObjectIDForEntity:resolvedDestinationEntity referenceObject:value];
+            [objectIDs addObject:objectID];
         }
     }
     
