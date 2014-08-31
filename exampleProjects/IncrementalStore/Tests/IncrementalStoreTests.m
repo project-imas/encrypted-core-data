@@ -4,7 +4,7 @@
 //
 // Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
 //
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 #import <CoreData/CoreData.h>
 #import "EncryptedStore.h"
 
@@ -16,7 +16,7 @@
  */
 #define USE_ENCRYPTED_STORE 1
 
-@interface IncrementalStoreTests : SenTestCase
+@interface IncrementalStoreTests : XCTestCase
 
 @end
 
@@ -63,14 +63,14 @@
     }
     error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@",error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@",error);
     
     // test count
     error = nil;
     NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, count, @"The number of tags is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, count, @"The number of tags is wrong.");
 
 }
 
@@ -84,14 +84,14 @@
     }
     error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // test count
     error = nil;
     NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, count, @"The number of users is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, count, @"The number of users is wrong.");
     
 }
 
@@ -111,23 +111,23 @@
     }
     error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // test count
     error = nil;
     NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     request.predicate = [NSPredicate predicateWithFormat:@"admin == NO || admin == nil"];
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, count, @"The number of users is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, count, @"The number of users is wrong.");
     
     // test admin count
     error = nil;
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     request.predicate = [NSPredicate predicateWithFormat:@"admin == YES"];
     testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, adminCount, @"The number of admin users is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, adminCount, @"The number of admin users is wrong.");
     
 }
 
@@ -143,7 +143,7 @@
     }
     error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // test count
     error = nil;
@@ -151,8 +151,8 @@
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"user = %@", user];
     [request setPredicate:predicate];
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, count, @"The number of posts is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, count, @"The number of posts is wrong.");
     
 }
 
@@ -181,7 +181,7 @@
     
     NSError *error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Error saving context.\n%@",error);
+    XCTAssertTrue(save, @"Error saving context.\n%@",error);
     
     return retval;
 }
@@ -199,14 +199,14 @@
     
     NSError *error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Error saving context.\n%@",error);
+    XCTAssertTrue(save, @"Error saving context.\n%@",error);
     
     // test count (is it necessary?)
     error = nil;
     NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Could not execute fetch request.");
-    STAssertEquals(testCount, count, @"The number of users is wrong.");
+    XCTAssertNil(error, @"Could not execute fetch request.");
+    XCTAssertEqual(testCount, count, @"The number of users is wrong.");
     
 }
 
@@ -246,12 +246,12 @@
              options:options
              error:&error];
     
-    STAssertNotNil(store, @"Unable to add persistent store.\n%@", error);
+    XCTAssertNotNil(store, @"Unable to add persistent store.\n%@", error);
     
     // load context
     context = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSConfinementConcurrencyType];
     [context setPersistentStoreCoordinator:coordinator];
-    STAssertNotNil(context, @"Unable to create context.\n%@", error);
+    XCTAssertNotNil(context, @"Unable to create context.\n%@", error);
     
     // log
     NSLog(@"Working with database at %@", [URL path]);
@@ -310,8 +310,8 @@
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     [request setFetchLimit:limit];
     NSArray *users = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([users count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
     
     // delete users
     [users enumerateObjectsUsingBlock:^(id user, NSUInteger index, BOOL *stop) {
@@ -319,13 +319,13 @@
     }];
     error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // perform count
     error = nil;
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     NSUInteger countTest = [context countForFetchRequest:request error:&error];
-    STAssertEquals(countTest, count - limit, @"Invalid number of results.");
+    XCTAssertEqual(countTest, count - limit, @"Invalid number of results.");
     
 }
 
@@ -340,16 +340,16 @@
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     [request setFetchLimit:limit];
     NSArray *users = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([users count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
     NSManagedObject *user = [users lastObject];
-    STAssertNotNil(user, @"No user found.");
+    XCTAssertNotNil(user, @"No user found.");
     
     // edit and save
     for (NSUInteger i = 0; i < 10; i++) {
         [user setValue:[[NSProcessInfo processInfo] globallyUniqueString] forKey:@"name"];
         BOOL save = [context save:&error];
-        STAssertTrue(save, @"Unable to perform save at index:%lu.\n%@", (unsigned long)i, error);
+        XCTAssertTrue(save, @"Unable to perform save at index:%lu.\n%@", (unsigned long)i, error);
     }
     
 }
@@ -366,16 +366,16 @@
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     [request setFetchLimit:limit];
     NSArray *users = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([users count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
     NSManagedObject *user = [users lastObject];
-    STAssertNotNil(user, @"No user found.");
+    XCTAssertNotNil(user, @"No user found.");
     
     // edit and save
     error = nil;
     [user setValue:nil forKey:@"name"];
     save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
 }
 
@@ -401,15 +401,15 @@
     error = nil;
     request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
     count = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals(numberOfusers, count, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual(numberOfusers, count, @"Invalid number of results.");
     
     // overall post count
     error = nil;
     request = [NSFetchRequest fetchRequestWithEntityName:@"Post"];
     count = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals(numberOfPostsPerUser * numberOfusers, count, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual(numberOfPostsPerUser * numberOfusers, count, @"Invalid number of results.");
     
 }
 
@@ -431,29 +431,29 @@
     error = nil;
     request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
     NSArray *matching = [context executeFetchRequest:request error:&error];
-    STAssertNotNil(matching, @"Unable to perform fetch request.\n%@", error);
-    STAssertEquals(numberOfusers, [matching count], @"Invalid number of users.");
+    XCTAssertNotNil(matching, @"Unable to perform fetch request.\n%@", error);
+    XCTAssertEqual(numberOfusers, [matching count], @"Invalid number of users.");
     id user = [matching objectAtIndex:rand() % [matching count]];
     
     // delete user and save
     error = nil;
     [context deleteObject:user];
     save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // make sure we have one less user
     error = nil;
     request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
     count = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals(numberOfusers - 1, count, @"Invalid number of users.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual(numberOfusers - 1, count, @"Invalid number of users.");
     
     // make sure we have one less user worth of posts
     error = nil;
     request = [NSFetchRequest fetchRequestWithEntityName:@"Post"];
     count = [context countForFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals((numberOfusers - 1) * numberOfPostsPerUser, count, @"Invalid number of posts.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual((numberOfusers - 1) * numberOfPostsPerUser, count, @"Invalid number of posts.");
     
 }
 
@@ -469,11 +469,11 @@
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     [request setFetchLimit:limit];
     NSArray *users = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([users count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
     NSManagedObject *user = [users lastObject];
     
-    STAssertNotNil(user, @"No object found.");
+    XCTAssertNotNil(user, @"No object found.");
     
     // create posts
     [self createPosts:5 forUser:user];
@@ -484,15 +484,15 @@
     [request setFetchLimit:limit];
     [request setPredicate:[NSPredicate predicateWithFormat:@"user = %@", user]];
     NSArray *posts = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([posts count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([posts count], limit, @"Invalid number of results.");
     NSManagedObject *post = [posts lastObject];
-    STAssertNotNil(post, @"No object found.");
+    XCTAssertNotNil(post, @"No object found.");
     
     // delete and save
     [context deleteObject:post];
     save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
 }
 
@@ -513,10 +513,10 @@
         request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
         [request setPredicate:obj];
         NSArray *users = [context executeFetchRequest:request error:&error];
-        STAssertNil(error, @"Unable to perform fetch request.");
-        STAssertEquals([users count], limit, @"Invalid number of results.");
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([users count], limit, @"Invalid number of results.");
         NSManagedObject *user = [users lastObject];
-        STAssertNotNil(user, @"No object found.");
+        XCTAssertNotNil(user, @"No object found.");
     }];
 }
 
@@ -533,10 +533,10 @@
     request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
     [request setFetchLimit:limit];
     NSArray *users = [context executeFetchRequest:request error:&error];
-    STAssertNil(error, @"Unable to perform fetch request.");
-    STAssertEquals([users count], limit, @"Invalid number of results.");
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
     NSManagedObject *user = [users lastObject];
-    STAssertNotNil(user, @"No object found.");
+    XCTAssertNotNil(user, @"No object found.");
     
     // create posts
     [self createPosts:5 forUser:user];
@@ -552,10 +552,10 @@
         requestBlock = [[NSFetchRequest alloc] initWithEntityName:@"User"];
         [request setPredicate:obj];
         NSArray *users = [context executeFetchRequest:request error:&errorBlock];
-        STAssertNil(error, @"Unable to perform fetch request.");
-        STAssertEquals([users count], limit, @"Invalid number of results.");
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([users count], limit, @"Invalid number of results.");
         NSManagedObject *user = [users lastObject];
-        STAssertNotNil(user, @"No object found.");
+        XCTAssertNotNil(user, @"No object found.");
     }];
 }
 
@@ -597,7 +597,7 @@
     
     // save relations only (many-to-many update)
     BOOL success = [context save:&error];
-    STAssertTrue(success, @"Unable to perform save.\n%@",error);
+    XCTAssertTrue(success, @"Unable to perform save.\n%@",error);
     
 }
 
@@ -615,7 +615,7 @@
     }
     
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@",error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@",error);
 }
 
 -(void)test_createUsersWithTags_selects {
@@ -634,10 +634,10 @@
         request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
         [request setPredicate:obj];
         NSArray *users = [context executeFetchRequest:request error:&error];
-        STAssertNil(error, @"Unable to perform fetch request.");
-        STAssertEquals([users count], count, @"Invalid number of results.");
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([users count], count, @"Invalid number of results.");
         NSManagedObject *user = [users lastObject];
-        STAssertNotNil(user, @"No object found.");
+        XCTAssertNotNil(user, @"No object found.");
     }];
 }
 
@@ -662,7 +662,7 @@
     
     // check if array was sorted by comparing against array sorted w/out ECD
     NSArray *sortedUsers = [users sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortCaseSensitive]];
-    STAssertTrue([users isEqualToArray:sortedUsers],
+    XCTAssertTrue([users isEqualToArray:sortedUsers],
                  @"The array was not sorted properly (case-sensitive).");
     
     // test with case-INsensitive sort descriptor
@@ -676,7 +676,7 @@
     
     // check if array was sorted by comparing against array sorted w/out ECD
     sortedUsers = [users sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortCaseInsensitive]];
-    STAssertTrue([users isEqualToArray:sortedUsers],
+    XCTAssertTrue([users isEqualToArray:sortedUsers],
                  @"The array was not sorted properly (case-sensitive).");
 }
 
@@ -695,10 +695,10 @@
         [request setPredicate:
          [NSPredicate predicateWithFormat:@"ANY hasTags = %@",obj]];
         NSArray *users = [context executeFetchRequest:request error:&error];
-        STAssertNil(error, @"Unable to perform fetch request.");
-        STAssertEquals([users count], count, @"Invalid number of results.");
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([users count], count, @"Invalid number of results.");
         NSManagedObject *user = [users lastObject];
-        STAssertNotNil(user, @"No object found.");
+        XCTAssertNotNil(user, @"No object found.");
     }];
 }
 
@@ -717,10 +717,10 @@
         [request setPredicate:
          [NSPredicate predicateWithFormat:@"ANY hasTags.hasUsers.hasTags = %@",obj]];
         NSArray *users = [context executeFetchRequest:request error:&error];
-        STAssertNil(error, @"Unable to perform fetch request.");
-        STAssertEquals([users count], count, @"Invalid number of results.");
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([users count], count, @"Invalid number of results.");
         NSManagedObject *user = [users lastObject];
-        STAssertNotNil(user, @"No object found.");
+        XCTAssertNotNil(user, @"No object found.");
     }];
 }
 
@@ -734,7 +734,7 @@
     [user setValue:@"Maggie" forKey:@"name"];
     [user setValue:@(50) forKey:@"age"];
     [context save:&error];
-    STAssertNil(error, @"Error saving database.");
+    XCTAssertNil(error, @"Error saving database.");
     
     [self createPosts:count forUser:user];
     
@@ -747,11 +747,11 @@
         req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
         [req setPredicate:pred];
         results = [context executeFetchRequest:req error:&error];
-        STAssertNil(error, @"Error in fetch request.");
-        STAssertFalse([results count] == 0, @"No results found");
+        XCTAssertNil(error, @"Error in fetch request.");
+        XCTAssertFalse([results count] == 0, @"No results found");
          NSManagedObject *u = [results firstObject];
-        STAssertEqualObjects([u valueForKey:@"name"], @"Maggie", @"Fetch error.");
-        STAssertEqualObjects([u valueForKey:@"age"], @(50), @"Fetch error.");
+        XCTAssertEqualObjects([u valueForKey:@"name"], @"Maggie", @"Fetch error.");
+        XCTAssertEqualObjects([u valueForKey:@"age"], @(50), @"Fetch error.");
          
      }];
     

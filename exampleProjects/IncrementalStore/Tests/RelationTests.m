@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Caleb Davenport. All rights reserved.
 //
 
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 #import <CoreData/CoreData.h>
 #import "EncryptedStore.h"
 
@@ -23,7 +23,7 @@
  */
 #define USE_ENCRYPTED_STORE 1
 
-@interface RelationTests : SenTestCase
+@interface RelationTests : XCTestCase
 
 @end
 
@@ -88,12 +88,12 @@
              options:options
              error:&error];
     
-    STAssertNotNil(store, @"Unable to add persistent store: %@", error);
+    XCTAssertNotNil(store, @"Unable to add persistent store: %@", error);
     
     // load context
     context = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSConfinementConcurrencyType];
     [context setPersistentStoreCoordinator:coordinator];
-    STAssertNotNil(context, @"Unable to create context.\n%@", error);
+    XCTAssertNotNil(context, @"Unable to create context.\n%@", error);
     
     // log
     NSLog(@"Working with database at %@", [URL path]);
@@ -103,7 +103,7 @@
 {
     if (coordinator) {
         NSError *error;
-        STAssertTrue([coordinator removePersistentStore:[coordinator persistentStoreForURL:[[self class] databaseURL]] error:&error], @"Could not remove persistent store: %@", error);
+        XCTAssertTrue([coordinator removePersistentStore:[coordinator persistentStoreForURL:[[self class] databaseURL]] error:&error], @"Could not remove persistent store: %@", error);
         coordinator = nil;
     }
     context = nil;
@@ -182,45 +182,45 @@
     // Save
     NSError *error = nil;
     BOOL save = [context save:&error];
-    STAssertTrue(save, @"Unable to perform save.\n%@", error);
+    XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
     
     // Test one-to-many from cache
     {
         NSSet *oneToManyRelations = root.oneToMany;
-        STAssertEquals([oneToManyRelations count], (NSUInteger)3, @"The number of one-to-many relations is wrong.");
+        XCTAssertEqual([oneToManyRelations count], (NSUInteger)3, @"The number of one-to-many relations is wrong.");
         
         // Here the counts are correct as the objects are exactly the same as we just inserted
         NSSet *childrenA = [oneToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
         NSSet *childrenB = [oneToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
         
         // This should be correct as this is how we entered the values in above
-        STAssertEquals([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
-        STAssertEquals([childrenB count], (NSUInteger)1, @"Wrong ChildB count");
+        XCTAssertEqual([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
+        XCTAssertEqual([childrenB count], (NSUInteger)1, @"Wrong ChildB count");
         // Just for fun check the objects
-        STAssertTrue([childrenA containsObject:childAOneToMany], @"Inserted ChildA isn't in the set");
-        STAssertTrue([childrenB anyObject] == childBOneToMany, @"Inserted ChildB object isn't the same");
+        XCTAssertTrue([childrenA containsObject:childAOneToMany], @"Inserted ChildA isn't in the set");
+        XCTAssertTrue([childrenB anyObject] == childBOneToMany, @"Inserted ChildB object isn't the same");
     }
     
     // Test one-to-one from cache
     {
-        STAssertTrue(root.oneToOne == childAOneToOne, @"Inserted one-to-one ChildA isn't the same");
+        XCTAssertTrue(root.oneToOne == childAOneToOne, @"Inserted one-to-one ChildA isn't the same");
     }
     
     // Test many-to-many from cache
     {
         NSSet *manyToManyRelations = root.manyToMany;
-        STAssertEquals([manyToManyRelations count], (NSUInteger)5, @"The number of many-to-many relations is wrong.");
+        XCTAssertEqual([manyToManyRelations count], (NSUInteger)5, @"The number of many-to-many relations is wrong.");
         
         // Here the counts are correct as the objects are exactly the same as we just inserted
         NSSet *childrenA = [manyToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
         NSSet *childrenB = [manyToManyRelations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
         
         // This should be correct as this is how we entered the values in above
-        STAssertEquals([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
-        STAssertEquals([childrenB count], (NSUInteger)3, @"Wrong ChildB count");
+        XCTAssertEqual([childrenA count], (NSUInteger)2, @"Wrong ChildA count");
+        XCTAssertEqual([childrenB count], (NSUInteger)3, @"Wrong ChildB count");
         // Just for fun check the objects
-        STAssertTrue([childrenA containsObject:childAManyToMany], @"Inserted ChildA isn't in the many-to-many set");
-        STAssertTrue([childrenB containsObject:childBManyToMany], @"Inserted ChildB isn't in the many-to-many set");
+        XCTAssertTrue([childrenA containsObject:childAManyToMany], @"Inserted ChildA isn't in the many-to-many set");
+        XCTAssertTrue([childrenB containsObject:childBManyToMany], @"Inserted ChildB isn't in the many-to-many set");
     }
 }
 
@@ -230,8 +230,8 @@
     NSFetchRequest *request = [ISDRoot fetchRequest];
     request.predicate = [NSPredicate predicateWithFormat:@"name == %@", @"root"];
     NSArray *results = [context executeFetchRequest:request error:&error];
-    STAssertNotNil(results, @"Could not execute fetch request.");
-    STAssertEquals([results count], (NSUInteger)1, @"The number of root objects is wrong.");
+    XCTAssertNotNil(results, @"Could not execute fetch request.");
+    XCTAssertEqual([results count], (NSUInteger)1, @"The number of root objects is wrong.");
     return [results firstObject];
 }
 
@@ -299,13 +299,13 @@
 {
     ISDRoot *fetchedRoot = [self fetchRootObject];
     NSSet *relations = fetchedRoot.oneToMany;
-    STAssertEquals([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
+    XCTAssertEqual([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
     
     NSSet *childrenA = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
     NSSet *childrenB = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
     
-    STAssertEquals([childrenA count], childACount, @"Wrong ChildA count");
-    STAssertEquals([childrenB count], childBCount, @"Wrong ChildB count");
+    XCTAssertEqual([childrenA count], childACount, @"Wrong ChildA count");
+    XCTAssertEqual([childrenB count], childBCount, @"Wrong ChildB count");
 }
 
 /// Checks that the root object has the correct one-to-one relational ChildA/ChildB
@@ -313,15 +313,15 @@
 {
     ISDRoot *fetchedRoot = [self fetchRootObject];
     ISDParent *child = fetchedRoot.oneToOne;
-    STAssertNotNil(child, @"Nil one-to-one relation");
+    XCTAssertNotNil(child, @"Nil one-to-one relation");
     
     if (childA) {
-        STAssertTrue([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
-        STAssertFalse([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        XCTAssertTrue([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        XCTAssertFalse([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
     }
     if (childB) {
-        STAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
-        STAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        XCTAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        XCTAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
     }
 }
 
@@ -330,13 +330,13 @@
 {
     ISDRoot *fetchedRoot = [self fetchRootObject];
     NSSet *relations = fetchedRoot.manyToMany;
-    STAssertEquals([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
+    XCTAssertEqual([relations count], childACount + childBCount, @"The total number of oneToMany objects is wrong.");
     
     NSSet *childrenA = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildA entityName]]];
     NSSet *childrenB = [relations filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"entity.name == %@", [ISDChildB entityName]]];
     
-    STAssertEquals([childrenA count], childACount, @"Wrong ChildA count");
-    STAssertEquals([childrenB count], childBCount, @"Wrong ChildB count");
+    XCTAssertEqual([childrenA count], childACount, @"Wrong ChildA count");
+    XCTAssertEqual([childrenB count], childBCount, @"Wrong ChildB count");
 }
 
 @end
