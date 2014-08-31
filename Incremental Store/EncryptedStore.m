@@ -489,11 +489,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // one-to-many relationship, foreign key exists in desination entity table
         
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-        NSString *entityQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@._entityType", destinationTable] : @"";
+        NSString *entityTypeQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@._entityType", destinationTable] : @"";
         
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID%@ FROM %@ WHERE %@=?",
-                            entityQuery,
+                            entityTypeQuery,
                             destinationTable,
                             [self foreignKeyColumnForRelationship:inverseRelationship]];
         statement = [self preparedStatementForQuery:string];
