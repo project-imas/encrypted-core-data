@@ -27,6 +27,7 @@
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		440E850919B385C9002542D1 /* RelationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E850819B385C9002542D1 /* RelationTests.m */; };
 		443CEAE619A2915200F270FE /* PasswordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 443CEAE519A2915200F270FE /* PasswordTests.m */; };
 		444AF94D19B3733D00B1F2A1 /* ClassModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */; };
 		444AF95319B3814500B1F2A1 /* ISDModelCategories.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95219B3814500B1F2A1 /* ISDModelCategories.m */; };
@@ -92,6 +93,7 @@
 		3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3EB644001799EE1E00392BFF /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3EB644011799EE1E00392BFF /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
+		440E850819B385C9002542D1 /* RelationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RelationTests.m; sourceTree = "<group>"; };
 		443CEAE519A2915200F270FE /* PasswordTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PasswordTests.m; sourceTree = "<group>"; };
 		444AF93D19B36BD300B1F2A1 /* ClassModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ClassModel.xcdatamodel; sourceTree = "<group>"; };
 		444AF95119B3814500B1F2A1 /* ISDModelCategories.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDModelCategories.h; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 			children = (
 				443CEAE519A2915200F270FE /* PasswordTests.m */,
 				3BD5F03015EE5E7200333320 /* IncrementalStoreTests.m */,
+				440E850819B385C9002542D1 /* RelationTests.m */,
 				3BD5F02A15EE5E7200333320 /* Supporting Files */,
 			);
 			path = "Incremental Store Tests";
@@ -403,6 +406,7 @@
 			files = (
 				443CEAE619A2915200F270FE /* PasswordTests.m in Sources */,
 				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
+				440E850919B385C9002542D1 /* RelationTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
