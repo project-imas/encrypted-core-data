@@ -163,7 +163,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         entityTypeCache = [NSMutableDictionary dictionary];
         for (NSEntityDescription * entity in root.managedObjectModel.entities) {
             // TODO: should check for [entity isAbstract] and not add it to the cache
-            if (entity.superentity || entity.subentities.count > 0) {
+            if ([self entityNeedsEntityTypeColumn:entity]) {
                 [entityTypeCache setObject:entity forKey:@(entity.name.hash)];
             }
         }
@@ -222,7 +222,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // NOTE: this would probably clash with DISTINCT
         // Disable the combination for now until we can figure out a way to handle both and
         // have a proper test case
-        BOOL shouldFetchEntityType = (entity.subentities.count > 0 || entity.superentity) && !isDistinctFetchEnabled;
+        BOOL shouldFetchEntityType = [self entityNeedsEntityTypeColumn:entity] && !isDistinctFetchEnabled;
         // return objects or ids
         if (type == NSManagedObjectResultType || type == NSManagedObjectIDResultType) {
             NSString *string = [NSString stringWithFormat:
