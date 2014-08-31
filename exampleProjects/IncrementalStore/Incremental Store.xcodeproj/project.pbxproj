@@ -28,6 +28,7 @@
 		440E852619B3A1E1002542D1 /* IncrementalStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */; };
 		440E852719B3A1E1002542D1 /* PasswordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852419B3A1E1002542D1 /* PasswordTests.m */; };
 		440E852819B3A1E1002542D1 /* RelationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852519B3A1E1002542D1 /* RelationTests.m */; };
+		440E852F19B3A3D2002542D1 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 440E852E19B3A3D2002542D1 /* Images.xcassets */; };
 		444AF94D19B3733D00B1F2A1 /* ClassModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */; };
 		444AF95319B3814500B1F2A1 /* ISDModelCategories.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95219B3814500B1F2A1 /* ISDModelCategories.m */; };
 		444AF95619B3823300B1F2A1 /* ISDParent.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95519B3823300B1F2A1 /* ISDParent.m */; };
@@ -92,6 +93,7 @@
 		440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IncrementalStoreTests.m; sourceTree = "<group>"; };
 		440E852419B3A1E1002542D1 /* PasswordTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PasswordTests.m; sourceTree = "<group>"; };
 		440E852519B3A1E1002542D1 /* RelationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RelationTests.m; sourceTree = "<group>"; };
+		440E852E19B3A3D2002542D1 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		444AF93D19B36BD300B1F2A1 /* ClassModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ClassModel.xcdatamodel; sourceTree = "<group>"; };
 		444AF95119B3814500B1F2A1 /* ISDModelCategories.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDModelCategories.h; sourceTree = "<group>"; };
 		444AF95219B3814500B1F2A1 /* ISDModelCategories.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDModelCategories.m; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 				3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */,
 				3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */,
 				3BD5F06415EE61E200333320 /* View Controllers */,
+				440E852E19B3A3D2002542D1 /* Images.xcassets */,
 				3BD5F00015EE5DDF00333320 /* Supporting Files */,
 			);
 			path = "Incremental Store Demo";
@@ -359,6 +362,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				440E852F19B3A3D2002542D1 /* Images.xcassets in Resources */,
 				3BD5F00415EE5DDF00333320 /* InfoPlist.strings in Resources */,
 				3BD5F00D15EE5DDF00333320 /* MainStoryboard.storyboard in Resources */,
 			);
@@ -518,6 +522,8 @@
 		3BD5F01415EE5DDF00333320 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
@@ -530,6 +536,8 @@
 		3BD5F01515EE5DDF00333320 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
