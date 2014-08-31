@@ -34,7 +34,7 @@
 }
 
 + (NSBundle *)bundle {
-    return [NSBundle bundleForClass:[IncrementalStoreTests class]];
+    return [NSBundle bundleForClass:[EncryptedStore class]];
 }
 
 + (NSURL *)databaseURL {
@@ -217,7 +217,7 @@
     
     // get the model
     NSBundle *bundle = [IncrementalStoreTests bundle];
-    NSManagedObjectModel *model = [NSManagedObjectModel mergedModelFromBundles:@[ bundle ]];
+    NSManagedObjectModel *model = [[NSManagedObjectModel alloc] initWithContentsOfURL:[bundle URLForResource:@"Model" withExtension:@"momd"]];
     
     // get the coordinator
     coordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
