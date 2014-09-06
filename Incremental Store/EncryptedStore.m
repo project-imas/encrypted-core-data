@@ -477,11 +477,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
         // many-to-many relationship, foreign key exists in relation table
         
-        NSString *string = [NSString stringWithFormat:
-                            @"SELECT %@__objectid FROM %@ WHERE %@__objectid=?",
-                            [destinationEntity name],
-                            [self tableNameForRelationship:relationship],
-                            [sourceEntity name]];
+        NSString *relationTable = [self tableNameForRelationship:relationship];
+        
+        NSString *rootObjectColumn = [[self rootForEntity:relationship.entity] name];
+        NSString *rootInverseObjectColumn = [[self rootForEntity:destinationEntity] name];
+        NSString *rootInverseObjectTypeColumn = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@__entityType", rootInverseObjectColumn] : @"";
+        
+        NSString *string = [NSString stringWithFormat:@"SELECT %@__objectid%@ FROM %@ WHERE %@__objectid=?", rootInverseObjectColumn, rootInverseObjectTypeColumn, relationTable, rootObjectColumn];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
         
