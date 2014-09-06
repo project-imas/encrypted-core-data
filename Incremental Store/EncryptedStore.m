@@ -1600,16 +1600,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
 }
 
-- (NSString *)tableNameForEntity:(NSEntityDescription *)entity {
-    NSEntityDescription *targetEntity = entity;
-    while ([targetEntity superentity] != nil) {
-        targetEntity = [targetEntity superentity];
-    }
-    return [NSString stringWithFormat:@"ecd%@",[targetEntity name]];
+- (NSString *)tableNameForEntity:(NSEntityDescription *)entity
+{
+    return [NSString stringWithFormat:@"ecd%@", [self rootForEntity:entity].name];
 }
 
 /// Traverses up the object hierarchy and finds the base entity
-- (NSEntityDescription *)rootForEntity:(NSEntityDescription *)entity {
+- (NSEntityDescription *)rootForEntity:(NSEntityDescription *)entity
+{
     NSEntityDescription *targetEntity = entity;
     while ([targetEntity superentity] != nil) {
         targetEntity = [targetEntity superentity];
