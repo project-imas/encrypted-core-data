@@ -1157,7 +1157,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 - (BOOL)createTableForRelationship:(NSRelationshipDescription *)relationship error:(NSError **)error {
     // create table
-    NSArray *columns = [self columnNamesForRelationship:relationship withQuotes:YES];
+    NSArray *columns = [self columnNamesForRelationship:relationship withQuotes:YES forCreation:YES];
     NSString *string = [NSString stringWithFormat:
                         @"CREATE TABLE %@ (%@);",
                         [self tableNameForRelationship:relationship],
@@ -1180,45 +1180,58 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 /// Create columns for both object IDs and add any type columns if needed
--(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes
+-(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes forCreation:(BOOL)creation
 {
     NSString *format;
     NSString *typeFormat;
     if (withQuotes) {
         static NSString *formatWithQuotes = @"'%@__objectid'";
-        static NSString *typeFormatWithQuotes = @"'%@__entityType' INTEGER";
+        static NSString *typeFormatWithQuotes = @"'%@__entityType'";
         format = formatWithQuotes;
         typeFormat = typeFormatWithQuotes;
     } else {
         static NSString *formatNoQuotes = @"%@__objectid";
-        static NSString *typeFormatNoQuotes = @"%@__entityType INTEGER";
+        static NSString *typeFormatNoQuotes = @"%@__entityType";
         format = formatNoQuotes;
         typeFormat = typeFormatNoQuotes;
+    }
+    if (creation) {
+        typeFormat = [typeFormat stringByAppendingString:@" INTEGER"];
     }
     
     NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
     NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
     
-    NSString *objectIDColumn = [NSString stringWithFormat:format, rootSourceEntity.name];
-    NSString *inverseObjectIDColumn = [NSString stringWithFormat:format, rootDestinationEntity.name];
-    
-    // Max columns ObjectID, Type, Inverse ObjectID, Inverse Type, PK
-    NSMutableArray *columns = [NSMutableArray arrayWithCapacity:5];
+    // No creation: Max columns ObjectID, Type, Inverse ObjectID, Inverse Type
+    // Creation: No creation columns, PK
+    NSMutableArray *columns = [NSMutableArray arrayWithCapacity:creation ? 5 : 4];
     
     // Object
-    [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", objectIDColumn]];
+    NSString *objectIDColumn = [NSString stringWithFormat:format, rootSourceEntity.name];
+    if (creation) {
+        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", objectIDColumn]];
+    } else {
+        [columns addObject:objectIDColumn];
+    }
     if (rootSourceEntity != relationship.entity) {
         [columns addObject:[NSString stringWithFormat:typeFormat, rootSourceEntity.name]];
     }
     
     // Inverse
-    [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", inverseObjectIDColumn]];
+    NSString *inverseObjectIDColumn = [NSString stringWithFormat:format, rootDestinationEntity.name];
+    if (creation) {
+        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", inverseObjectIDColumn]];
+    } else {
+        [columns addObject:inverseObjectIDColumn];
+    }
     if (rootDestinationEntity != relationship.destinationEntity) {
         [columns addObject:[NSString stringWithFormat:typeFormat, rootDestinationEntity.name]];
     }
     
-    // PK
-    [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", objectIDColumn, inverseObjectIDColumn]];
+    if (creation) {
+        // PK
+        [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", objectIDColumn, inverseObjectIDColumn]];
+    }
     
     return columns;
 }
@@ -1835,7 +1848,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 
                 // source entity table to relation table join
                 NSUInteger index;
-                NSArray *columns = [self columnNamesForRelationship:rel withQuotes:NO];
+                NSArray *columns = [self columnNamesForRelationship:rel withQuotes:NO forCreation:NO];
                 NSString *entity_name = [[rel entity] name];
                 
                 if ([[columns objectAtIndex:0] isEqualToString:[NSString stringWithFormat:@"%@__objectid",entity_name]]) {
