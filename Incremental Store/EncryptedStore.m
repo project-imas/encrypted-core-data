@@ -1508,7 +1508,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     BOOL __block success = YES;
     
     NSString *string = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@__objectid=?;",
-                        [self tableNameForRelationship:desc], [[object entity] name]];
+                        [self tableNameForRelationship:desc], [[self rootForEntity:[object entity]] name]];
     
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     
@@ -1567,7 +1567,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             if ([desc isToMany] && [inverse isToMany]) {
                 
                 NSString *string = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@__objectid=?;",
-                                    [self tableNameForRelationship:desc],[[object entity] name]];
+                                    [self tableNameForRelationship:desc],[[self rootForEntity:[object entity]] name]];
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
                 NSNumber *number = [self referenceObjectForObjectID:[object objectID]];
                 sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
