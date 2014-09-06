@@ -320,8 +320,8 @@
         XCTAssertFalse([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
     }
     if (childB) {
-        XCTAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
-        XCTAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
+        XCTAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
+        XCTAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
     }
 }
 
