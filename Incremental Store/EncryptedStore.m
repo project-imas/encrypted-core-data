@@ -954,17 +954,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             return;
         }
         NSString *column = [self foreignKeyColumnForRelationship:description];
-        if (!indexedOnly) {
-            BOOL needsTypeColumn = [self entityNeedsEntityTypeColumn:description.destinationEntity];
-            if (needsTypeColumn) {
-                NSString *typeColumn;
-                if (quotedNames) {
-                    typeColumn = [NSString stringWithFormat:@"'%@__entityType' integer", [description name]];
-                } else {
-                    typeColumn = [NSString stringWithFormat:@"%@__entityType integer", [description name]];
-                }
-                [columns addObject:typeColumn];
+        BOOL needsTypeColumn = [self entityNeedsEntityTypeColumn:description.destinationEntity];
+        if (needsTypeColumn) {
+            NSString *typeColumn = [NSString stringWithFormat:@"%@__entityType", [description name]];
+            if (quotedNames) {
+                typeColumn = [NSString stringWithFormat:@"'%@'", typeColumn];
             }
+            if (!indexedOnly) {
+                typeColumn = [typeColumn stringByAppendingString:@" integer"];
+            }
+            [columns addObject:typeColumn];
         } else if (quotedNames) {
             column = [NSString stringWithFormat:@"'%@'", column];
         }
