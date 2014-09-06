@@ -378,11 +378,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         }
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
             NSRelationshipDescription *relationship = (NSRelationshipDescription *) obj;
-//            NSRelationshipDescription *inverse = [relationship inverseRelationship];
             NSEntityDescription *destinationEntity = relationship.destinationEntity;
             
             
-            // Handle one-to-many and one-to-one
+            // Handle many-to-one and one-to-one
             if (![relationship isToMany]) {
                 NSString *column = [self foreignKeyColumnForRelationship:relationship];
                 [columns addObject:column];
