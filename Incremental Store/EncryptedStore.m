@@ -1157,9 +1157,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // create table
     NSArray *columns = [self columnNamesForRelationship:relationship withQuotes:YES];
     NSString *string = [NSString stringWithFormat:
-                        @"CREATE TABLE %@ (%@ INTEGER NOT NULL, %@ INTEGER NOT NULL, PRIMARY KEY(%@));",
+                        @"CREATE TABLE %@ (%@);",
                         [self tableNameForRelationship:relationship],
-                        [columns objectAtIndex:0], [columns objectAtIndex:1],
                         [columns componentsJoinedByString:@", "]];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
@@ -1178,24 +1177,48 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 
--(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes {
-    NSRelationshipDescription *inverse = [relationship inverseRelationship];
-    NSArray *names = [@[[relationship name], [inverse name]] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+/// Create columns for both object IDs and add any type columns if needed
+-(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes
+{
     NSString *format;
+    NSString *typeFormat;
     if (withQuotes) {
         static NSString *formatWithQuotes = @"'%@__objectid'";
+        static NSString *typeFormatWithQuotes = @"'%@__entityType' INTEGER";
         format = formatWithQuotes;
+        typeFormat = typeFormatWithQuotes;
     } else {
         static NSString *formatNoQuotes = @"%@__objectid";
+        static NSString *typeFormatNoQuotes = @"%@__entityType INTEGER";
         format = formatNoQuotes;
+        typeFormat = typeFormatNoQuotes;
     }
-    if ([[names objectAtIndex:0] isEqualToString:[relationship name]]) {
-        return @[[NSString stringWithFormat:format,[[inverse entity] name]],
-                 [NSString stringWithFormat:format,[[relationship entity] name]]];
-    } else {
-        return @[[NSString stringWithFormat:format,[[relationship entity] name]],
-                 [NSString stringWithFormat:format,[[inverse entity] name]]];
+    
+    NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
+    NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
+    
+    NSString *objectIDColumn = [NSString stringWithFormat:format, rootSourceEntity.name];
+    NSString *inverseObjectIDColumn = [NSString stringWithFormat:format, rootDestinationEntity.name];
+    
+    // Max columns ObjectID, Type, Inverse ObjectID, Inverse Type, PK
+    NSMutableArray *columns = [NSMutableArray arrayWithCapacity:5];
+    
+    // Object
+    [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", objectIDColumn]];
+    if (rootSourceEntity != relationship.entity) {
+        [columns addObject:[NSString stringWithFormat:typeFormat, rootSourceEntity.name]];
     }
+    
+    // Inverse
+    [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", inverseObjectIDColumn]];
+    if (rootDestinationEntity != relationship.destinationEntity) {
+        [columns addObject:[NSString stringWithFormat:typeFormat, rootDestinationEntity.name]];
+    }
+    
+    // PK
+    [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", objectIDColumn, inverseObjectIDColumn]];
+    
+    return columns;
 }
 
 #pragma mark - save changes to the database
