@@ -229,7 +229,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 @"SELECT %@%@.__objectID%@ FROM %@ %@%@%@%@;",
                                 (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                                 table,
-                                (shouldFetchEntityType)?[NSString stringWithFormat:@", %@._entityType", table]:@"",
+                                (shouldFetchEntityType)?[NSString stringWithFormat:@", %@.__entityType", table]:@"",
                                 table,
                                 joinStatement,
                                 [condition objectForKey:@"query"],
@@ -251,7 +251,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                           @"SELECT %@%@.__objectID%@ FROM %@ %@%@%@%@;",
                           (isDistinctFetchEnabled)?@"DISTINCT ":@"",
                           table,
-                          (shouldFetchEntityType)?[NSString stringWithFormat:@", %@._entityType", table]:@"",
+                          (shouldFetchEntityType)?[NSString stringWithFormat:@", %@.__entityType", table]:@"",
                           table,
                           joinStatement,
                           groupHaving,
@@ -491,7 +491,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // one-to-many relationship, foreign key exists in desination entity table
         
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-        NSString *entityTypeQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@._entityType", destinationTable] : @"";
+        NSString *entityTypeQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@.__entityType", destinationTable] : @"";
         
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID%@ FROM %@ WHERE %@=?",
@@ -1000,7 +1000,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         //       faster integer-indexed queries.  Any string greater than 96-chars is
         //       not guaranteed to produce a unique hash value, but for entity names that
         //       shouldn't be a problem.
-        [columns addObject:@"'_entityType' integer"];
+        [columns addObject:@"'__entityType' integer"];
     }
     
     [columns addObjectsFromArray:[self columnNamesForEntity:entity indexedOnly:NO quotedNames:YES]];
@@ -1122,7 +1122,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // copy data
     if (destinationEntity.subentities.count > 0) {
         string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ ('_entityType', %@)"
+                  @"INSERT INTO %@ ('__entityType', %@)"
                   @"SELECT %lu, %@ "
                   @"FROM %@",
                   destinationTableName,
@@ -1304,7 +1304,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSString *string = nil;
         if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
-                      @"INSERT INTO %@ ('_entityType', %@) VALUES(%lu, %@);",
+                      @"INSERT INTO %@ ('__entityType', %@) VALUES(%lu, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
                       (unsigned long) entity.name.hash,
@@ -2336,11 +2336,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSString *entityWhere = nil;
     if (request.entity.superentity != nil) {
         if (request.entity.subentities.count > 0 && request.includesSubentities) {
-            entityWhere = [NSString stringWithFormat:@"%@._entityType IN (%@)",
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType IN (%@)",
                            [self tableNameForEntity:request.entity],
                            [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
         } else {
-            entityWhere = [NSString stringWithFormat:@"%@._entityType = %lu",
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %lu",
                            [self tableNameForEntity:request.entity],
                            (unsigned long) request.entityName.hash];
         }
@@ -2554,7 +2554,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                          entityTableName];
                 if (rel.destinationEntity.superentity != nil) {
                     value = [value stringByAppendingString:
-                             [NSString stringWithFormat:@" AND [%@]._entityType = %lu",
+                             [NSString stringWithFormat:@" AND [%@].__entityType = %lu",
                               rel.name,
                               (unsigned long) rel.destinationEntity.name.hash]];
                 }
