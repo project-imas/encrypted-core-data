@@ -1338,37 +1338,58 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return success;
 }
 
-- (BOOL)handleInsertedRelationInSaveRequest:(NSRelationshipDescription *)desc forObject:(NSManagedObject *)object error:(NSError **)error {
-    BOOL __block success = YES;
+- (BOOL)handleInsertedRelationInSaveRequest:(NSRelationshipDescription *)relationship forObject:(NSManagedObject *)object error:(NSError **)error
+{
+    // Inverse
+    NSSet *inverseObjects = [object valueForKey:[relationship name]];
+    if ([inverseObjects count] == 0) {
+        // No objects to add so finish
+        return YES;
+    }
     
-    NSNumber __block *one, *two;
-    NSArray *names = [@[[desc name],[[desc inverseRelationship] name]] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ VALUES (?, ?);",
-                        [self tableNameForRelationship:desc]];
+    NSString *tableName = [self tableNameForRelationship:relationship];
     
-    [[object valueForKey:[desc name]] enumerateObjectsUsingBlock:^(id relative, NSUInteger idx, BOOL *stop) {
+    // Object
+    NSNumber *objectID = [self referenceObjectForObjectID:[object objectID]];
+    NSNumber *objectType = [self entityNeedsEntityTypeColumn:relationship.entity] ? @([object.entity.name hash]) : nil;
+    
+    // Inverse
+    BOOL needsInverseType = [self entityNeedsEntityTypeColumn:relationship.destinationEntity];
+    
+    id objectValues = objectType ? [NSString stringWithFormat:@"%@, %@", objectID, objectType] : objectID;
+    
+    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ VALUES (%@, ?%@);", tableName, objectValues, needsInverseType ? @", ?" : @""];
+    
+    __block BOOL success = YES;
+    
+    [inverseObjects enumerateObjectsUsingBlock:^(NSManagedObject *obj, BOOL *stop) {
+        
+        NSNumber *inverseObjectID = [self referenceObjectForObjectID:[obj objectID]];
         
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
-        if ([[names objectAtIndex:0] isEqualToString:[desc name]]) {
-            one = [self referenceObjectForObjectID:[relative objectID]];
-            two = [self referenceObjectForObjectID:[object objectID]];
-        } else {
-            one = [self referenceObjectForObjectID:[object objectID]];
-            two = [self referenceObjectForObjectID:[relative objectID]];
-        }
+        // Add the related objects properties
+        sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedIntegerValue]);
         
-        sqlite3_bind_int64(statement, 1, [one unsignedLongLongValue]);
-        sqlite3_bind_int64(statement, 2, [two unsignedLongLongValue]);
+        if (needsInverseType) {
+            // If this relations scheme requires a inverse type column add the entity type
+            sqlite3_bind_int64(statement, 2, [obj.entity.name hash]);
+        }
         
         sqlite3_step(statement);
         
         int finalize = sqlite3_finalize(statement);
         if (finalize != SQLITE_OK && finalize != SQLITE_CONSTRAINT) {
-            if (error != nil) { *error = [self databaseError]; }
+            if (error != nil) {
+                *error = [self databaseError];
+            }
             success = NO;
+        } else {
+            success = YES;
         }
-
+        
+        // Stop if we failed
+        *stop = !success;
     }];
     
     return success;
