@@ -1355,7 +1355,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // Object
     unsigned long long objectID = [[self referenceObjectForObjectID:[object objectID]] unsignedLongLongValue];
     
-    // TODO: make sure of order
     NSString *values = [NSString stringWithFormat:(firstColumnIsSource ? @"%llu, ?" : @"?, %llu"), objectID];
     NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@) VALUES (%@);", tableName, firstIDColumn, secondIDColumn, values];
     
