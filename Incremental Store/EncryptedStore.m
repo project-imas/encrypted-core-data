@@ -366,14 +366,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     NSEntityDescription *entity = [objectID entity];
     NSMutableArray *columns = [NSMutableArray array];
     NSMutableArray *keys = [NSMutableArray array];
-    NSMutableDictionary *entityTypes = [NSMutableDictionary dictionary];
+    NSMutableArray *typeJoins = [NSMutableArray array];
+    NSMutableSet *entityTypes = [NSMutableSet set];
     unsigned long long primaryKey = [[self referenceObjectForObjectID:objectID] unsignedLongLongValue];
+    
+    NSString *table = [self tableNameForEntity:entity];
     
     // enumerate properties
     NSDictionary *properties = [entity propertiesByName];
     [properties enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSPropertyDescription *obj, BOOL *stop) {
         if ([obj isKindOfClass:[NSAttributeDescription class]]) {
-            [columns addObject:key];
+            [columns addObject:[NSString stringWithFormat:@"%@.%@", table, key]];
             [keys addObject:key];
         }
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
@@ -384,15 +387,24 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             // Handle many-to-one and one-to-one
             if (![relationship isToMany]) {
                 NSString *column = [self foreignKeyColumnForRelationship:relationship];
-                [columns addObject:column];
+                [columns addObject:[NSString stringWithFormat:@"%@.%@", table, column]];
                 [keys addObject:key];
                 
                 // We need to fetch the direct entity not its super type
                 if ([self entityNeedsEntityTypeColumn:destinationEntity]) {
-                    NSString *typeColumn = [NSString stringWithFormat:@"%@__entityType", [relationship name]];
-                    entityTypes[key] = typeColumn;
+                    // Get the destination table for the type look up
+                    NSString *destinationTable = [self tableNameForEntity:destinationEntity];
                     
+                    // Add teh type column to the query
+                    NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationTable];
                     [columns addObject:typeColumn];
+                    
+                    // Create the join
+                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
+                    [typeJoins addObject:join];
+                    
+                    // Mark that this relation needs a type lookup
+                    [entityTypes addObject:key];
                 }
             }
             
@@ -401,9 +413,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     // prepare query
     NSString *string = [NSString stringWithFormat:
-                        @"SELECT %@ FROM %@ WHERE __objectID=?;",
+                        @"SELECT %@ FROM %@%@ WHERE %@.__objectid=?;",
                         [columns componentsJoinedByString:@", "],
-                        [self tableNameForEntity:entity]];
+                        table, [typeJoins componentsJoinedByString:@""], table];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     
     // run query
@@ -418,7 +430,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSPropertyDescription *property = [properties objectForKey:obj];
             id value = [self valueForProperty:property inStatement:statement atIndex:idx + offset];
             
-            if (entityTypes[obj]) {
+            if ([entityTypes containsObject:obj]) {
                 // This key needs an entity type - the next column will be it, so shift all values from now on
                 offset++;
             }
@@ -463,12 +475,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     if (![relationship isToMany]) {
         // to-one relationship, foreign key exists in source entity table
         
-        NSString *entityTypeQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@__entityType", [relationship name]] : @"";
-        
         NSString *string = [NSString stringWithFormat:
                             @"SELECT %@%@ FROM %@ WHERE __objectID=?",
                             [self foreignKeyColumnForRelationship:relationship],
-                            entityTypeQuery,
+                            shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
@@ -490,11 +500,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // one-to-many relationship, foreign key exists in desination entity table
         
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-        NSString *entityTypeQuery = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@.__entityType", destinationTable] : @"";
         
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID%@ FROM %@ WHERE %@=?",
-                            entityTypeQuery,
+                            shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             destinationTable,
                             [self foreignKeyColumnForRelationship:inverseRelationship]];
         statement = [self preparedStatementForQuery:string];
@@ -955,17 +964,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             return;
         }
         NSString *column = [self foreignKeyColumnForRelationship:description];
-        BOOL needsTypeColumn = [self entityNeedsEntityTypeColumn:description.destinationEntity];
-        if (needsTypeColumn) {
-            NSString *typeColumn = [NSString stringWithFormat:@"%@__entityType", [description name]];
-            if (quotedNames) {
-                typeColumn = [NSString stringWithFormat:@"'%@'", typeColumn];
-            }
-            if (!indexedOnly) {
-                typeColumn = [typeColumn stringByAppendingString:@" integer"];
-            }
-            [columns addObject:typeColumn];
-        } else if (quotedNames) {
+        if (quotedNames) {
             column = [NSString stringWithFormat:@"'%@'", column];
         }
         [columns addObject:column];
@@ -1278,8 +1277,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     [[request insertedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
-        NSMutableSet *keysNeedingType = [NSMutableSet set];
-        
         // get values
         NSEntityDescription *entity = [object entity];
         NSMutableArray *keys = [NSMutableArray array];
@@ -1300,14 +1297,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     [keys addObject:key];
                     NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:desc]];
                     [columns addObject:column];
-                    
-                    // We need to fetch the direct entity not its super type
-                    if ([self entityNeedsEntityTypeColumn:desc.destinationEntity]) {
-                        NSString *typeColumn = [NSString stringWithFormat:@"'%@__entityType'", [obj name]];
-                        
-                        [keysNeedingType addObject:key];
-                        [columns addObject:typeColumn];
-                    }
                 }
                 else if ([desc isToMany] && [inverse isToMany]) {
                     if (![self handleInsertedRelationInSaveRequest:desc forObject:object error:error]) {
@@ -1340,21 +1329,13 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSNumber *number = [self referenceObjectForObjectID:[object objectID]];
         sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
         
-        __block NSUInteger offset = 0;
-        
         // bind properties
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            // SQL indexes start at 1
+            NSUInteger columnIndex = idx + 1;
             NSPropertyDescription *property = [properties objectForKey:obj];
-                [self
-                 bindProperty:property
-                 withValue:[object valueForKey:obj]
-                 forKey:obj
-                 toStatement:statement
-                 atIndex:(idx + 2 + offset)];
-            
-            if ([keysNeedingType containsObject:obj]) {
-                offset++;
-            }
+            // Add 1 to column index as the first bind is the objectID
+            [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:columnIndex + 1];
         }];
         
         // execute
@@ -2088,11 +2069,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             if (![desc isToMany]) {
                 NSNumber *number = [self referenceObjectForObjectID:[value objectID]];
                 sqlite3_bind_int64(statement, index, [number unsignedLongLongValue]);
-                if ([self entityNeedsEntityTypeColumn:desc.destinationEntity]) {
-                    // Get the type of the value to put it into the type column
-                    NSUInteger entityType = [value entity].name.hash;
-                    sqlite3_bind_int64(statement, index + 1, entityType);
-                }
             }
         }
     }
