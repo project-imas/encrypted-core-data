@@ -1232,7 +1232,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [columns addObject:firstIDColumn];
     }
     if ((firstEntity == rootSourceEntity && rootSourceEntity != relationship.entity) || (firstEntity == rootDestinationEntity && rootDestinationEntity != relationship.destinationEntity)) {
-        [columns addObject:[NSString stringWithFormat:typeFormat, rootSourceEntity.name]];
+        [columns addObject:[NSString stringWithFormat:typeFormat, firstEntity.name]];
     }
     
     // 2nd
@@ -1869,10 +1869,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 NSArray *columns = [self columnNamesForRelationship:rel withQuotes:NO forCreation:NO];
                 NSString *entity_name = [[self rootForEntity:[rel entity]] name];
                 
-                if ([[columns objectAtIndex:0] isEqualToString:[NSString stringWithFormat:@"%@__objectid",entity_name]]) {
+                if ([[columns firstObject] isEqualToString:[NSString stringWithFormat:@"%@__objectid", entity_name]]) {
                     index = 0;
                 } else {
                     index = 1;
+                    // Check to see if we need to skip a column as the second column might be a type column
+                    if ([self entityNeedsEntityTypeColumn:[rel destinationEntity]]) {
+                        index++;
+                    }
                 }
                 
                 NSString *joinTableAsClause1 = [NSString stringWithFormat:@"%@ AS %@",
@@ -1887,8 +1891,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 NSString *firstJoinClause = [NSString stringWithFormat:@"LEFT OUTER JOIN %@ ON %@", joinTableAsClause1, joinTableOnClause1];
                 
                 // relation table to destination entity table join
-                if (index == 1) { index = 0; }
-                else { index = 1; }
+                if (index >= 1) {
+                    index = 0;
+                } else {
+                    index = 1;
+                    // Check to see if we need to skip a column as the second column might be a type column
+                    if ([self entityNeedsEntityTypeColumn:[rel entity]]) {
+                        index++;
+                    }
+                }
                 
                 NSString *joinTableAsClause2 = [NSString stringWithFormat:@"%@ AS %@",
                                                 [self tableNameForEntity:[rel destinationEntity]],
