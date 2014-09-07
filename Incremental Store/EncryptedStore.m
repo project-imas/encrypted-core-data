@@ -1172,9 +1172,23 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return YES;
 }
 
+/// Performs case insensitive comparsion using the fixed EN-US POSIX locale
+-(NSComparator)fixedLocaleCaseInsensitiveComparator
+{
+    return ^NSComparisonResult(NSString *obj1, NSString *obj2) {
+        static NSLocale *enPOSIXLocale;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            enPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+        });
+        
+        return [obj1 compare:obj2 options:NSCaseInsensitiveSearch range:NSMakeRange(0, [obj1 length]) locale:enPOSIXLocale];
+    };
+}
+
 -(NSString *)tableNameForRelationship:(NSRelationshipDescription *)relationship {
     NSRelationshipDescription *inverse = [relationship inverseRelationship];
-    NSArray *names = [@[[relationship name],[inverse name]] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+    NSArray *names = [@[[relationship name],[inverse name]] sortedArrayUsingComparator:[self fixedLocaleCaseInsensitiveComparator]];
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 
@@ -1201,35 +1215,40 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
     NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
     
+    NSArray *orderedEntities = [@[rootSourceEntity, rootDestinationEntity] sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:NSStringFromSelector(@selector(name)) ascending:YES comparator:[self fixedLocaleCaseInsensitiveComparator]]]];
+    
+    NSEntityDescription *firstEntity = [orderedEntities firstObject];
+    NSEntityDescription *secondEntity = [orderedEntities lastObject];
+    
     // No creation: Max columns ObjectID, Type, Inverse ObjectID, Inverse Type
     // Creation: No creation columns, PK
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:creation ? 5 : 4];
     
-    // Object
-    NSString *objectIDColumn = [NSString stringWithFormat:format, rootSourceEntity.name];
+    // 1st
+    NSString *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
     if (creation) {
-        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", objectIDColumn]];
+        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", firstIDColumn]];
     } else {
-        [columns addObject:objectIDColumn];
+        [columns addObject:firstIDColumn];
     }
-    if (rootSourceEntity != relationship.entity) {
+    if ((firstEntity == rootSourceEntity && rootSourceEntity != relationship.entity) || (firstEntity == rootDestinationEntity && rootDestinationEntity != relationship.destinationEntity)) {
         [columns addObject:[NSString stringWithFormat:typeFormat, rootSourceEntity.name]];
     }
     
-    // Inverse
-    NSString *inverseObjectIDColumn = [NSString stringWithFormat:format, rootDestinationEntity.name];
+    // 2nd
+    NSString *secondIDColumn = [NSString stringWithFormat:format, secondEntity.name];
     if (creation) {
-        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", inverseObjectIDColumn]];
+        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", secondIDColumn]];
     } else {
-        [columns addObject:inverseObjectIDColumn];
+        [columns addObject:secondIDColumn];
     }
-    if (rootDestinationEntity != relationship.destinationEntity) {
-        [columns addObject:[NSString stringWithFormat:typeFormat, rootDestinationEntity.name]];
+    if ((secondEntity == rootSourceEntity && rootSourceEntity != relationship.entity) || (secondEntity == rootDestinationEntity && rootDestinationEntity != relationship.destinationEntity)) {
+        [columns addObject:[NSString stringWithFormat:typeFormat, secondEntity.name]];
     }
     
     if (creation) {
         // PK
-        [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", objectIDColumn, inverseObjectIDColumn]];
+        [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", firstIDColumn, secondIDColumn]];
     }
     
     return columns;
