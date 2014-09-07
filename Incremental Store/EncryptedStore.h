@@ -42,7 +42,6 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 - (id)valueForProperty:(NSPropertyDescription *)property
            inStatement:(sqlite3_stmt *)statement
                atIndex:(int)index;
-- (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship;
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship;
 - (void)bindProperty:(NSPropertyDescription *)property
            withValue:(id)value

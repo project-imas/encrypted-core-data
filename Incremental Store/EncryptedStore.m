@@ -2634,11 +2634,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 }
 
-- (NSString *)foreignKeyColumnForRelationshipP:(NSRelationshipDescription *)relationship {
-    NSEntityDescription *destination = [relationship destinationEntity];
-    return [NSString stringWithFormat:@"%@.__objectid", [destination name]];
-}
-
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
     return [NSString stringWithFormat:@"%@__objectid", [relationship name]];
 }
