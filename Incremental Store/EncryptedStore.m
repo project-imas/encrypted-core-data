@@ -1867,7 +1867,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 // source entity table to relation table join
                 NSUInteger index;
                 NSArray *columns = [self columnNamesForRelationship:rel withQuotes:NO forCreation:NO];
-                NSString *entity_name = [[rel entity] name];
+                NSString *entity_name = [[self rootForEntity:[rel entity]] name];
                 
                 if ([[columns objectAtIndex:0] isEqualToString:[NSString stringWithFormat:@"%@__objectid",entity_name]]) {
                     index = 0;
