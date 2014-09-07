@@ -2191,7 +2191,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     //    enum {
     //        NSCustomSelectorPredicateOperatorType,
-    //        NSBetweenPredicateOperatorType
     //    };
     //    typedef NSUInteger NSPredicateOperatorType;
     
@@ -2210,7 +2209,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                       @(NSLessThanPredicateOperatorType)             : @{ @"operator" : @"<",      @"format" : @"%@" },
                       @(NSLessThanOrEqualToPredicateOperatorType)    : @{ @"operator" : @"<=",     @"format" : @"%@" },
                       @(NSGreaterThanPredicateOperatorType)          : @{ @"operator" : @">",      @"format" : @"%@" },
-                      @(NSGreaterThanOrEqualToPredicateOperatorType) : @{ @"operator" : @">=",     @"format" : @"%@" }
+                      @(NSGreaterThanOrEqualToPredicateOperatorType) : @{ @"operator" : @">=",     @"format" : @"%@" },
+                      @(NSBetweenPredicateOperatorType)              : @{ @"operator" : @"BETWEEN",     @"format" : @"%@ AND %@" }
                       };
     });
     
@@ -2583,12 +2583,17 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             *operand = @"?";
         }
         else if ([value isKindOfClass:[NSArray class]]) {
-            NSUInteger count = [value count];
-            NSArray *parameters = [NSArray cmdArrayWithObject:@"?" times:count];
-            *bindings = value;
-            *operand = [NSString stringWithFormat:
-                        [operator objectForKey:@"format"],
-                        [parameters componentsJoinedByString:@", "]];
+            if (predicate.predicateOperatorType == NSBetweenPredicateOperatorType) {
+                *bindings = value;
+                *operand = [NSString stringWithFormat:[operator objectForKey:@"format"], @"?", @"?"];
+            } else {
+                NSUInteger count = [value count];
+                NSArray *parameters = [NSArray cmdArrayWithObject:@"?" times:count];
+                *bindings = value;
+                *operand = [NSString stringWithFormat:
+                            [operator objectForKey:@"format"],
+                            [parameters componentsJoinedByString:@", "]];
+            }
         }
         else if ([value isKindOfClass:[NSString class]]) {
             if ([predicate options] & NSCaseInsensitivePredicateOption) {

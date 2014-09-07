@@ -140,6 +140,8 @@
         [object setValue:@"adventures" forKey:@"title"];
         [object setValue:@"fundamental" forKey:@"body"];
         [object setValue:user forKey:@"user"];
+        NSDate *date = [NSDate dateWithTimeIntervalSinceNow:3600 * i];
+        [object setValue:date forKey:@"timestamp"];
     }
     error = nil;
     BOOL save = [context save:&error];
@@ -755,6 +757,36 @@
          
      }];
     
+}
+
+-(void)test_predicateEqualityComparisonUsingDates
+{
+    const NSUInteger count = 30;
+
+    __block NSError *error = nil;
+    NSManagedObject *user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+    [context save:&error];
+    XCTAssertNil(error, @"Error saving database.");
+
+    NSDate *now = [NSDate date];
+    
+    [self createPosts:count forUser:user];
+    
+    [@{ [NSPredicate predicateWithFormat:@"timestamp < %@", now] : @(0),
+        [NSPredicate predicateWithFormat:@"timestamp > %@", now] : @(count),
+        [NSPredicate predicateWithFormat:@"timestamp BETWEEN %@", @[[now dateByAddingTimeInterval:100], [now dateByAddingTimeInterval:4000]]] : @(1),
+        [NSPredicate predicateWithFormat:@"timestamp BETWEEN %@", @[now, [now dateByAddingTimeInterval:30 * 3601]]] : @(count),
+        [NSPredicate predicateWithFormat:@"timestamp BETWEEN %@", @[[now dateByAddingTimeInterval:100], [now dateByAddingTimeInterval:10 * 3602]]] : @(10)
+       } enumerateKeysAndObjectsUsingBlock:^(NSPredicate *predicate, NSNumber *expectedCount, BOOL *stop) {
+        
+           NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"Post"];
+           req.predicate = predicate;
+           
+           NSUInteger count = [context countForFetchRequest:req error:&error];
+        
+           XCTAssertFalse(count == NSNotFound, @"Error with fetch: %@", error);
+           XCTAssertEqual(count, [expectedCount unsignedIntegerValue], @"Incorrect fetch count");
+    }];
 }
 
 @end
