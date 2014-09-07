@@ -232,7 +232,9 @@
     NSArray *results = [context executeFetchRequest:request error:&error];
     XCTAssertNotNil(results, @"Could not execute fetch request.");
     XCTAssertEqual([results count], (NSUInteger)1, @"The number of root objects is wrong.");
-    return [results firstObject];
+    ISDRoot *root = [results firstObject];
+    XCTAssertEqualObjects(root.name, @"root", @"The name of the root object is wrong.");
+    return root;
 }
 
 -(void)setUp
