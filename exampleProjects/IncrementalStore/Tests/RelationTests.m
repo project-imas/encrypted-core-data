@@ -316,10 +316,22 @@
     XCTAssertNotNil(child, @"Nil one-to-one relation");
     
     if (childA) {
+        XCTAssertEqualObjects([child.entity name], [ISDChildA entityName], @"One-to-one child is of wrong entity");
+        if ([child respondsToSelector:@selector(attributeA)]) {
+            XCTAssertTrue([((ISDChildA *) child).attributeA hasPrefix:@"String for child A"], @"One-to-one childs attribute does not start with the correct prefix, got: %@, expecting prefix: %@", ((ISDChildA *) child).attributeA, @"String for child A");
+        } else {
+            XCTFail(@"One-to-one child does not have the correct attribute: %@", child);
+        }
         XCTAssertTrue([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
         XCTAssertFalse([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildA class]));
     }
     if (childB) {
+        XCTAssertEqualObjects([child.entity name], [ISDChildB entityName], @"One-to-one child is of wrong entity");
+        if ([child respondsToSelector:@selector(attributeB)]) {
+            XCTAssertTrue([((ISDChildB *) child).attributeB hasPrefix:@"String for child B"], @"One-to-one childs attribute does not start with the correct prefix, got: %@, expecting prefix: %@", ((ISDChildB *) child).attributeB, @"String for child B");
+        } else {
+            XCTFail(@"One-to-one child does not have the correct attribute: %@", child);
+        }
         XCTAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
         XCTAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
     }
