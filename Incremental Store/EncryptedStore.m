@@ -489,15 +489,28 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         sqlite3_bind_int64(statement, 1, key);
         
     } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
-        // many-to-many relationship, foreign key exists in relation table
+        // many-to-many relationship, foreign key exists in relation table, join to get the type
+        
+        NSString *sourceEntityName = [[self rootForEntity:sourceEntity] name];
+        NSString *destinationEntityName = [[self rootForEntity:destinationEntity] name];
         
         NSString *relationTable = [self tableNameForRelationship:relationship];
+        NSString *sourceIDColumn = [NSString stringWithFormat:@"%@__objectid", sourceEntityName];
+        NSString *destinationIDColumn = [NSString stringWithFormat:@"%@__objectid", destinationEntityName];
         
-        NSString *rootObjectColumn = [[self rootForEntity:relationship.entity] name];
-        NSString *rootInverseObjectColumn = [[self rootForEntity:destinationEntity] name];
-        NSString *rootInverseObjectTypeColumn = shouldFetchDestinationEntityType ? [NSString stringWithFormat:@", %@__entityType", rootInverseObjectColumn] : @"";
+        NSString *join = @"";
+        NSString *destinationTypeColumn = @"";
+        if (shouldFetchDestinationEntityType) {
+            NSString *destinationTable = [self tableNameForEntity:destinationEntity];
+            destinationTypeColumn = [NSString stringWithFormat:@", %@.__entityType", destinationTable];
+            join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, relationTable, destinationIDColumn];
+            
+            // Add tables so we don't get ambigious column errors
+            sourceIDColumn = [relationTable stringByAppendingFormat:@".%@", sourceIDColumn];
+            destinationIDColumn = [relationTable stringByAppendingFormat:@".%@", destinationIDColumn];
+        }
         
-        NSString *string = [NSString stringWithFormat:@"SELECT %@__objectid%@ FROM %@ WHERE %@__objectid=?", rootInverseObjectColumn, rootInverseObjectTypeColumn, relationTable, rootObjectColumn];
+        NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=?", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
         
@@ -1158,13 +1171,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return YES;
 }
 
-- (BOOL)createTableForRelationship:(NSRelationshipDescription *)relationship error:(NSError **)error {
+- (BOOL)createTableForRelationship:(NSRelationshipDescription *)relationship error:(NSError **)error
+{
+    NSString *firstIDColumn;
+    NSString *secondIDColumn;
+    [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
     // create table
-    NSArray *columns = [self columnNamesForRelationship:relationship withQuotes:YES forCreation:YES];
     NSString *string = [NSString stringWithFormat:
-                        @"CREATE TABLE %@ (%@);",
+                        @"CREATE TABLE %@ ('%@' INTEGER NOT NULL, '%@' INTEGER NOT NULL, PRIMARY KEY('%@', '%@'));",
                         [self tableNameForRelationship:relationship],
-                        [columns componentsJoinedByString:@", "]];
+                        firstIDColumn, secondIDColumn, firstIDColumn, secondIDColumn];
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     
@@ -1196,25 +1212,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 
-/// Create columns for both object IDs and add any type columns if needed
--(NSArray *)columnNamesForRelationship:(NSRelationshipDescription *)relationship withQuotes:(BOOL)withQuotes forCreation:(BOOL)creation
+/// Create columns for both object IDs. @returns YES  if the relationship.entity was first
+-(BOOL)relationships:(NSRelationshipDescription *)relationship firstIDColumn:(NSString *__autoreleasing*)firstIDColumn secondIDColumn:(NSString *__autoreleasing*)secondIDColumn
 {
-    NSString *format;
-    NSString *typeFormat;
-    if (withQuotes) {
-        static NSString *formatWithQuotes = @"'%@__objectid'";
-        static NSString *typeFormatWithQuotes = @"'%@__entityType'";
-        format = formatWithQuotes;
-        typeFormat = typeFormatWithQuotes;
-    } else {
-        static NSString *formatNoQuotes = @"%@__objectid";
-        static NSString *typeFormatNoQuotes = @"%@__entityType";
-        format = formatNoQuotes;
-        typeFormat = typeFormatNoQuotes;
-    }
-    if (creation) {
-        typeFormat = [typeFormat stringByAppendingString:@" INTEGER"];
-    }
+    NSParameterAssert(firstIDColumn);
+    NSParameterAssert(secondIDColumn);
     
     NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
     NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
@@ -1224,38 +1226,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSEntityDescription *firstEntity = [orderedEntities firstObject];
     NSEntityDescription *secondEntity = [orderedEntities lastObject];
     
-    // No creation: Max columns ObjectID, Type, Inverse ObjectID, Inverse Type
-    // Creation: No creation columns, PK
-    NSMutableArray *columns = [NSMutableArray arrayWithCapacity:creation ? 5 : 4];
+    static NSString *format = @"%@__objectid";
     
     // 1st
-    NSString *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
-    if (creation) {
-        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", firstIDColumn]];
-    } else {
-        [columns addObject:firstIDColumn];
-    }
-    if ((firstEntity == rootSourceEntity && rootSourceEntity != relationship.entity) || (firstEntity == rootDestinationEntity && rootDestinationEntity != relationship.destinationEntity)) {
-        [columns addObject:[NSString stringWithFormat:typeFormat, firstEntity.name]];
-    }
+    *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
     
     // 2nd
-    NSString *secondIDColumn = [NSString stringWithFormat:format, secondEntity.name];
-    if (creation) {
-        [columns addObject:[NSString stringWithFormat:@"%@ INTEGER NOT NULL", secondIDColumn]];
-    } else {
-        [columns addObject:secondIDColumn];
-    }
-    if ((secondEntity == rootSourceEntity && rootSourceEntity != relationship.entity) || (secondEntity == rootDestinationEntity && rootDestinationEntity != relationship.destinationEntity)) {
-        [columns addObject:[NSString stringWithFormat:typeFormat, secondEntity.name]];
-    }
+    *secondIDColumn = [NSString stringWithFormat:format, secondEntity.name];
     
-    if (creation) {
-        // PK
-        [columns addObject:[NSString stringWithFormat:@"PRIMARY KEY(%@, %@)", firstIDColumn, secondIDColumn]];
-    }
-    
-    return columns;
+    // Return if the relationship.entity was first
+    return orderedEntities[0] == rootSourceEntity;
 }
 
 #pragma mark - save changes to the database
@@ -1368,16 +1348,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     NSString *tableName = [self tableNameForRelationship:relationship];
     
+    NSString *firstIDColumn;
+    NSString *secondIDColumn;
+    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
+    
     // Object
-    NSNumber *objectID = [self referenceObjectForObjectID:[object objectID]];
-    NSNumber *objectType = [self entityNeedsEntityTypeColumn:relationship.entity] ? @([object.entity.name hash]) : nil;
+    unsigned long long objectID = [[self referenceObjectForObjectID:[object objectID]] unsignedLongLongValue];
     
-    // Inverse
-    BOOL needsInverseType = [self entityNeedsEntityTypeColumn:relationship.destinationEntity];
-    
-    id objectValues = objectType ? [NSString stringWithFormat:@"%@, %@", objectID, objectType] : objectID;
-    
-    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ VALUES (%@, ?%@);", tableName, objectValues, needsInverseType ? @", ?" : @""];
+    // TODO: make sure of order
+    NSString *values = [NSString stringWithFormat:(firstColumnIsSource ? @"%llu, ?" : @"?, %llu"), objectID];
+    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@) VALUES (%@);", tableName, firstIDColumn, secondIDColumn, values];
     
     __block BOOL success = YES;
     
@@ -1388,12 +1368,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // Add the related objects properties
-        sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedIntegerValue]);
-        
-        if (needsInverseType) {
-            // If this relations scheme requires a inverse type column add the entity type
-            sqlite3_bind_int64(statement, 2, [obj.entity.name hash]);
-        }
+        sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedLongLongValue]);
         
         sqlite3_step(statement);
         
@@ -1850,19 +1825,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             
             if ([rel isToMany] && [inverse isToMany]) {
                 
-                // source entity table to relation table join
-                NSUInteger index;
-                NSArray *columns = [self columnNamesForRelationship:rel withQuotes:NO forCreation:NO];
-                NSString *entity_name = [[self rootForEntity:[rel entity]] name];
+                // ID columns
+                NSString *firstIDColumn;
+                NSString *secondIDColumn;
+                BOOL sourceFirst = [self relationships:rel firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
                 
-                if ([[columns firstObject] isEqualToString:[NSString stringWithFormat:@"%@__objectid", entity_name]]) {
-                    index = 0;
+                NSString *clause1Column;
+                NSString *clause2Column;
+                if (sourceFirst) {
+                    clause1Column = firstIDColumn;
+                    clause2Column = secondIDColumn;
                 } else {
-                    index = 1;
-                    // Check to see if we need to skip a column as the second column might be a type column
-                    if ([self entityNeedsEntityTypeColumn:[rel destinationEntity]]) {
-                        index++;
-                    }
+                    clause1Column = secondIDColumn;
+                    clause2Column = firstIDColumn;
                 }
                 
                 NSString *joinTableAsClause1 = [NSString stringWithFormat:@"%@ AS %@",
@@ -1872,20 +1847,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 NSString *joinTableOnClause1 = [NSString stringWithFormat:@"%@.__objectID = %@.%@",
                                                lastTableName,
                                                relTableName,
-                                               [columns objectAtIndex:index]];
+                                               clause1Column];
                 
                 NSString *firstJoinClause = [NSString stringWithFormat:@"LEFT OUTER JOIN %@ ON %@", joinTableAsClause1, joinTableOnClause1];
-                
-                // relation table to destination entity table join
-                if (index >= 1) {
-                    index = 0;
-                } else {
-                    index = 1;
-                    // Check to see if we need to skip a column as the second column might be a type column
-                    if ([self entityNeedsEntityTypeColumn:[rel entity]]) {
-                        index++;
-                    }
-                }
                 
                 NSString *joinTableAsClause2 = [NSString stringWithFormat:@"%@ AS %@",
                                                 [self tableNameForEntity:[rel destinationEntity]],
@@ -1893,7 +1857,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 
                 NSString *joinTableOnClause2 = [NSString stringWithFormat:@"%@.%@ = %@.__objectID",
                                                 relTableName,
-                                                [columns objectAtIndex:index],
+                                                clause2Column,
                                                 nextTableName];
                 
                 NSString *secondJoinClause = [NSString stringWithFormat:@"LEFT OUTER JOIN %@ ON %@", joinTableAsClause2, joinTableOnClause2];
