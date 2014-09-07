@@ -161,7 +161,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         objectCountCache = [NSMutableDictionary dictionary];
         nodeCache = [NSMutableDictionary dictionary];
         entityTypeCache = [NSMutableDictionary dictionary];
-        for (NSEntityDescription * entity in root.managedObjectModel.entities) {
+        for (NSEntityDescription * entity in [[root managedObjectModel] entitiesForConfiguration:name]) {
             // TODO: should check for [entity isAbstract] and not add it to the cache
             if ([self entityNeedsEntityTypeColumn:entity]) {
                 [entityTypeCache setObject:entity forKey:@(entity.name.hash)];
@@ -175,6 +175,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 - (void)dealloc {
     sqlite3_close(database);
     database = NULL;
+}
+
+-(NSArray *)storeEntities
+{
+    return [[self.persistentStoreCoordinator managedObjectModel] entitiesForConfiguration:[self configurationName]];
 }
 
 - (NSArray *)obtainPermanentIDsForObjects:(NSArray *)array error:(NSError **)error {
@@ -680,9 +685,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     return NO;
                 }
                 
-                // run migrations
-                NSManagedObjectModel *model = [[self persistentStoreCoordinator] managedObjectModel];
-                if (![self initializeDatabaseWithModel:model error:error]) {
+                // Create the tables for all entities
+                if (![self initializeDatabase:error]) {
                     return NO;
                 }
                 
@@ -895,12 +899,13 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return succuess;
 }
 
-- (BOOL)initializeDatabaseWithModel:(NSManagedObjectModel *)model error:(NSError**)error {
+- (BOOL)initializeDatabase:(NSError**)error {
     BOOL __block success = YES;
     NSMutableSet *manytomanys = [NSMutableSet set];
     
     if (success) {
-        [[model entities] enumerateObjectsUsingBlock:^(NSEntityDescription *entity, NSUInteger idx, BOOL *stop) {
+        NSArray *entities = [self storeEntities];
+        [entities enumerateObjectsUsingBlock:^(NSEntityDescription *entity, NSUInteger idx, BOOL *stop) {
             if (![self createTableForEntity:entity error:error]) {
                 success = NO;
                 *stop = YES;
