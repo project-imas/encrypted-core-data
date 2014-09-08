@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */; };
-		3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */; };
 		3BD5EFFA15EE5DDF00333320 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
 		3BD5EFFC15EE5DDF00333320 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
 		3BD5EFFE15EE5DDF00333320 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */; };
@@ -16,23 +15,27 @@
 		3BD5F00615EE5DDF00333320 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F00515EE5DDF00333320 /* main.m */; };
 		3BD5F00A15EE5DDF00333320 /* ISDAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */; };
 		3BD5F00D15EE5DDF00333320 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */; };
-		3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F02515EE5E7200333320 /* SenTestingKit.framework */; };
-		3BD5F02715EE5E7200333320 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
-		3BD5F02815EE5E7200333320 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
-		3BD5F02E15EE5E7200333320 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3BD5F02C15EE5E7200333320 /* InfoPlist.strings */; };
-		3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F03015EE5E7200333320 /* IncrementalStoreTests.m */; };
 		3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F06115EE61A700333320 /* ISDEditPostViewController.m */; };
-		3BD5F06615EE62EC00333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06715EE62F300333320 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5F06515EE62EC00333320 /* CoreData.framework */; };
 		3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05D15EE616E00333320 /* ISDUserListViewController.m */; };
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
-		443CEAE619A2915200F270FE /* PasswordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 443CEAE519A2915200F270FE /* PasswordTests.m */; };
-		661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
-		661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		440E851219B3A1B0002542D1 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 440E850B19B3A15A002542D1 /* XCTest.framework */; };
+		440E851319B3A1B0002542D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
+		440E851419B3A1B0002542D1 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
+		440E851A19B3A1B0002542D1 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 440E851819B3A1B0002542D1 /* InfoPlist.strings */; };
+		440E852619B3A1E1002542D1 /* IncrementalStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */; };
+		440E852719B3A1E1002542D1 /* PasswordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852419B3A1E1002542D1 /* PasswordTests.m */; };
+		440E852819B3A1E1002542D1 /* RelationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440E852519B3A1E1002542D1 /* RelationTests.m */; };
+		440E852F19B3A3D2002542D1 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 440E852E19B3A3D2002542D1 /* Images.xcassets */; };
+		444AF94D19B3733D00B1F2A1 /* ClassModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */; };
+		444AF95319B3814500B1F2A1 /* ISDModelCategories.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95219B3814500B1F2A1 /* ISDModelCategories.m */; };
+		444AF95619B3823300B1F2A1 /* ISDParent.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95519B3823300B1F2A1 /* ISDParent.m */; };
+		444AF95919B3823300B1F2A1 /* ISDChildB.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95819B3823300B1F2A1 /* ISDChildB.m */; };
+		444AF95C19B3823300B1F2A1 /* ISDRoot.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95B19B3823300B1F2A1 /* ISDRoot.m */; };
+		444AF95F19B3823300B1F2A1 /* ISDChildA.m in Sources */ = {isa = PBXBuildFile; fileRef = 444AF95E19B3823300B1F2A1 /* ISDChildA.m */; };
 		661D95AF1954821900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
-		661D95B11954854900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,14 +46,14 @@
 			remoteGlobalIDString = D2AAC046055464E500DB518D;
 			remoteInfo = sqlcipher;
 		};
-		661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */ = {
+		440E851E19B3A1B0002542D1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
+			containerPortal = 3BD5EFEC15EE5DDF00333320 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D2AAC045055464E500DB518D;
-			remoteInfo = sqlcipher;
+			remoteGlobalIDString = 3BD5EFF415EE5DDF00333320;
+			remoteInfo = "Incremental Store Demo";
 		};
-		661A2D031948D26300C3C74E /* PBXContainerItemProxy */ = {
+		661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */;
 			proxyType = 1;
@@ -72,12 +75,6 @@
 		3BD5F00815EE5DDF00333320 /* ISDAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISDAppDelegate.h; sourceTree = "<group>"; };
 		3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ISDAppDelegate.m; sourceTree = "<group>"; };
 		3BD5F00C15EE5DDF00333320 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/MainStoryboard.storyboard; sourceTree = "<group>"; };
-		3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Incremental Store Tests.octest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		3BD5F02515EE5E7200333320 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
-		3BD5F02B15EE5E7200333320 /* Incremental Store Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Incremental Store Tests-Info.plist"; sourceTree = "<group>"; };
-		3BD5F02D15EE5E7200333320 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		3BD5F03015EE5E7200333320 /* IncrementalStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IncrementalStoreTests.m; sourceTree = "<group>"; };
-		3BD5F03215EE5E7200333320 /* Incremental Store Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Incremental Store Tests-Prefix.pch"; sourceTree = "<group>"; };
 		3BD5F05A15EE616E00333320 /* ISDPostListViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDPostListViewController.h; sourceTree = "<group>"; };
 		3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDPostListViewController.m; sourceTree = "<group>"; };
 		3BD5F05C15EE616E00333320 /* ISDUserListViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDUserListViewController.h; sourceTree = "<group>"; };
@@ -88,7 +85,26 @@
 		3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3EB644001799EE1E00392BFF /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3EB644011799EE1E00392BFF /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
-		443CEAE519A2915200F270FE /* PasswordTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PasswordTests.m; sourceTree = "<group>"; };
+		440E850B19B3A15A002542D1 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		440E851119B3A1B0002542D1 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		440E851719B3A1B0002542D1 /* Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Tests-Info.plist"; sourceTree = "<group>"; };
+		440E851919B3A1B0002542D1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		440E851D19B3A1B0002542D1 /* Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Tests-Prefix.pch"; sourceTree = "<group>"; };
+		440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IncrementalStoreTests.m; sourceTree = "<group>"; };
+		440E852419B3A1E1002542D1 /* PasswordTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PasswordTests.m; sourceTree = "<group>"; };
+		440E852519B3A1E1002542D1 /* RelationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RelationTests.m; sourceTree = "<group>"; };
+		440E852E19B3A3D2002542D1 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		444AF93D19B36BD300B1F2A1 /* ClassModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ClassModel.xcdatamodel; sourceTree = "<group>"; };
+		444AF95119B3814500B1F2A1 /* ISDModelCategories.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDModelCategories.h; sourceTree = "<group>"; };
+		444AF95219B3814500B1F2A1 /* ISDModelCategories.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDModelCategories.m; sourceTree = "<group>"; };
+		444AF95419B3823300B1F2A1 /* ISDParent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDParent.h; sourceTree = "<group>"; };
+		444AF95519B3823300B1F2A1 /* ISDParent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDParent.m; sourceTree = "<group>"; };
+		444AF95719B3823300B1F2A1 /* ISDChildB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDChildB.h; sourceTree = "<group>"; };
+		444AF95819B3823300B1F2A1 /* ISDChildB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDChildB.m; sourceTree = "<group>"; };
+		444AF95A19B3823300B1F2A1 /* ISDRoot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDRoot.h; sourceTree = "<group>"; };
+		444AF95B19B3823300B1F2A1 /* ISDRoot.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDRoot.m; sourceTree = "<group>"; };
+		444AF95D19B3823300B1F2A1 /* ISDChildA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISDChildA.h; sourceTree = "<group>"; };
+		444AF95E19B3823300B1F2A1 /* ISDChildA.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISDChildA.m; sourceTree = "<group>"; };
 		661D95AE1954821900581737 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -106,16 +122,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3BD5F02015EE5E7200333320 /* Frameworks */ = {
+		440E850E19B3A1B0002542D1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				661D95B11954854900581737 /* Security.framework in Frameworks */,
-				661A2D081948D26D00C3C74E /* libsqlcipher.a in Frameworks */,
-				3BD5F06615EE62EC00333320 /* CoreData.framework in Frameworks */,
-				3BD5F02615EE5E7200333320 /* SenTestingKit.framework in Frameworks */,
-				3BD5F02715EE5E7200333320 /* UIKit.framework in Frameworks */,
-				3BD5F02815EE5E7200333320 /* Foundation.framework in Frameworks */,
+				440E851219B3A1B0002542D1 /* XCTest.framework in Frameworks */,
+				440E851419B3A1B0002542D1 /* UIKit.framework in Frameworks */,
+				440E851319B3A1B0002542D1 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,8 +141,10 @@
 				3EB643FF1799EE1E00392BFF /* Incremental Store */,
 				3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */,
 				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
+				444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */,
+				444AF94019B36CA000B1F2A1 /* ClassModels */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
-				3BD5F02915EE5E7200333320 /* Incremental Store Tests */,
+				440E851519B3A1B0002542D1 /* Tests */,
 				3BD5EFF815EE5DDF00333320 /* Frameworks */,
 				3BD5EFF615EE5DDF00333320 /* Products */,
 			);
@@ -139,7 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */,
-				3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */,
+				440E851119B3A1B0002542D1 /* Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -147,12 +162,12 @@
 		3BD5EFF815EE5DDF00333320 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				440E850B19B3A15A002542D1 /* XCTest.framework */,
 				661D95AE1954821900581737 /* Security.framework */,
 				3BD5F06515EE62EC00333320 /* CoreData.framework */,
 				3BD5EFF915EE5DDF00333320 /* UIKit.framework */,
 				3BD5EFFB15EE5DDF00333320 /* Foundation.framework */,
 				3BD5EFFD15EE5DDF00333320 /* CoreGraphics.framework */,
-				3BD5F02515EE5E7200333320 /* SenTestingKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -164,6 +179,7 @@
 				3BD5F00915EE5DDF00333320 /* ISDAppDelegate.m */,
 				3BD5F00B15EE5DDF00333320 /* MainStoryboard.storyboard */,
 				3BD5F06415EE61E200333320 /* View Controllers */,
+				440E852E19B3A3D2002542D1 /* Images.xcassets */,
 				3BD5F00015EE5DDF00333320 /* Supporting Files */,
 			);
 			path = "Incremental Store Demo";
@@ -176,26 +192,6 @@
 				3BD5F00215EE5DDF00333320 /* InfoPlist.strings */,
 				3BD5F00515EE5DDF00333320 /* main.m */,
 				3BD5F00715EE5DDF00333320 /* Incremental Store Demo-Prefix.pch */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		3BD5F02915EE5E7200333320 /* Incremental Store Tests */ = {
-			isa = PBXGroup;
-			children = (
-				443CEAE519A2915200F270FE /* PasswordTests.m */,
-				3BD5F03015EE5E7200333320 /* IncrementalStoreTests.m */,
-				3BD5F02A15EE5E7200333320 /* Supporting Files */,
-			);
-			path = "Incremental Store Tests";
-			sourceTree = "<group>";
-		};
-		3BD5F02A15EE5E7200333320 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				3BD5F02B15EE5E7200333320 /* Incremental Store Tests-Info.plist */,
-				3BD5F02C15EE5E7200333320 /* InfoPlist.strings */,
-				3BD5F03215EE5E7200333320 /* Incremental Store Tests-Prefix.pch */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -231,6 +227,44 @@
 			path = "../../Incremental Store";
 			sourceTree = "<group>";
 		};
+		440E851519B3A1B0002542D1 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */,
+				440E852419B3A1E1002542D1 /* PasswordTests.m */,
+				440E852519B3A1E1002542D1 /* RelationTests.m */,
+				440E851619B3A1B0002542D1 /* Supporting Files */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		440E851619B3A1B0002542D1 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				440E851719B3A1B0002542D1 /* Tests-Info.plist */,
+				440E851819B3A1B0002542D1 /* InfoPlist.strings */,
+				440E851D19B3A1B0002542D1 /* Tests-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		444AF94019B36CA000B1F2A1 /* ClassModels */ = {
+			isa = PBXGroup;
+			children = (
+				444AF95A19B3823300B1F2A1 /* ISDRoot.h */,
+				444AF95B19B3823300B1F2A1 /* ISDRoot.m */,
+				444AF95419B3823300B1F2A1 /* ISDParent.h */,
+				444AF95519B3823300B1F2A1 /* ISDParent.m */,
+				444AF95D19B3823300B1F2A1 /* ISDChildA.h */,
+				444AF95E19B3823300B1F2A1 /* ISDChildA.m */,
+				444AF95719B3823300B1F2A1 /* ISDChildB.h */,
+				444AF95819B3823300B1F2A1 /* ISDChildB.m */,
+				444AF95119B3814500B1F2A1 /* ISDModelCategories.h */,
+				444AF95219B3814500B1F2A1 /* ISDModelCategories.m */,
+			);
+			path = ClassModels;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -252,24 +286,23 @@
 			productReference = 3BD5EFF515EE5DDF00333320 /* Incremental Store Demo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		3BD5F02315EE5E7200333320 /* Incremental Store Tests */ = {
+		440E851019B3A1B0002542D1 /* Tests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3BD5F03315EE5E7200333320 /* Build configuration list for PBXNativeTarget "Incremental Store Tests" */;
+			buildConfigurationList = 440E852019B3A1B0002542D1 /* Build configuration list for PBXNativeTarget "Tests" */;
 			buildPhases = (
-				3BD5F01F15EE5E7200333320 /* Sources */,
-				3BD5F02015EE5E7200333320 /* Frameworks */,
-				3BD5F02115EE5E7200333320 /* Resources */,
-				3BD5F02215EE5E7200333320 /* ShellScript */,
+				440E850D19B3A1B0002542D1 /* Sources */,
+				440E850E19B3A1B0002542D1 /* Frameworks */,
+				440E850F19B3A1B0002542D1 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				661A2D041948D26300C3C74E /* PBXTargetDependency */,
+				440E851F19B3A1B0002542D1 /* PBXTargetDependency */,
 			);
-			name = "Incremental Store Tests";
-			productName = "Incremental Store Tests";
-			productReference = 3BD5F02415EE5E7200333320 /* Incremental Store Tests.octest */;
-			productType = "com.apple.product-type.bundle";
+			name = Tests;
+			productName = Tests;
+			productReference = 440E851119B3A1B0002542D1 /* Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -278,11 +311,15 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = ISD;
-				LastUpgradeCheck = 0440;
+				LastTestingUpgradeCheck = 0510;
+				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Caleb Davenport";
 				TargetAttributes = {
 					3BD5EFF415EE5DDF00333320 = {
 						DevelopmentTeam = M9BLEU3LFV;
+					};
+					440E851019B3A1B0002542D1 = {
+						TestTargetID = 3BD5EFF415EE5DDF00333320;
 					};
 				};
 			};
@@ -305,7 +342,7 @@
 			projectRoot = "";
 			targets = (
 				3BD5EFF415EE5DDF00333320 /* Incremental Store Demo */,
-				3BD5F02315EE5E7200333320 /* Incremental Store Tests */,
+				440E851019B3A1B0002542D1 /* Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -325,36 +362,21 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				440E852F19B3A3D2002542D1 /* Images.xcassets in Resources */,
 				3BD5F00415EE5DDF00333320 /* InfoPlist.strings in Resources */,
 				3BD5F00D15EE5DDF00333320 /* MainStoryboard.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3BD5F02115EE5E7200333320 /* Resources */ = {
+		440E850F19B3A1B0002542D1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3BD5F02E15EE5E7200333320 /* InfoPlist.strings in Resources */,
+				440E851A19B3A1B0002542D1 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		3BD5F02215EE5E7200333320 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3BD5EFF115EE5DDF00333320 /* Sources */ = {
@@ -362,38 +384,43 @@
 			buildActionMask = 2147483647;
 			files = (
 				3BD5F00615EE5DDF00333320 /* main.m in Sources */,
+				444AF95C19B3823300B1F2A1 /* ISDRoot.m in Sources */,
+				3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */,
+				444AF95319B3814500B1F2A1 /* ISDModelCategories.m in Sources */,
 				3BD5F00A15EE5DDF00333320 /* ISDAppDelegate.m in Sources */,
-				3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */,
+				3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
+				444AF95919B3823300B1F2A1 /* ISDChildB.m in Sources */,
 				3BD5F06815EE64AF00333320 /* ISDUserListViewController.m in Sources */,
 				3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */,
-				3BA9B71416359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
-				3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */,
+				444AF95619B3823300B1F2A1 /* ISDParent.m in Sources */,
+				3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */,
+				444AF95F19B3823300B1F2A1 /* ISDChildA.m in Sources */,
+				444AF94D19B3733D00B1F2A1 /* ClassModel.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3BD5F01F15EE5E7200333320 /* Sources */ = {
+		440E850D19B3A1B0002542D1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				443CEAE619A2915200F270FE /* PasswordTests.m in Sources */,
-				661A2CFB1948D23900C3C74E /* EncryptedStore.m in Sources */,
-				3BD5F03115EE5E7200333320 /* IncrementalStoreTests.m in Sources */,
-				3BA9B71516359A7000C91EB0 /* Model.xcdatamodeld in Sources */,
+				440E852719B3A1E1002542D1 /* PasswordTests.m in Sources */,
+				440E852619B3A1E1002542D1 /* IncrementalStoreTests.m in Sources */,
+				440E852819B3A1E1002542D1 /* RelationTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		440E851F19B3A1B0002542D1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3BD5EFF415EE5DDF00333320 /* Incremental Store Demo */;
+			targetProxy = 440E851E19B3A1B0002542D1 /* PBXContainerItemProxy */;
+		};
 		661A2D001948D24B00C3C74E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = sqlcipher;
 			targetProxy = 661A2CFF1948D24B00C3C74E /* PBXContainerItemProxy */;
-		};
-		661A2D041948D26300C3C74E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = sqlcipher;
-			targetProxy = 661A2D031948D26300C3C74E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -414,10 +441,10 @@
 			name = MainStoryboard.storyboard;
 			sourceTree = "<group>";
 		};
-		3BD5F02C15EE5E7200333320 /* InfoPlist.strings */ = {
+		440E851819B3A1B0002542D1 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				3BD5F02D15EE5E7200333320 /* en */,
+				440E851919B3A1B0002542D1 /* en */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -429,9 +456,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -443,8 +474,11 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				ONLY_ACTIVE_ARCH = YES;
@@ -457,16 +491,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				OTHER_CFLAGS = (
@@ -481,6 +522,8 @@
 		3BD5F01415EE5DDF00333320 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
@@ -493,6 +536,8 @@
 		3BD5F01515EE5DDF00333320 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Incremental Store Demo/Incremental Store Demo-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
@@ -502,35 +547,74 @@
 			};
 			name = Release;
 		};
-		3BD5F03415EE5E7200333320 /* Debug */ = {
+		440E852119B3A1B0002542D1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Incremental Store Demo.app/Incremental Store Demo";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				FRAMEWORK_SEARCH_PATHS = (
-					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
-					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
-				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
-				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
+				GCC_PREFIX_HEADER = "Tests/Tests-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				INFOPLIST_FILE = "Tests/Tests-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
 			};
 			name = Debug;
 		};
-		3BD5F03515EE5E7200333320 /* Release */ = {
+		440E852219B3A1B0002542D1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Incremental Store Demo.app/Incremental Store Demo";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				ENABLE_NS_ASSERTIONS = NO;
 				FRAMEWORK_SEARCH_PATHS = (
-					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
-					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Incremental Store Tests/Incremental Store Tests-Prefix.pch";
-				HEADER_SEARCH_PATHS = "\"$PROJECT_DIR/../Incremental Store\"/**";
-				INFOPLIST_FILE = "Incremental Store Tests/Incremental Store Tests-Info.plist";
+				GCC_PREFIX_HEADER = "Tests/Tests-Prefix.pch";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				INFOPLIST_FILE = "Tests/Tests-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
 			};
 			name = Release;
 		};
@@ -555,11 +639,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3BD5F03315EE5E7200333320 /* Build configuration list for PBXNativeTarget "Incremental Store Tests" */ = {
+		440E852019B3A1B0002542D1 /* Build configuration list for PBXNativeTarget "Tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3BD5F03415EE5E7200333320 /* Debug */,
-				3BD5F03515EE5E7200333320 /* Release */,
+				440E852119B3A1B0002542D1 /* Debug */,
+				440E852219B3A1B0002542D1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -574,6 +658,16 @@
 			);
 			currentVersion = 3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */;
 			path = Model.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				444AF93D19B36BD300B1F2A1 /* ClassModel.xcdatamodel */,
+			);
+			currentVersion = 444AF93D19B36BD300B1F2A1 /* ClassModel.xcdatamodel */;
+			path = ClassModel.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

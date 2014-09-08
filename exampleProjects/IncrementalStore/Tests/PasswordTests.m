@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Caleb Davenport. All rights reserved.
 //
 
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 #import <CoreData/CoreData.h>
 #import "EncryptedStore.h"
 
@@ -17,7 +17,7 @@ static BOOL const UseEncryptedStore = YES;
 static NSString *const CorrectPassword = @"CorrectPassword";
 static NSString *const IncorrectPassword = @"IncorrectPassword";
 
-@interface PasswordTests : SenTestCase
+@interface PasswordTests : XCTestCase
 
 @end
 
@@ -100,12 +100,12 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     NSError *error;
     NSPersistentStore *store = [self openDatabaseWithPassword:CorrectPassword error:&error];
     
-    STAssertNotNil(store, @"Nil store: %@", error);
+    XCTAssertNotNil(store, @"Nil store: %@", error);
     [self cleanUp:store];
 
     store = [self openDatabaseWithPassword:CorrectPassword error:&error];
     
-    STAssertNotNil(store, @"Nil store: %@", error);
+    XCTAssertNotNil(store, @"Nil store: %@", error);
     [self cleanUp:store];
 }
 
@@ -114,25 +114,25 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     NSError *error;
     NSPersistentStore *store = [self openDatabaseWithPassword:CorrectPassword error:&error];
     
-    STAssertNotNil(store, @"Nil store: %@", error);
+    XCTAssertNotNil(store, @"Nil store: %@", error);
     [self cleanUp:store];
     
     store = [self openDatabaseWithPassword:IncorrectPassword error:&error];
     
-    STAssertNil(store, @"Nil context");
-    STAssertEqualObjects(error.domain, EncryptedStoreErrorDomain, @"Incorrect error domain");
-    STAssertEquals(error.code, EncryptedStoreErrorIncorrectPasscode, @"Incorrect error code");
+    XCTAssertNil(store, @"Nil context");
+    XCTAssertEqualObjects(error.domain, EncryptedStoreErrorDomain, @"Incorrect error domain");
+    XCTAssertEqual(error.code, EncryptedStoreErrorIncorrectPasscode, @"Incorrect error code");
     
     NSError *sqliteError = error.userInfo[NSUnderlyingErrorKey];
-    STAssertNotNil(sqliteError, @"Nil SQLite error");
-    STAssertEqualObjects(sqliteError.domain, NSSQLiteErrorDomain, @"Incorrect error SQLite error domain");
-    STAssertEquals(sqliteError.code, (NSInteger)SQLITE_NOTADB, @"Incorrect error SQLite error code");
+    XCTAssertNotNil(sqliteError, @"Nil SQLite error");
+    XCTAssertEqualObjects(sqliteError.domain, NSSQLiteErrorDomain, @"Incorrect error SQLite error domain");
+    XCTAssertEqual(sqliteError.code, (NSInteger)SQLITE_NOTADB, @"Incorrect error SQLite error code");
     [self cleanUp:store];
     
     // Try again once more to be sure it still opens
     store = [self openDatabaseWithPassword:CorrectPassword error:&error];
     
-    STAssertNotNil(store, @"Nil store: %@", error);
+    XCTAssertNotNil(store, @"Nil store: %@", error);
     [self cleanUp:store];
 }
 
