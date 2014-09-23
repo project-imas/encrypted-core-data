@@ -21,6 +21,8 @@
 		3BD5F06915EE64B300333320 /* ISDPostListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BD5F05B15EE616E00333320 /* ISDPostListViewController.m */; };
 		3EB644021799EE1E00392BFF /* EncryptedStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EB644011799EE1E00392BFF /* EncryptedStore.m */; };
 		3EB644041799EE7E00392BFF /* libsqlcipher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EB643FE1799EE0000392BFF /* libsqlcipher.a */; };
+		440B67DA19D1E45F00C28112 /* SubEntitiesModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 440B67D819D1E45F00C28112 /* SubEntitiesModel.xcdatamodeld */; };
+		440B67DD19D1E52100C28112 /* SubEntityTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 440B67DC19D1E52100C28112 /* SubEntityTests.m */; };
 		440E851219B3A1B0002542D1 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 440E850B19B3A15A002542D1 /* XCTest.framework */; };
 		440E851319B3A1B0002542D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFFB15EE5DDF00333320 /* Foundation.framework */; };
 		440E851419B3A1B0002542D1 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD5EFF915EE5DDF00333320 /* UIKit.framework */; };
@@ -85,6 +87,8 @@
 		3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = sqlcipher.xcodeproj; path = ../../vendor/sqlcipher/sqlcipher.xcodeproj; sourceTree = "<group>"; };
 		3EB644001799EE1E00392BFF /* EncryptedStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EncryptedStore.h; sourceTree = "<group>"; };
 		3EB644011799EE1E00392BFF /* EncryptedStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EncryptedStore.m; sourceTree = "<group>"; };
+		440B67D919D1E45F00C28112 /* SubEntitiesModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SubEntitiesModel.xcdatamodel; sourceTree = "<group>"; };
+		440B67DC19D1E52100C28112 /* SubEntityTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SubEntityTests.m; sourceTree = "<group>"; };
 		440E850B19B3A15A002542D1 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		440E851119B3A1B0002542D1 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		440E851719B3A1B0002542D1 /* Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Tests-Info.plist"; sourceTree = "<group>"; };
@@ -142,6 +146,7 @@
 				3EB643F81799EDFF00392BFF /* sqlcipher.xcodeproj */,
 				3BA9B71216359A7000C91EB0 /* Model.xcdatamodeld */,
 				444AF93C19B36BD300B1F2A1 /* ClassModel.xcdatamodeld */,
+				440B67D819D1E45F00C28112 /* SubEntitiesModel.xcdatamodeld */,
 				444AF94019B36CA000B1F2A1 /* ClassModels */,
 				3BD5EFFF15EE5DDF00333320 /* Incremental Store Demo */,
 				440E851519B3A1B0002542D1 /* Tests */,
@@ -233,6 +238,7 @@
 				440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */,
 				440E852419B3A1E1002542D1 /* PasswordTests.m */,
 				440E852519B3A1E1002542D1 /* RelationTests.m */,
+				440B67DC19D1E52100C28112 /* SubEntityTests.m */,
 				440E851619B3A1B0002542D1 /* Supporting Files */,
 			);
 			path = Tests;
@@ -396,6 +402,7 @@
 				3BD5F06215EE61A700333320 /* ISDEditPostViewController.m in Sources */,
 				444AF95F19B3823300B1F2A1 /* ISDChildA.m in Sources */,
 				444AF94D19B3733D00B1F2A1 /* ClassModel.xcdatamodeld in Sources */,
+				440B67DA19D1E45F00C28112 /* SubEntitiesModel.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -404,6 +411,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				440E852719B3A1E1002542D1 /* PasswordTests.m in Sources */,
+				440B67DD19D1E52100C28112 /* SubEntityTests.m in Sources */,
 				440E852619B3A1E1002542D1 /* IncrementalStoreTests.m in Sources */,
 				440E852819B3A1E1002542D1 /* RelationTests.m in Sources */,
 			);
@@ -658,6 +666,16 @@
 			);
 			currentVersion = 3BA9B71316359A7000C91EB0 /* Model.xcdatamodel */;
 			path = Model.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		440B67D819D1E45F00C28112 /* SubEntitiesModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				440B67D919D1E45F00C28112 /* SubEntitiesModel.xcdatamodel */,
+			);
+			currentVersion = 440B67D919D1E45F00C28112 /* SubEntitiesModel.xcdatamodel */;
+			path = SubEntitiesModel.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};
