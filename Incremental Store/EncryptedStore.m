@@ -66,6 +66,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @end
 
+@interface NSEntityDescription (CMDTypeHash)
+
+@property (nonatomic, readonly) NSUInteger typeHash;
+
+@end
+
 @implementation EncryptedStore {
     
     // database resources
@@ -164,7 +170,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         for (NSEntityDescription * entity in [[root managedObjectModel] entitiesForConfiguration:name]) {
             // TODO: should check for [entity isAbstract] and not add it to the cache
             if ([self entityNeedsEntityTypeColumn:entity]) {
-                [entityTypeCache setObject:entity forKey:@(entity.name.hash)];
+                [entityTypeCache setObject:entity forKey:@(entity.typeHash)];
             }
         }
         database = NULL;
@@ -948,7 +954,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 - (NSArray*)entityIdsForEntity:(NSEntityDescription*)entity {
-    NSMutableArray *entityIds = [NSMutableArray arrayWithObject:@(entity.name.hash)];
+    NSMutableArray *entityIds = [NSMutableArray arrayWithObject:@(entity.typeHash)];
     
     for (NSEntityDescription *subentity in entity.subentities) {
         [entityIds addObjectsFromArray:[self entityIdsForEntity:subentity]];
@@ -1143,7 +1149,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                   @"FROM %@",
                   destinationTableName,
                   [destinationColumns componentsJoinedByString:@", "],
-                  (unsigned long) destinationEntity.name.hash,
+                  destinationEntity.typeHash,
                   [sourceColumns componentsJoinedByString:@", "],
                   temporaryTableName];
     } else {
@@ -1299,7 +1305,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                       @"INSERT INTO %@ ('__entityType', %@) VALUES(%lu, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
-                      (unsigned long) entity.name.hash,
+                      entity.typeHash,
                       [[NSArray cmdArrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
         } else {
             string = [NSString stringWithFormat:
@@ -2315,7 +2321,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         } else {
             entityWhere = [NSString stringWithFormat:@"%@.__entityType = %lu",
                            [self tableNameForEntity:request.entity],
-                           (unsigned long) request.entityName.hash];
+                           request.entity.typeHash];
         }
         
         if (query.length > 0) {
@@ -2529,7 +2535,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     value = [value stringByAppendingString:
                              [NSString stringWithFormat:@" AND [%@].__entityType = %lu",
                               rel.name,
-                              (unsigned long) rel.destinationEntity.name.hash]];
+                              rel.destinationEntity.typeHash]];
                 }
                 value = [value stringByAppendingString:@")"];
                 foundPredicate = YES;
@@ -2722,6 +2728,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
     }
     [self updateWithValues:updateValues version:self.version+1];
+}
+
+@end
+
+@implementation NSEntityDescription (CMDTypeHash)
+
+-(NSUInteger)typeHash
+{
+    NSUInteger hash = (uint32_t) self.name.hash;
+    return hash;
 }
 
 @end
