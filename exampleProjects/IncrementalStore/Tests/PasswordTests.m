@@ -174,6 +174,34 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     [self cleanUp:store];
 }
 
+/// Creates with empty string, tries with incorrect string, tries again with nil
+- (void)test_creatingEmptyPasswordDBAndOpeningWithIncorrectPassword
+{
+    NSError *error;
+    NSPersistentStore *store = [self openDatabaseWithPassword:@"" error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+    
+    store = [self openDatabaseWithPassword:IncorrectPassword error:&error];
+    
+    XCTAssertNil(store, @"Nil context");
+    XCTAssertEqualObjects(error.domain, EncryptedStoreErrorDomain, @"Incorrect error domain");
+    XCTAssertEqual(error.code, EncryptedStoreErrorIncorrectPasscode, @"Incorrect error code");
+    
+    NSError *sqliteError = error.userInfo[NSUnderlyingErrorKey];
+    XCTAssertNotNil(sqliteError, @"Nil SQLite error");
+    XCTAssertEqualObjects(sqliteError.domain, NSSQLiteErrorDomain, @"Incorrect error SQLite error domain");
+    XCTAssertEqual(sqliteError.code, (NSInteger)SQLITE_NOTADB, @"Incorrect error SQLite error code");
+    [self cleanUp:store];
+    
+    // Try again once more to be sure it still opens
+    store = [self openDatabaseWithPassword:nil error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+}
+
 - (void)test_storeHelperMethodsWithEmptyPassword
 {
     NSPersistentStoreCoordinator *coord;
