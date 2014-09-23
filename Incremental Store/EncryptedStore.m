@@ -227,7 +227,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSString *table = [self tableNameForEntity:entity];
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
         NSDictionary *ordering = [self orderClause:fetchRequest forEntity:entity];
-        NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %ld", (unsigned long)[fetchRequest fetchLimit]] : @"");
+        NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %lu", (unsigned long)[fetchRequest fetchLimit]] : @"");
         BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
         
         // NOTE: this would probably clash with DISTINCT
@@ -2640,7 +2640,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     // unsupported type
     else {
-        NSLog(@"%s Unsupported expression type %ld", __PRETTY_FUNCTION__, (unsigned long)type);
+        NSLog(@"%s Unsupported expression type %lu", __PRETTY_FUNCTION__, (unsigned long)type);
     }
 }
 
