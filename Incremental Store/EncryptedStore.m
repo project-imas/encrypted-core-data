@@ -123,7 +123,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 + (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel {
     
     NSMutableDictionary *newOptions = [NSMutableDictionary dictionary];
-    [newOptions setValue:[NSString stringWithUTF8String:options->passphrase] forKey:EncryptedStorePassphraseKey];
+    if (options->passphrase) {
+        [newOptions setValue:[NSString stringWithUTF8String:options->passphrase] forKey:EncryptedStorePassphraseKey];
+    }
     
     if (options->database_location)
         [newOptions setValue:[NSString stringWithUTF8String:options->database_location] forKey:EncryptedStoreDatabaseLocation];
@@ -136,7 +138,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode
 {
-    NSDictionary *options = @{ EncryptedStorePassphraseKey : passcode };
+    NSDictionary *options = passcode ? @{ EncryptedStorePassphraseKey : passcode } : nil;
     
     return [self makeStoreWithOptions:options managedObjectModel:objModel];
 }
@@ -765,11 +767,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 - (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
     
-    if (passphrase == nil) return NO;
-    const char *string = [passphrase UTF8String];
-    int status = sqlite3_key(database, string, strlen(string));
-    string = NULL;
-    passphrase = nil;
+    int status;
+    if ([passphrase length] > 0) {
+        // Password provided, use it to key the DB
+        const char *string = [passphrase UTF8String];
+        status = sqlite3_key(database, string, strlen(string));
+        string = NULL;
+        passphrase = nil;
+    } else {
+        // No password
+        status = SQLITE_OK;
+    }
     
     if (status == SQLITE_OK) {
         // Check if the password is correct as per http://sqlcipher.net/sqlcipher-api/#key section "Testing the Key"

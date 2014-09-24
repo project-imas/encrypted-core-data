@@ -29,6 +29,10 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     return [NSBundle bundleForClass:self];
 }
 
++ (NSManagedObjectModel *)model {
+    return [NSManagedObjectModel mergedModelFromBundles:@[ [self bundle] ]];
+}
+
 + (NSURL *)databaseURL {
     
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -46,16 +50,20 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     NSURL *URL;
     
     // get the model
-    NSBundle *bundle = [[self class] bundle];
-    NSManagedObjectModel *model = [NSManagedObjectModel mergedModelFromBundles:@[ bundle ]];
+    NSManagedObjectModel *model = [[self class] model];
     
     // get the coordinator
     coordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
     
     // add store
-    NSDictionary *options = @{
-                              EncryptedStorePassphraseKey : password
-                              };
+    NSDictionary *options;
+    if (password) {
+        options = @{
+                    EncryptedStorePassphraseKey : password
+                    };
+    } else {
+        options = nil;
+    }
     URL = [[self class] databaseURL];
     NSLog(@"Working with database at URL: %@", URL);
     
@@ -134,6 +142,108 @@ static NSString *const IncorrectPassword = @"IncorrectPassword";
     
     XCTAssertNotNil(store, @"Nil store: %@", error);
     [self cleanUp:store];
+}
+
+#pragma mark - Empty password
+
+- (void)test_creatingDBAndOpeningWithEmptyPassword
+{
+    NSError *error;
+    NSPersistentStore *store = [self openDatabaseWithPassword:@"" error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+    
+    store = [self openDatabaseWithPassword:@"" error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+}
+
+- (void)test_creatingDBAndOpeningWithNilPassword
+{
+    NSError *error;
+    NSPersistentStore *store = [self openDatabaseWithPassword:nil error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+    
+    store = [self openDatabaseWithPassword:nil error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+}
+
+/// Creates with empty string, tries with incorrect string, tries again with nil
+- (void)test_creatingEmptyPasswordDBAndOpeningWithIncorrectPassword
+{
+    NSError *error;
+    NSPersistentStore *store = [self openDatabaseWithPassword:@"" error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+    
+    store = [self openDatabaseWithPassword:IncorrectPassword error:&error];
+    
+    XCTAssertNil(store, @"Nil context");
+    XCTAssertEqualObjects(error.domain, EncryptedStoreErrorDomain, @"Incorrect error domain");
+    XCTAssertEqual(error.code, EncryptedStoreErrorIncorrectPasscode, @"Incorrect error code");
+    
+    NSError *sqliteError = error.userInfo[NSUnderlyingErrorKey];
+    XCTAssertNotNil(sqliteError, @"Nil SQLite error");
+    XCTAssertEqualObjects(sqliteError.domain, NSSQLiteErrorDomain, @"Incorrect error SQLite error domain");
+    XCTAssertEqual(sqliteError.code, (NSInteger)SQLITE_NOTADB, @"Incorrect error SQLite error code");
+    [self cleanUp:store];
+    
+    // Try again once more to be sure it still opens
+    store = [self openDatabaseWithPassword:nil error:&error];
+    
+    XCTAssertNotNil(store, @"Nil store: %@", error);
+    [self cleanUp:store];
+}
+
+- (void)test_storeHelperMethodsWithEmptyPassword
+{
+    NSPersistentStoreCoordinator *coord;
+    
+    // Dict
+    NSDictionary *dictOpts = @{EncryptedStorePassphraseKey : @""};
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStoreWithOptions:dictOpts managedObjectModel:[[self class] model]], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
+    
+    // Struct
+    EncryptedStoreOptions structOpts;
+    structOpts.database_location = NULL;
+    structOpts.cache_size = 0;
+    structOpts.passphrase = "";
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStoreWithStructOptions:&structOpts managedObjectModel:[[self class] model]], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
+    
+    // Passcode
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStore:[[self class] model] passcode:@""], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
+}
+
+- (void)test_storeHelperMethodsWithNilPassword
+{
+    NSPersistentStoreCoordinator *coord;
+    
+    // Dict
+    NSDictionary *dictOpts = @{};
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStoreWithOptions:dictOpts managedObjectModel:[[self class] model]], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
+    
+    // Struct
+    EncryptedStoreOptions structOpts;
+    structOpts.database_location = NULL;
+    structOpts.cache_size = 0;
+    structOpts.passphrase = NULL;
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStoreWithStructOptions:&structOpts managedObjectModel:[[self class] model]], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
+    
+    // Passcode
+    XCTAssertNoThrowSpecificNamed(coord = [EncryptedStore makeStore:[[self class] model] passcode:nil], NSException, NSInternalInconsistencyException, @"Assert was triggered as the created store was nil");
+    XCTAssertEqual([[coord persistentStores] count], (NSUInteger) 1, @"There should be one persistent store attached to the coordinator");
 }
 
 @end
