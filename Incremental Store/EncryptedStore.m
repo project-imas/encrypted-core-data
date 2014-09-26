@@ -669,20 +669,22 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                                       mergedModelFromBundles:bundles
                                                       forStoreMetadata:metadata];
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
-                    if (oldModel && newModel && ![oldModel isEqual:newModel]) {
+                    if (oldModel && newModel) {
                         
-                        // run migrations
-                        if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
-                            return NO;
-                        }
-                        
-                        // update metadata
-                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                        [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                        [self setMetadata:mutableMetadata];
-                        if (![self saveMetadata]) {
-                            if (error) { *error = [self databaseError]; }
-                            return NO;
+                        if (![oldModel isEqual:newModel]) {
+                            // run migrations
+                            if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
+                                return NO;
+                            }
+                            
+                            // update metadata
+                            NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                            [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
+                            [self setMetadata:mutableMetadata];
+                            if (![self saveMetadata]) {
+                                if (error) { *error = [self databaseError]; }
+                                return NO;
+                            }
                         }
                         
                     } else {
@@ -1063,7 +1065,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSString * tableName = [self tableNameForEntity:entity];
     for (NSString * column in indexedColumns) {
         NSString * query = [NSString stringWithFormat:
-                            @"CREATE INDEX %@_%@_INDEX ON %@ (%@)",
+                            @"CREATE INDEX %@_%@_INDEX ON %@ (`%@`)",
                             tableName,
                             column,
                             tableName,
