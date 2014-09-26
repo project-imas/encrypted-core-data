@@ -1065,7 +1065,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSString * tableName = [self tableNameForEntity:entity];
     for (NSString * column in indexedColumns) {
         NSString * query = [NSString stringWithFormat:
-                            @"CREATE INDEX %@_%@_INDEX ON %@ (%@)",
+                            @"CREATE INDEX %@_%@_INDEX ON %@ (`%@`)",
                             tableName,
                             column,
                             tableName,
