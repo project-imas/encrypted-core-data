@@ -1153,7 +1153,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [cacheChanges setObject:value forKey:obj];
             }
             else {
-                [cacheChanges removeObjectForKey:obj];
+                [cacheChanges setObject: [NSNull null] forKey: obj];
             }
 #endif
             [self
@@ -2093,15 +2093,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 - (void)updateWithChangedValues:(NSDictionary *)changedValues
 {
-    NSMutableDictionary *allValues = [NSMutableDictionary dictionaryWithDictionary:changedValues];
+    NSMutableDictionary * updateValues = [NSMutableDictionary dictionaryWithCapacity:self.allProperties.count];
     for (NSPropertyDescription * key in self.allProperties) {
-        id newValue = [allValues objectForKey:key.name];
-        if(!newValue){
-            [allValues setObject:[self valueForPropertyDescription:key] forKey:key.name];
+        id newValue = [changedValues objectForKey:key.name];
+        id value = newValue ?: [self valueForPropertyDescription:key];
+        if (value && ![value isEqual: [NSNull null]]) {
+            [updateValues setObject:value forKey:key.name];
         }
     }
-    [self updateWithValues:allValues version:self.version+1];
-
+    [self updateWithValues:updateValues version:self.version+1];
 }
 
 @end
