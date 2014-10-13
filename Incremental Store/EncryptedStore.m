@@ -825,6 +825,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSString *string = @"PRAGMA cache_size;";
             sqlite3_stmt *checkStatement = [self preparedStatementForQuery:string];
             sqlite3_step(checkStatement);
+            if (checkStatement == NULL || sqlite3_finalize(checkStatement) != SQLITE_OK) {
+                // TO-DO: handle error with statement
+                NSLog(@"Error: checkStatement is NULL or could not be finalized");
+                return NO;
+            }
+            
             int actualCacheSize = sqlite3_column_int(checkStatement,0);
             if (actualCacheSize == [cacheSize intValue]) {
                 // succeeded
