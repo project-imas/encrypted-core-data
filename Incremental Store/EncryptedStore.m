@@ -855,11 +855,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
         
-        pattern = [NSString stringWithUTF8String:aux];
+        /*Safeguard against null returns*/
+        if (aux)
+            pattern = [NSString stringWithUTF8String:aux];
         
         aux     = (const char *)sqlite3_value_text((sqlite3_value*)argv[1]);
         
-        string  = [NSString stringWithUTF8String:aux];
+        if (aux)
+            string  = [NSString stringWithUTF8String:aux];
         
         if(pattern != nil && string != nil){
             NSError *error;
