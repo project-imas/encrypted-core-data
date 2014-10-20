@@ -1087,6 +1087,30 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return YES;
 }
 
+- (BOOL)dropIndicesForEntity:(NSEntityDescription *)entity error:(NSError **)error
+{
+    if (entity.superentity) {
+        return YES;
+    }
+
+    NSArray * indexedColumns = [self columnNamesForEntity:entity indexedOnly:YES quotedNames:NO];
+    NSString * tableName = [self tableNameForEntity:entity];
+    for (NSString * column in indexedColumns) {
+        NSString * query = [NSString stringWithFormat:
+                            @"DROP INDEX IF EXISTS %@_%@_INDEX",
+                            tableName,
+                            column];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:query];
+        sqlite3_step(statement);
+        BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
+        if (!result) {
+            *error = [self databaseError];
+            return result;
+        }
+    }
+    return YES;
+}
+
 - (BOOL)dropTableForEntity:(NSEntityDescription *)entity {
     NSString *name = [self tableNameForEntity:entity];
     return [self dropTableNamed:name];
@@ -1110,7 +1134,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [sourceEntity name]];
     NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
     NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [destinationEntity name]];
-    
+
+    if (![self dropIndicesForEntity:destinationEntity error:error]) {
+        return NO;
+    }
+
     // move existing table to temporary new table
     string = [NSString stringWithFormat:
               @"ALTER TABLE %@ "
@@ -1146,16 +1174,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             [sourceColumns addObject:source];
         }
     }];
-    //    [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-    //        NSExpression *expression = [obj valueExpression];
-    //        if (expression != nil) {
-    //            NSString *destination = [self foreignKeyColumnWithName:[obj name]];
-    //            [destinationColumns addObject:destination];
-    //            NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
-    //            source = [self foreignKeyColumnWithName:source];
-    //            [sourceColumns addObject:source];
-    //        }
-    //    }];
+    [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][[obj name]];
+        if (![relationship isToMany])
+        {
+            NSExpression *expression = [obj valueExpression];
+            if (expression != nil) {
+                NSString *destination = [self foreignKeyColumnForRelationshipName:[obj name]];
+                [destinationColumns addObject:destination];
+                NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
+                source = [self foreignKeyColumnForRelationshipName:source];
+                [sourceColumns addObject:source];
+            }
+        }
+    }];
     
     // copy data
     if (destinationEntity.subentities.count > 0) {
@@ -2660,8 +2692,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 }
 
+- (NSString *)foreignKeyColumnForRelationshipName:(NSString *)relationshipName {
+    return [NSString stringWithFormat:@"%@__objectid", relationshipName];
+}
+
 - (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship {
-    return [NSString stringWithFormat:@"%@__objectid", [relationship name]];
+    return [self foreignKeyColumnForRelationshipName:[relationship name]];
 }
 
 - (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray forRelationship:(BOOL)forRelationship{
