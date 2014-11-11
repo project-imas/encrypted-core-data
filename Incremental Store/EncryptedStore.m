@@ -1056,7 +1056,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
     if (!result) {
-        *error = [self databaseError];
+        if (error)
+        {
+            *error = [self databaseError];
+        }
         return result;
     }
     
@@ -1083,7 +1086,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
         if (!result) {
-            *error = [self databaseError];
+            if (error)
+            {
+                *error = [self databaseError];
+            }
             return result;
         }
     }
@@ -1107,7 +1113,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
         if (!result) {
-            *error = [self databaseError];
+            if (error)
+            {
+                *error = [self databaseError];
+            }
             return result;
         }
     }
