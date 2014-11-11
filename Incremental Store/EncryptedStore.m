@@ -688,8 +688,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                         }
                         
                     } else {
-						NSLog(@"Failed to create NSManagedObject models for migration.");
-						return NO;
+                        NSLog(@"Failed to create NSManagedObject models for migration.");
+                        if (error) {
+                            NSDictionary * userInfo = @{EncryptedStoreErrorMessageKey : @"Missing old model, cannot migrate database"};
+                            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorMigrationFailed userInfo:userInfo];
+                        }
+                        return NO;
 					}
                 }
                 
@@ -736,7 +740,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     }
     
     // load failed
-    if (error) { *error = [self databaseError]; }
+    if (error && *error == nil) { *error = [self databaseError]; }
     sqlite3_close(database);
     database = NULL;
     return NO;
