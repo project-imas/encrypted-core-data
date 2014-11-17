@@ -1,5 +1,9 @@
 language: objective-c
 
+before_install:
+	- brew update
+	- if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
+
 script:
     - cd "exampleProjects/IncrementalStore"
     # 32-bit tests
