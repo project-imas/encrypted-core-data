@@ -68,7 +68,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @interface NSEntityDescription (CMDTypeHash)
 
-@property (nonatomic, readonly) NSUInteger typeHash;
+@property (nonatomic, readonly) unsigned long typeHash;
 
 @end
 
@@ -289,7 +289,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
                 NSEntityDescription * entityToFetch = nil;
                 if (shouldFetchEntityType) {
-                    NSUInteger entityType = sqlite3_column_int64(statement, 1);
+                    long long entityType = sqlite3_column_int64(statement, 1);
                     entityToFetch = [entityTypeCache objectForKey:@(entityType)];
                 }
                 if (!entityToFetch) {
@@ -556,7 +556,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             // If we need to get the type of the entity to make sure the eventual entity that gets created is of the correct subentity type
             NSEntityDescription *resolvedDestinationEntity = nil;
             if (shouldFetchDestinationEntityType) {
-                NSUInteger entityType = sqlite3_column_int64(statement, 1);
+                long long entityType = sqlite3_column_int64(statement, 1);
                 resolvedDestinationEntity = [entityTypeCache objectForKey:@(entityType)];
             }
             if (!resolvedDestinationEntity) {
@@ -1070,7 +1070,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     sqlite3_step(statement);
     
     BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
-    if (!result) {
+    if (!result && error) {
         *error = [self databaseError];
         return result;
     }
@@ -1097,7 +1097,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_stmt *statement = [self preparedStatementForQuery:query];
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
-        if (!result) {
+        if (!result && error) {
             *error = [self databaseError];
             return result;
         }
@@ -1121,7 +1121,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_stmt *statement = [self preparedStatementForQuery:query];
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
-        if (!result) {
+        if (!result && error) {
             *error = [self databaseError];
             return result;
         }
@@ -2187,7 +2187,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
         NSEntityDescription *target = [(id)property destinationEntity];
         if ([self entityNeedsEntityTypeColumn:target]) {
-            NSUInteger entityType = sqlite3_column_int64(statement, index + 1);
+            long long entityType = sqlite3_column_int64(statement, index + 1);
             NSEntityDescription *resolvedTarget = [entityTypeCache objectForKey:@(entityType)];
             if (resolvedTarget) {
                 target = resolvedTarget;
@@ -2803,9 +2803,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 @implementation NSEntityDescription (CMDTypeHash)
 
--(NSUInteger)typeHash
+-(unsigned long)typeHash
 {
-    NSUInteger hash = (uint32_t) self.name.hash;
+    unsigned long hash = (unsigned long) self.name.hash;
     return hash;
 }
 
