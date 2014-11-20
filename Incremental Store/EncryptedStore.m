@@ -85,7 +85,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
 }
 
-+ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel
++ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
 {
     NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
     
@@ -115,18 +115,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
     }
     
-    NSError *error = nil;
     NSPersistentStore *store = [persistentCoordinator
                                 addPersistentStoreWithType:EncryptedStoreType
                                 configuration:nil
                                 URL:databaseURL
                                 options:options
-                                error:&error];
-    NSAssert(store, @"Unable to add persistent store\n%@", error);
+                                error:error];
+    NSAssert(store, @"Unable to add persistent store\n%@", *error);
     return persistentCoordinator;
 }
 
-+ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel {
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error {
     
     NSMutableDictionary *newOptions = [NSMutableDictionary dictionary];
     if (options->passphrase) {
@@ -139,14 +138,14 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     if (options->cache_size)
         [newOptions setValue:[NSNumber numberWithInt:*(options->cache_size)] forKey:EncryptedStoreCacheSize];
     
-    return [self makeStoreWithOptions:newOptions managedObjectModel:objModel];
+    return [self makeStoreWithOptions:newOptions managedObjectModel:objModel error:error];
 }
 
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode error:(NSError *__autoreleasing *)error
 {
     NSDictionary *options = passcode ? @{ EncryptedStorePassphraseKey : passcode } : nil;
     
-    return [self makeStoreWithOptions:options managedObjectModel:objModel];
+    return [self makeStoreWithOptions:options managedObjectModel:objModel error:error];
 }
 
 + (void)load {
