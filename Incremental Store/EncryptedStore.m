@@ -87,14 +87,18 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel
 {
-    return [self makeStoreWithOptions:options managedObjectModel:objModel error:nil];
+    NSError * error;
+    return [self makeStoreWithOptions:options managedObjectModel:objModel error:&error];
 }
-+ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel {
-    return [self makeStoreWithStructOptions:options managedObjectModel:objModel error:nil];
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel
+{
+    NSError * error;
+    return [self makeStoreWithStructOptions:options managedObjectModel:objModel error:&error];
 }
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode
 {
-    return [self makeStore:objModel passcode:passcode error:nil];
+    NSError * error;
+    return [self makeStore:objModel passcode:passcode error:&error];
 }
 
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
@@ -133,7 +137,14 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 URL:databaseURL
                                 options:options
                                 error:error];
-    NSAssert(store, @"Unable to add persistent store\n%@", *error);
+    if (error)
+    {
+        NSAssert(store, @"Unable to add persistent store\n%@", *error);
+    }
+    else
+    {
+        NSAssert(store, @"Unable to add persistent store. Reasoning unknown!");
+    }
     return persistentCoordinator;
 }
 
