@@ -85,6 +85,18 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
 }
 
++ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel
+{
+    return [self makeStoreWithOptions:options managedObjectModel:objModel error:nil];
+}
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel {
+    return [self makeStoreWithStructOptions:options managedObjectModel:objModel error:nil];
+}
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode
+{
+    return [self makeStore:objModel passcode:passcode error:nil];
+}
+
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
 {
     NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];

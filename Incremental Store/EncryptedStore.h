@@ -29,6 +29,11 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 };
 
 @interface EncryptedStore : NSIncrementalStore
++ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel;
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel;
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
+                                   passcode:(NSString *) passcode;
+
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
 + (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
