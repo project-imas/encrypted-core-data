@@ -278,7 +278,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
                 NSEntityDescription * entityToFetch = nil;
                 if (shouldFetchEntityType) {
-                    NSUInteger entityType = sqlite3_column_int64(statement, 1);
+                    long long entityType = sqlite3_column_int64(statement, 1);
                     entityToFetch = [entityTypeCache objectForKey:@(entityType)];
                 }
                 if (!entityToFetch) {
@@ -545,7 +545,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             // If we need to get the type of the entity to make sure the eventual entity that gets created is of the correct subentity type
             NSEntityDescription *resolvedDestinationEntity = nil;
             if (shouldFetchDestinationEntityType) {
-                NSUInteger entityType = sqlite3_column_int64(statement, 1);
+                long long entityType = sqlite3_column_int64(statement, 1);
                 resolvedDestinationEntity = [entityTypeCache objectForKey:@(entityType)];
             }
             if (!resolvedDestinationEntity) {
@@ -1056,7 +1056,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
     if (!result) {
-        *error = [self databaseError];
+        if (error)
+        {
+            *error = [self databaseError];
+        }
         return result;
     }
     
@@ -1083,7 +1086,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
         if (!result) {
-            *error = [self databaseError];
+            if (error)
+            {
+                *error = [self databaseError];
+            }
             return result;
         }
     }
@@ -1107,7 +1113,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_step(statement);
         BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
         if (!result) {
-            *error = [self databaseError];
+            if (error)
+            {
+                *error = [self databaseError];
+            }
             return result;
         }
     }
@@ -1196,7 +1205,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (destinationEntity.subentities.count > 0) {
         string = [NSString stringWithFormat:
                   @"INSERT INTO %@ ('__entityType', %@)"
-                  @"SELECT %lu, %@ "
+                  @"SELECT %du, %@ "
                   @"FROM %@",
                   destinationTableName,
                   [destinationColumns componentsJoinedByString:@", "],
@@ -1353,7 +1362,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSString *string = nil;
         if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
-                      @"INSERT INTO %@ ('__entityType', %@) VALUES(%lu, %@);",
+                      @"INSERT INTO %@ ('__entityType', %@) VALUES(%du, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
                       entity.typeHash,
@@ -2172,7 +2181,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
         NSEntityDescription *target = [(id)property destinationEntity];
         if ([self entityNeedsEntityTypeColumn:target]) {
-            NSUInteger entityType = sqlite3_column_int64(statement, index + 1);
+            long long entityType = sqlite3_column_int64(statement, index + 1);
             NSEntityDescription *resolvedTarget = [entityTypeCache objectForKey:@(entityType)];
             if (resolvedTarget) {
                 target = resolvedTarget;
@@ -2370,7 +2379,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                            [self tableNameForEntity:request.entity],
                            [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
         } else {
-            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %lu",
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %du",
                            [self tableNameForEntity:request.entity],
                            request.entity.typeHash];
         }
@@ -2584,7 +2593,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                          entityTableName];
                 if (rel.destinationEntity.superentity != nil) {
                     value = [value stringByAppendingString:
-                             [NSString stringWithFormat:@" AND [%@].__entityType = %lu",
+                             [NSString stringWithFormat:@" AND [%@].__entityType = %du",
                               rel.name,
                               rel.destinationEntity.typeHash]];
                 }
@@ -2788,9 +2797,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 @implementation NSEntityDescription (CMDTypeHash)
 
--(NSUInteger)typeHash
+-(uint32_t)typeHash
 {
-    NSUInteger hash = (uint32_t) self.name.hash;
+    uint32_t hash = (uint32_t) self.name.hash;
     return hash;
 }
 
