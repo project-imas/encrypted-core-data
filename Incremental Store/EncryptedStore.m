@@ -2816,7 +2816,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 -(unsigned long)typeHash
 {
-    unsigned long hash = (unsigned long) self.name.hash;
+    unsigned long hash = (uint32_t) self.name.hash;
     return hash;
 }
 
