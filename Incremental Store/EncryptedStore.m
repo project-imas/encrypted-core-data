@@ -127,6 +127,35 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
     }
     
+    //
+    // Determine if a core data DB migration is necessary.
+    //
+    DDLogWarn(@"%@:%@ Determine if a core data DB migration is necessary.", THIS_FILE, THIS_METHOD);
+    NSError *error = nil;
+    
+    NSDictionary *sourceMetadata = [NSPersistentStoreCoordinator metadataForPersistentStoreOfType:EncryptedStoreType
+                                                                                              URL:databaseURL
+                                                                                            error:&error];
+    if (error)
+    {
+        DDLogError(@"%@:%@ : DB migration check ERROR: %@", THIS_FILE, THIS_METHOD, [error description]);
+    }
+    else
+    {
+        NSManagedObjectModel *destinationModel = [persistentCoordinator managedObjectModel];
+        BOOL pscCompatibile = [destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceMetadata];
+        
+        AppDelegate *appDelegate;
+        appDelegate.resetFormTemplates = !pscCompatibile;
+        
+#ifdef DEBUG
+        if (!pscCompatibile)
+            DDLogWarn(@"%@:%@ - DB Changed!  Coredata migration is necessary...", THIS_FILE, THIS_METHOD);
+        else
+            DDLogWarn(@"%@:%@ - No DB changes.", THIS_FILE, THIS_METHOD);
+#endif
+    }
+    
     NSPersistentStore *store = [persistentCoordinator
                                 addPersistentStoreWithType:EncryptedStoreType
                                 configuration:nil
