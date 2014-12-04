@@ -29,7 +29,7 @@
 
 + (void)initialize {
     if (self == [IncrementalStoreTests class]) {
-        srand(time(NULL));
+        srand((int)time(NULL));
     }
 }
 

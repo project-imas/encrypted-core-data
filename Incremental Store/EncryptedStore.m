@@ -68,7 +68,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @interface NSEntityDescription (CMDTypeHash)
 
-@property (nonatomic, readonly) unsigned long typeHash;
+@property (nonatomic, readonly) long typeHash;
 
 @end
 
@@ -274,8 +274,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             if(endHavingRange.location != NSNotFound) { // String manipulation to handle SUM
                 // Between HAVING and END_HAVING
                 NSRange havingRange = [string rangeOfString:@"HAVING"];
-                int length = endHavingRange.location - havingRange.location;
-                int location = havingRange.location;
+                NSUInteger length = endHavingRange.location - havingRange.location;
+                NSUInteger location = havingRange.location;
                 NSRange substrRange = NSMakeRange(location,length);
                 
                 NSInteger endHavingEnd = endHavingRange.location + endHavingRange.length;
@@ -343,7 +343,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             while (sqlite3_step(statement) == SQLITE_ROW) {
                 NSMutableDictionary* singleResult = [NSMutableDictionary dictionary];
                 [propertiesToFetch enumerateObjectsUsingBlock:^(id property, NSUInteger idx, BOOL *stop) {
-                    id value = [self valueForProperty:property inStatement:statement atIndex:idx];
+                    id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx];
                     if (value)
                     {
                         [singleResult setValue:value forKey:[property name]];
@@ -459,11 +459,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
         NSMutableArray * allProperties = [NSMutableArray new];
         
-        __block NSUInteger offset = 0;
+        __block int offset = 0;
         
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
-            id value = [self valueForProperty:property inStatement:statement atIndex:idx + offset];
+            id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx + offset];
             
             if ([entityTypes containsObject:obj]) {
                 // This key needs an entity type - the next column will be it, so shift all values from now on
@@ -789,7 +789,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     string = [NSString stringWithFormat:kSQL_INSERT,EncryptedStoreMetadataTableName];
     statement = [self preparedStatementForQuery:string];
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:[self metadata]];
-    sqlite3_bind_blob(statement, 1, [data bytes], [data length], SQLITE_TRANSIENT);
+    sqlite3_bind_blob(statement, 1, [data bytes], (int)[data length], SQLITE_TRANSIENT);
     sqlite3_step(statement);
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) { return NO; }
     
@@ -805,7 +805,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     if ([passphrase length] > 0) {
         // Password provided, use it to key the DB
         const char *string = [passphrase UTF8String];
-        status = sqlite3_key(database, string, strlen(string));
+        status = sqlite3_key(database, string, (int)strlen(string));
         string = NULL;
         passphrase = nil;
     } else {
@@ -905,7 +905,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
 	}
     
-	(void)sqlite3_result_int(context, numberOfMatches);
+	(void)sqlite3_result_int(context, (int)numberOfMatches);
 }
 
 #pragma mark - migration helpers
@@ -1222,7 +1222,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (destinationEntity.subentities.count > 0) {
         string = [NSString stringWithFormat:
                   @"INSERT INTO %@ ('__entityType', %@)"
-                  @"SELECT %lu, %@ "
+                  @"SELECT %ld, %@ "
                   @"FROM %@",
                   destinationTableName,
                   [destinationColumns componentsJoinedByString:@", "],
@@ -1379,7 +1379,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSString *string = nil;
         if (entity.superentity != nil) {
             string = [NSString stringWithFormat:
-                      @"INSERT INTO %@ ('__entityType', %@) VALUES(%lu, %@);",
+                      @"INSERT INTO %@ ('__entityType', %@) VALUES(%ld, %@);",
                       [self tableNameForEntity:entity],
                       [columns componentsJoinedByString:@", "],
                       entity.typeHash,
@@ -1403,7 +1403,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             NSUInteger columnIndex = idx + 1;
             NSPropertyDescription *property = [properties objectForKey:obj];
             // Add 1 to column index as the first bind is the objectID
-            [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:columnIndex + 1];
+            [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:(int)columnIndex + 1];
         }];
         
         // execute
@@ -1556,12 +1556,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
              withValue:value
              forKey:obj
              toStatement:statement
-             atIndex:(idx + 1)];
+             atIndex:((int)idx + 1)];
         }];
         
         // execute
         NSNumber *number = [self referenceObjectForObjectID:objectID];
-        sqlite3_bind_int64(statement, ([columns count] + 1), [number unsignedLongLongValue]);
+        sqlite3_bind_int64(statement, ((int)[columns count] + 1), [number unsignedLongLongValue]);
         sqlite3_step(statement);
         
         // finish up
@@ -2091,7 +2091,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             
             // blob
             else if (type == NSBinaryDataAttributeType) {
-                sqlite3_bind_blob(statement, index, [value bytes], [value length], SQLITE_TRANSIENT);
+                sqlite3_bind_blob(statement, index, [value bytes], (int)[value length], SQLITE_TRANSIENT);
             }
             
             // optimus prime
@@ -2103,7 +2103,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 const BOOL isDefaultTransformer = [name isEqualToString:NSKeyedUnarchiveFromDataTransformerName];
                 NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
                 NSData *data = isDefaultTransformer ? [transformer reverseTransformedValue:value] : [transformer transformedValue:value];
-                sqlite3_bind_blob(statement, index, [data bytes], [data length], SQLITE_TRANSIENT);
+                sqlite3_bind_blob(statement, index, [data bytes], (int)[data length], SQLITE_TRANSIENT);
             }
             
             else if (type == NSDecimalAttributeType) {
@@ -2396,7 +2396,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                            [self tableNameForEntity:request.entity],
                            [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
         } else {
-            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %lu",
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %ld",
                            [self tableNameForEntity:request.entity],
                            request.entity.typeHash];
         }
@@ -2426,12 +2426,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
-            int len = [obj length];
+            int len = (int)[obj length];
             
             if (str[0] == '\'' && str[len-1] == '\'')
-                sqlite3_bind_text(statement, (idx + 1), [obj UTF8String]+1, [(NSString*)obj length]-2, SQLITE_TRANSIENT);
+                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String]+1, (int)[(NSString*)obj length]-2, SQLITE_TRANSIENT);
             else
-                sqlite3_bind_text(statement, (idx + 1), [obj UTF8String], [(NSString*)obj length], SQLITE_TRANSIENT);
+                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String], (int)[(NSString*)obj length], SQLITE_TRANSIENT);
         }
         
         // number
@@ -2443,11 +2443,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 case kCFNumberFloatType:
                 case kCFNumberDoubleType:
                 case kCFNumberCGFloatType:
-                    sqlite3_bind_double(statement, (idx + 1), [obj doubleValue]);
+                    sqlite3_bind_double(statement, ((int)idx + 1), [obj doubleValue]);
                     break;
                     
                 default:
-                    sqlite3_bind_int64(statement, (idx + 1), [obj longLongValue]);
+                    sqlite3_bind_int64(statement, ((int)idx + 1), [obj longLongValue]);
                     break;
             }
         }
@@ -2455,19 +2455,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // managed object id
         else if ([obj isKindOfClass:[NSManagedObjectID class]]) {
             id referenceObject = [self referenceObjectForObjectID:obj];
-            sqlite3_bind_int64(statement, (idx + 1), [referenceObject unsignedLongLongValue]);
+            sqlite3_bind_int64(statement, ((int)idx + 1), [referenceObject unsignedLongLongValue]);
         }
         
         // managed object
         else if ([obj isKindOfClass:[NSManagedObject class]]) {
             NSManagedObjectID *objectID = [obj objectID];
             id referenceObject = [self referenceObjectForObjectID:objectID];
-            sqlite3_bind_int64(statement, (idx + 1), [referenceObject unsignedLongLongValue]);
+            sqlite3_bind_int64(statement, ((int)idx + 1), [referenceObject unsignedLongLongValue]);
         }
         
         // date
         else if ([obj isKindOfClass:[NSDate class]]) {
-            sqlite3_bind_double(statement, (idx + 1), [obj timeIntervalSince1970]);
+            sqlite3_bind_double(statement, ((int)idx + 1), [obj timeIntervalSince1970]);
         }
         
     }];
@@ -2610,7 +2610,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                          entityTableName];
                 if (rel.destinationEntity.superentity != nil) {
                     value = [value stringByAppendingString:
-                             [NSString stringWithFormat:@" AND [%@].__entityType = %lu",
+                             [NSString stringWithFormat:@" AND [%@].__entityType = %ld",
                               rel.name,
                               rel.destinationEntity.typeHash]];
                 }
@@ -2814,9 +2814,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 @implementation NSEntityDescription (CMDTypeHash)
 
--(unsigned long)typeHash
+-(long)typeHash
 {
-    unsigned long hash = (uint32_t) self.name.hash;
+    long hash = (long)self.name.hash;
     return hash;
 }
 
