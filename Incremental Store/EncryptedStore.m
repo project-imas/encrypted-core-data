@@ -1304,12 +1304,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
     NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
     
+    static NSString *format = @"%@__objectid";
+    
+    if ([rootSourceEntity isEqual:rootDestinationEntity]) {
+        *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
+        *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        
+        return YES;
+    }
+    
     NSArray *orderedEntities = [@[rootSourceEntity, rootDestinationEntity] sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:NSStringFromSelector(@selector(name)) ascending:YES comparator:[self fixedLocaleCaseInsensitiveComparator]]]];
     
     NSEntityDescription *firstEntity = [orderedEntities firstObject];
     NSEntityDescription *secondEntity = [orderedEntities lastObject];
-    
-    static NSString *format = @"%@__objectid";
     
     // 1st
     *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
