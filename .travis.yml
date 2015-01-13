@@ -6,8 +6,8 @@ before_install:
 
 script:
     - cd "exampleProjects/IncrementalStore"
-    - export CC=clang
-    - export CXX=clang
+    - clang --version
+    - gcc --version
     # 32-bit tests
     - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone 5"
     # 64-bit tests
