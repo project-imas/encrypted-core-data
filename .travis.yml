@@ -1,16 +1,15 @@
 language: objective-c
 
-compiler:
-    - clang
-
 before_install:
     - brew update
     - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
 
 script:
     - cd "exampleProjects/IncrementalStore"
+    - export CC=clang
+    - export CXX=clang
     # 32-bit tests
-    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone Retina (4-inch)"
+    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone 5"
     # 64-bit tests
-    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone Retina (4-inch 64-bit)"
+    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone 5s"
 
