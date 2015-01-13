@@ -1,5 +1,8 @@
 language: objective-c
 
+compiler:
+	- clang
+
 before_install:
     - brew update
     - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
