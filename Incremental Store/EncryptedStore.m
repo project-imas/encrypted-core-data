@@ -139,11 +139,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 error:error];
     if (error)
     {
-        NSAssert(store, @"Unable to add persistent store\n%@", *error);
+        NSLog(@"Unable to add persistent store\n%@", *error);
+        return nil;
     }
     else
     {
-        NSAssert(store, @"Unable to add persistent store. Reasoning unknown!");
+        NSLog(@"Unable to add persistent store. Reasoning unknown!");
+        return nil;
     }
     return persistentCoordinator;
 }
