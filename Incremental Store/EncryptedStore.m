@@ -237,7 +237,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (id)executeRequest:(NSPersistentStoreRequest *)request
          withContext:(NSManagedObjectContext *)context
-               error:(NSError **)error {
+               error:(NSError **)error { NSLog(@"ECD IS ON");
     
     if ([request requestType] == NSFetchRequestType) {
         
@@ -1885,8 +1885,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // child.parent.name -> [child.parent].name and we generate a double join
     // JOIN childTable as child on mainTable.child_id = child.ID
     // JOIN parentTable as [child.parent] on child.parent_id = [child.parent].ID
-    // Care must be taken to ensure unique join table names so that a WHERE clause like:
     // child.name == %@ AND child.parent.name == %@ doesn't add the child relationship twice
+    // Care must be taken to ensure unique join table names so that a WHERE clause like:
     NSArray *keysArray = [key componentsSeparatedByString:@"."];
     
     // We terminate when there is one item left since that is the field of interest
@@ -2228,7 +2228,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     switch ([expressionDescription expressionResultType]) {
         case NSObjectIDAttributeType:
-            return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
+            if ([expressionDescription entity])
+                return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
+            else if (expressionDescription.name) {
+                NSEntityDescription * e = [[[self persistentStoreCoordinator] managedObjectModel] entitiesByName][expressionDescription.name];
+                return [self newObjectIDForEntity:e referenceObject:number];
+            }
             break;
             
             /*  NSUndefinedAttributeType
