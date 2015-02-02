@@ -137,16 +137,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 URL:databaseURL
                                 options:options
                                 error:error];
-    if (error)
+
+    if (*error)
     {
-        NSLog(@"Unable to add persistent store\n%@", *error);
-        return nil;
+        NSLog(@"Unable to add persistent store.");
+        NSLog(@"Error: %@\n%@\n%@", *error, [*error userInfo], [*error localizedDescription]);
     }
-    else
-    {
-        NSLog(@"Unable to add persistent store. Reasoning unknown!");
-        return nil;
-    }
+    
     return persistentCoordinator;
 }
 
@@ -239,7 +236,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (id)executeRequest:(NSPersistentStoreRequest *)request
          withContext:(NSManagedObjectContext *)context
-               error:(NSError **)error { NSLog(@"ECD IS ON");
+               error:(NSError **)error {
     
     if ([request requestType] == NSFetchRequestType) {
         
