@@ -520,12 +520,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
         // many-to-many relationship, foreign key exists in relation table, join to get the type
         
-        NSString *sourceEntityName = [[self rootForEntity:sourceEntity] name];
-        NSString *destinationEntityName = [[self rootForEntity:destinationEntity] name];
+        
+        //        NSString *sourceEntityName = [[self rootForEntity:sourceEntity] name];
+        //        NSString *destinationEntityName = [[self rootForEntity:destinationEntity] name];
         
         NSString *relationTable = [self tableNameForRelationship:relationship];
-        NSString *sourceIDColumn = [NSString stringWithFormat:@"%@__objectid", sourceEntityName];
-        NSString *destinationIDColumn = [NSString stringWithFormat:@"%@__objectid", destinationEntityName];
+        NSString *destinationIDColumn=nil;
+        NSString *sourceIDColumn=nil;
+        [self relationships:relationship firstIDColumn:&sourceIDColumn  secondIDColumn:&destinationIDColumn];
+
         
         NSString *join = @"";
         NSString *destinationTypeColumn = @"";
@@ -1306,8 +1309,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static NSString *format = @"%@__objectid";
     
     if ([rootSourceEntity isEqual:rootDestinationEntity]) {
-        *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
-        *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        *firstIDColumn = [NSString stringWithFormat:format, rootSourceEntity.name];
+        *secondIDColumn = @"reflexiv";
         
         return YES;
     }
