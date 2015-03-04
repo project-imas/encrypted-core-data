@@ -2437,14 +2437,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
-            int len = (int)[obj length];
-            
-            if (str[0] == '\'' && str[len-1] == '\'')
-                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String]+1, (int)[(NSString*)obj length]-2, SQLITE_TRANSIENT);
-            else
-                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String], (int)[(NSString*)obj length], SQLITE_TRANSIENT);
+			int len = strlen(str);
+
+			if (str[0] == '\'' && str[len-1] == '\'')
+				sqlite3_bind_text(statement, (idx + 1), str+1, len-2, SQLITE_TRANSIENT);
+			else
+				sqlite3_bind_text(statement, (idx + 1), str, len, SQLITE_TRANSIENT);
         }
-        
+
         // number
         else if ([obj isKindOfClass:[NSNumber class]]) {
             
