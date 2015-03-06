@@ -137,14 +137,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                 URL:databaseURL
                                 options:options
                                 error:error];
-    if (error)
+
+    if (*error)
     {
-        NSAssert(store, @"Unable to add persistent store\n%@", *error);
+        NSLog(@"Unable to add persistent store.");
+        NSLog(@"Error: %@\n%@\n%@", *error, [*error userInfo], [*error localizedDescription]);
     }
-    else
-    {
-        NSAssert(store, @"Unable to add persistent store. Reasoning unknown!");
-    }
+    
     return persistentCoordinator;
 }
 
@@ -1304,12 +1303,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
     NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
     
+    static NSString *format = @"%@__objectid";
+    
+    if ([rootSourceEntity isEqual:rootDestinationEntity]) {
+        *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
+        *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        
+        return YES;
+    }
+    
     NSArray *orderedEntities = [@[rootSourceEntity, rootDestinationEntity] sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:NSStringFromSelector(@selector(name)) ascending:YES comparator:[self fixedLocaleCaseInsensitiveComparator]]]];
     
     NSEntityDescription *firstEntity = [orderedEntities firstObject];
     NSEntityDescription *secondEntity = [orderedEntities lastObject];
-    
-    static NSString *format = @"%@__objectid";
     
     // 1st
     *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
@@ -1878,8 +1884,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // child.parent.name -> [child.parent].name and we generate a double join
     // JOIN childTable as child on mainTable.child_id = child.ID
     // JOIN parentTable as [child.parent] on child.parent_id = [child.parent].ID
-    // Care must be taken to ensure unique join table names so that a WHERE clause like:
     // child.name == %@ AND child.parent.name == %@ doesn't add the child relationship twice
+    // Care must be taken to ensure unique join table names so that a WHERE clause like:
     NSArray *keysArray = [key componentsSeparatedByString:@"."];
     
     // We terminate when there is one item left since that is the field of interest
@@ -2221,7 +2227,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     switch ([expressionDescription expressionResultType]) {
         case NSObjectIDAttributeType:
-            return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
+            if ([expressionDescription entity])
+                return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
+            else if (expressionDescription.name) {
+                NSEntityDescription * e = [[[self persistentStoreCoordinator] managedObjectModel] entitiesByName][expressionDescription.name];
+                return [self newObjectIDForEntity:e referenceObject:number];
+            }
             break;
             
             /*  NSUndefinedAttributeType
@@ -2426,14 +2437,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
-            int len = (int)[obj length];
-            
-            if (str[0] == '\'' && str[len-1] == '\'')
-                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String]+1, (int)[(NSString*)obj length]-2, SQLITE_TRANSIENT);
-            else
-                sqlite3_bind_text(statement, ((int)idx + 1), [obj UTF8String], (int)[(NSString*)obj length], SQLITE_TRANSIENT);
+			int len = strlen(str);
+
+			if (str[0] == '\'' && str[len-1] == '\'')
+				sqlite3_bind_text(statement, (idx + 1), str+1, len-2, SQLITE_TRANSIENT);
+			else
+				sqlite3_bind_text(statement, (idx + 1), str, len, SQLITE_TRANSIENT);
         }
-        
+
         // number
         else if ([obj isKindOfClass:[NSNumber class]]) {
             

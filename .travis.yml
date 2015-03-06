@@ -5,9 +5,12 @@ before_install:
     - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
 
 script:
-    - cd "exampleProjects/IncrementalStore"
+    - pushd vendor/sqlcipher/sqlcipher.xcodeproj
+    - cp project.pbxproj proj.tmp
+    - sed 's/ CFLAGS=../ CFLAGS=\\"-miphoneos-version-min=6.0 /' proj.tmp > project.pbxproj
+    - popd
+    - cd exampleProjects/IncrementalStore
     # 32-bit tests
-    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone Retina (4-inch)"
+    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone 5"
     # 64-bit tests
-    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone Retina (4-inch 64-bit)"
-
+    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" clean test -destination "name=iPhone 5s"
