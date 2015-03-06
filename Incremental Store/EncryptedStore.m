@@ -2233,6 +2233,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 NSEntityDescription * e = [[[self persistentStoreCoordinator] managedObjectModel] entitiesByName][expressionDescription.name];
                 return [self newObjectIDForEntity:e referenceObject:number];
             }
+            else
+            {
+                return nil;
+            }
             break;
             
             /*  NSUndefinedAttributeType
