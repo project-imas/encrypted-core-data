@@ -1530,12 +1530,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSString *string = [NSString stringWithFormat:
                         @"SELECT MAX(%@) FROM %@ WHERE %@=%llu;",
                         source ?
-                            (firstColumnIsSource ? firstOrderColumn : secondOrderColumn):
-                            (firstColumnIsSource ? secondOrderColumn : firstOrderColumn),
+                        (firstColumnIsSource ? firstOrderColumn : secondOrderColumn):
+                        (firstColumnIsSource ? secondOrderColumn : firstOrderColumn),
                         tableName,
                         source ?
-                            (firstColumnIsSource ? firstIDColumn : secondIDColumn):
-                            (firstColumnIsSource ? secondIDColumn : firstIDColumn),
+                        (firstColumnIsSource ? secondIDColumn : firstIDColumn):
+                        (firstColumnIsSource ? firstIDColumn : secondIDColumn),
                         objectID];
     
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
