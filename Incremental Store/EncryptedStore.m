@@ -520,12 +520,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
         // many-to-many relationship, foreign key exists in relation table, join to get the type
         
-        NSString *sourceEntityName = [[self rootForEntity:sourceEntity] name];
-        NSString *destinationEntityName = [[self rootForEntity:destinationEntity] name];
+        
+        NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+        BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
         
         NSString *relationTable = [self tableNameForRelationship:relationship];
-        NSString *sourceIDColumn = [NSString stringWithFormat:@"%@__objectid", sourceEntityName];
-        NSString *destinationIDColumn = [NSString stringWithFormat:@"%@__objectid", destinationEntityName];
+        NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
+        NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
         
         NSString *join = @"";
         NSString *destinationTypeColumn = @"";
@@ -539,8 +540,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             destinationIDColumn = [relationTable stringByAppendingFormat:@".%@", destinationIDColumn];
         }
         
-        NSString *orderColumn = [NSString stringWithFormat:@"%@_order", destinationEntityName];
-        
+        NSString *orderColumn = firstColumnIsSource ? secondOrderColumn : firstOrderColumn;
         NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=? ORDER BY %@ ASC", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn, orderColumn];
         
         statement = [self preparedStatementForQuery:string];
@@ -1260,19 +1260,17 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 {
     NSString *firstIDColumn;
     NSString *secondIDColumn;
-    [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
+    NSString *firstOrderColumn;
+    NSString *secondOrderColumn;
+    [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
     
-    NSString *sourceEntityName = [[self rootForEntity:relationship.entity] name];
-    NSString *destinationEntityName = [[self rootForEntity:relationship.destinationEntity] name];
     NSString *relationTable = [self tableNameForRelationship:relationship];
-    NSString *sourceIDOrderColumn = [NSString stringWithFormat:@"%@_order", sourceEntityName];
-    NSString *destinationIDOrderColumn = [NSString stringWithFormat:@"%@_order", destinationEntityName];
     
     // create table
     NSString *string = [NSString stringWithFormat:
                         @"CREATE TABLE %@ ('%@' INTEGER NOT NULL, '%@' INTEGER NOT NULL, '%@' INTEGER DEFAULT 0, '%@' INTEGER DEFAULT 0, PRIMARY KEY('%@', '%@'));",
                         relationTable,
-                        firstIDColumn, secondIDColumn, sourceIDOrderColumn, destinationIDOrderColumn, firstIDColumn, secondIDColumn];
+                        firstIDColumn, secondIDColumn, firstOrderColumn, secondOrderColumn, firstIDColumn, secondIDColumn];
 
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
@@ -1486,14 +1484,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     NSString *tableName = [self tableNameForRelationship:relationship];
     
-    NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
-    NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
+    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+    
+    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
     
     NSString *string = [NSString stringWithFormat:
-                        @"SELECT MAX(%@_order) FROM %@ WHERE %@__objectid=%llu;",
-                        source ? rootSourceEntity.name : rootDestinationEntity.name,
+                        @"SELECT MAX(%@) FROM %@ WHERE %@=%llu;",
+                        source ?
+                            (firstColumnIsSource ? firstOrderColumn : secondOrderColumn):
+                            (firstColumnIsSource ? secondOrderColumn : firstOrderColumn),
                         tableName,
-                        [self rootForEntity:object.entity].name,
+                        source ?
+                            (firstColumnIsSource ? firstIDColumn : secondIDColumn):
+                            (firstColumnIsSource ? secondIDColumn : firstIDColumn),
                         objectID];
     
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
@@ -1516,10 +1519,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     NSString *tableName = [self tableNameForRelationship:relationship];
     
-    NSString *firstIDColumn;
-    NSString *secondIDColumn;
-    NSString *firstOrderColumn;
-    NSString *secondOrderColumn;
+    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
     
     BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
     
@@ -1692,10 +1692,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     NSString *tableName = [self tableNameForRelationship:relationship];
     
-    NSString *firstIDColumn;
-    NSString *secondIDColumn;
-    NSString *firstOrderColumn;
-    NSString *secondOrderColumn;
+    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
     
     BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
     
@@ -1791,10 +1788,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // delete the rest of the relations
         NSString *notInValues = [inverseObjectIDs componentsJoinedByString:@","];
         
-        NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@__objectid=? AND %@__objectid NOT IN (%@);",
+        NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@=? AND %@ NOT IN (%@);",
                                  [self tableNameForRelationship:relationship],
-                                 [[self rootForEntity:[object entity]] name],
-                                 [[self rootForEntity:[relationship destinationEntity]] name],
+                                 firstColumnIsSource ? firstIDColumn : secondIDColumn,
+                                 firstColumnIsSource ? secondIDColumn : firstIDColumn,
                                  notInValues];
         
         sqlite3_stmt *statement = [self preparedStatementForQuery:deleteQuery];
