@@ -1445,7 +1445,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                              }];
                 }
                 else if ([desc isToMany] && [inverse isToMany]) {
-                    if (![self handleInsertedRelationInSaveRequest:desc forObject:object error:error]) {
+                    if (![self handleUpdatedRelationInSaveRequest:desc forObject:object error:error]) {
                         success = NO;
                     }
                 }
@@ -1545,69 +1545,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
     }
     return order + 1;
-}
-
-- (BOOL)handleInsertedRelationInSaveRequest:(NSRelationshipDescription *)relationship forObject:(NSManagedObject *)object error:(NSError **)error
-{
-    // Inverse
-    NSSet *inverseObjects = [object valueForKey:[relationship name]];
-    if ([inverseObjects count] == 0) {
-        // No objects to add so finish
-        return YES;
-    }
-    
-    NSString *tableName = [self tableNameForRelationship:relationship];
-    
-    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
-    
-    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
-    
-    // Object
-    unsigned long long objectID = [[self referenceObjectForObjectID:[object objectID]] unsignedLongLongValue];
-    
-    NSString *values = [NSString stringWithFormat:(firstColumnIsSource ? @"%llu, ?, ?, ?" : @"?, %llu, ?, ?"), objectID];
-    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@, %@, %@) VALUES (%@);", tableName, firstIDColumn, secondIDColumn, firstOrderColumn, secondOrderColumn, values];
-    
-    __block BOOL success = YES;
-    
-    for (NSManagedObject *obj in inverseObjects) {
-        
-        // find first order
-        int firstOrder = [self nextOrderForColumnInRelationship:relationship forObject:obj andSource:YES];
-        int secondOrder = [self nextOrderForColumnInRelationship:relationship forObject:object andSource:NO];
-        
-        NSNumber *inverseObjectID = [self referenceObjectForObjectID:[obj objectID]];
-        
-        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-        
-        // Add the related objects properties
-        sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedLongLongValue]);
-        
-        if (firstColumnIsSource) {
-            sqlite3_bind_int(statement, 2, firstOrder);
-            sqlite3_bind_int(statement, 3, secondOrder);
-        } else {
-            sqlite3_bind_int(statement, 2, secondOrder);
-            sqlite3_bind_int(statement, 3, firstOrder);
-        }
-        
-        sqlite3_step(statement);
-        
-        int finalize = sqlite3_finalize(statement);
-        if (finalize != SQLITE_OK && finalize != SQLITE_CONSTRAINT) {
-            if (error != nil) {
-                *error = [self databaseError];
-            }
-            success = NO;
-        } else {
-            success = YES;
-        }
-        
-        if (!success)
-            break;
-    }
-    
-    return success;
 }
 
 - (BOOL)handleUpdatedObjectsInSaveRequest:(NSSaveChangesRequest *)request cache:(NSMutableDictionary *)cache error:(NSError **)error {
@@ -1799,7 +1736,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             // insert
             
             int firstOrder = [self nextOrderForColumnInRelationship:relationship forObject:obj andSource:YES];
-            int secondOrder = [self nextOrderForColumnInRelationship:relationship forObject:object andSource:NO];
+            int secondOrder = x;
             
             sqlite3_stmt *statement = [self preparedStatementForQuery:insert];
             
@@ -1809,10 +1746,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             if (firstColumnIsSource) {
                 sqlite3_bind_int(statement, 2, firstOrder);
                 sqlite3_bind_int(statement, 3, secondOrder);
-                
+                //NSLog(@"%@ = %d, %@ = %d", firstOrderColumn, firstOrder, secondOrderColumn, secondOrder);
             } else {
                 sqlite3_bind_int(statement, 2, secondOrder);
                 sqlite3_bind_int(statement, 3, firstOrder);
+                //NSLog(@"%@ = %d, %@ = %d", firstOrderColumn, secondOrder, secondOrderColumn, firstOrder);
             }
             
             sqlite3_step(statement);
