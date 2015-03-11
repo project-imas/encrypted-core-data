@@ -1425,24 +1425,31 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 // one side of both one-to-one and one-to-many
                 // EDIT: only to-one relations should have columns in entity tables
                 if (![desc isToMany]){// || [inverse isToMany]){
-                    containsOrder = YES;
                     [keys addObject:key];
                     NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:desc]];
                     [columns addObject:column];
                     
-                    // highest order if not found
-                    NSNumber* orderSequence = @(INT_MAX);
-                    NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
-                    NSSet* values = [relationshipObject valueForKey:[inverse name]];
-                    if ([values isKindOfClass:[NSOrderedSet class]]) {
-                        NSOrderedSet* orderedValues = (NSOrderedSet*) values;
-                        orderSequence = @([orderedValues indexOfObject:object]);
+                    // if an inverse relationship exists and if it is to-many
+                    if (inverse != nil && [inverse isToMany]) {
+                        NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
+                        NSObject* values = [relationshipObject valueForKey:[inverse name]];
+                        
+                        if ([values isKindOfClass:[NSSet class]]) {
+                            containsOrder = YES;
+                            
+                            // highest order if not found
+                            NSNumber* orderSequence = @(INT_MAX);
+                            if ([values isKindOfClass:[NSOrderedSet class]]) {
+                                NSOrderedSet* orderedValues = (NSOrderedSet*) values;
+                                orderSequence = @([orderedValues indexOfObject:object]);
+                            }
+                            
+                            [orderValues addObject:@{
+                                                     @"k":[NSString stringWithFormat:@"'%@_order'", [desc name]],
+                                                     @"v":orderSequence
+                                                     }];
+                        }
                     }
-                    
-                    [orderValues addObject:@{
-                                             @"k":[NSString stringWithFormat:@"'%@_order'", [desc name]],
-                                             @"v":orderSequence
-                                             }];
                 }
                 else if ([desc isToMany] && [inverse isToMany]) {
                     if (![self handleUpdatedRelationInSaveRequest:desc forObject:object error:error]) {
