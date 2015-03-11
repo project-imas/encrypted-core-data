@@ -1429,18 +1429,32 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:desc]];
                     [columns addObject:column];
                     
+                    //NSLog(@"entity: %@", [self rootForEntity:desc.entity].name);
+                    //NSLog(@"destinationEntity: %@", [self rootForEntity:desc.destinationEntity].name);
+                    //NSLog(@"inverse == nil: %@", inverse == nil ? @"YES" : @"NO");
+                    //NSLog(@"inverse isToMany: %@", inverse.isToMany ? @"YES" : @"NO");
+                    
                     // if an inverse relationship exists and if it is to-many
                     if (inverse != nil && [inverse isToMany]) {
                         NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
+                        
+                        //NSLog(@"Inverse Relationship Name: %@", [inverse name]);
+                        
                         NSObject* values = [relationshipObject valueForKey:[inverse name]];
                         
-                        if ([values isKindOfClass:[NSSet class]]) {
+                        //NSLog(@"VALUES: %@", values);
+                        //NSLog(@"Value class: %@", [values class]);
+                        //NSLog(@"is NSSet: %@", [values isKindOfClass:[NSSet class]] ? @"YES" : @"NO");
+                        //NSLog(@"is NSOrderedSet: %@", [values isKindOfClass:[NSOrderedSet class]] ? @"YES" : @"NO");
+                        
+                        if ([values isKindOfClass:[NSOrderedSet class]]) {
                             containsOrder = YES;
+                            
+                            NSOrderedSet* orderedValues = (NSOrderedSet*) values;
                             
                             // highest order if not found
                             NSNumber* orderSequence = @(INT_MAX);
-                            if ([values isKindOfClass:[NSOrderedSet class]]) {
-                                NSOrderedSet* orderedValues = (NSOrderedSet*) values;
+                            if ([orderedValues containsObject:object]) {
                                 orderSequence = @([orderedValues indexOfObject:object]);
                             }
                             
