@@ -10,6 +10,7 @@
 
 #import <sqlite3.h>
 #import <objc/runtime.h>
+#import <limits.h>
 
 #import "EncryptedStore.h"
 
@@ -131,12 +132,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
     }
     
-    NSPersistentStore *store = [persistentCoordinator
-                                addPersistentStoreWithType:EncryptedStoreType
-                                configuration:nil
-                                URL:databaseURL
-                                options:options
-                                error:error];
+    [persistentCoordinator addPersistentStoreWithType:EncryptedStoreType configuration:nil URL:databaseURL
+        options:options error:error];
 
     if (*error)
     {
@@ -520,12 +517,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     } else if ([relationship isToMany] && [inverseRelationship isToMany]) {
         // many-to-many relationship, foreign key exists in relation table, join to get the type
         
-        NSString *sourceEntityName = [[self rootForEntity:sourceEntity] name];
-        NSString *destinationEntityName = [[self rootForEntity:destinationEntity] name];
+        
+        NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+        BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
         
         NSString *relationTable = [self tableNameForRelationship:relationship];
-        NSString *sourceIDColumn = [NSString stringWithFormat:@"%@__objectid", sourceEntityName];
-        NSString *destinationIDColumn = [NSString stringWithFormat:@"%@__objectid", destinationEntityName];
+        NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
+        NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
         
         NSString *join = @"";
         NSString *destinationTypeColumn = @"";
@@ -539,20 +537,22 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             destinationIDColumn = [relationTable stringByAppendingFormat:@".%@", destinationIDColumn];
         }
         
-        NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=?", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn];
+        NSString *orderColumn = firstColumnIsSource ? secondOrderColumn : firstOrderColumn;
+        NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=? ORDER BY %@ ASC", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn, orderColumn];
+        
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
         
     } else {
         // one-to-many relationship, foreign key exists in desination entity table
-        
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
         
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT __objectID%@ FROM %@ WHERE %@=?",
+                            @"SELECT __objectID%@ FROM %@ WHERE %@=? ORDER BY %@ ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             destinationTable,
-                            [self foreignKeyColumnForRelationship:inverseRelationship]];
+                            [self foreignKeyColumnForRelationship:inverseRelationship],
+                            [NSString stringWithFormat:@"%@_order", inverseRelationship.name]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
     }
@@ -1032,10 +1032,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             return;
         }
         NSString *column = [self foreignKeyColumnForRelationship:description];
+        NSString *orderColumn = [NSString stringWithFormat:@"%@_order", [description name]];
+        
         if (quotedNames) {
             column = [NSString stringWithFormat:@"'%@'", column];
+            orderColumn = [NSString stringWithFormat:@"'%@' integer default 0", orderColumn];
         }
         [columns addObject:column];
+        [columns addObject:orderColumn];
     }];
     
     for (NSEntityDescription *subentity in entity.subentities) {
@@ -1257,12 +1261,18 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 {
     NSString *firstIDColumn;
     NSString *secondIDColumn;
-    [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
+    NSString *firstOrderColumn;
+    NSString *secondOrderColumn;
+    [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
+    
+    NSString *relationTable = [self tableNameForRelationship:relationship];
+    
     // create table
     NSString *string = [NSString stringWithFormat:
-                        @"CREATE TABLE %@ ('%@' INTEGER NOT NULL, '%@' INTEGER NOT NULL, PRIMARY KEY('%@', '%@'));",
-                        [self tableNameForRelationship:relationship],
-                        firstIDColumn, secondIDColumn, firstIDColumn, secondIDColumn];
+                        @"CREATE TABLE %@ ('%@' INTEGER NOT NULL, '%@' INTEGER NOT NULL, '%@' INTEGER DEFAULT 0, '%@' INTEGER DEFAULT 0, PRIMARY KEY('%@', '%@'));",
+                        relationTable,
+                        firstIDColumn, secondIDColumn, firstOrderColumn, secondOrderColumn, firstIDColumn, secondIDColumn];
+
     sqlite3_stmt *statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     
@@ -1292,6 +1302,46 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSRelationshipDescription *inverse = [relationship inverseRelationship];
     NSArray *names = [@[[relationship name],[inverse name]] sortedArrayUsingComparator:[self fixedLocaleCaseInsensitiveComparator]];
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
+}
+
+/// Create columns for both object IDs. @returns YES  if the relationship.entity was first
+-(BOOL)relationships:(NSRelationshipDescription *)relationship firstIDColumn:(NSString *__autoreleasing*)firstIDColumn secondIDColumn:(NSString *__autoreleasing*)secondIDColumn firstOrderColumn:(NSString *__autoreleasing*)firstOrderColumn secondOrderColumn:(NSString *__autoreleasing*)secondOrderColumn
+{
+    NSParameterAssert(firstIDColumn);
+    NSParameterAssert(secondIDColumn);
+    NSParameterAssert(firstOrderColumn);
+    NSParameterAssert(secondOrderColumn);
+    
+    NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
+    NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
+    
+    static NSString *format = @"%@__objectid";
+    static NSString *orderFormat = @"%@_order";
+    
+    if ([rootSourceEntity isEqual:rootDestinationEntity]) {
+        *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
+        *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootSourceEntity.name stringByAppendingString:@"_1"]];
+        *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        
+        return YES;
+    }
+    
+    NSArray *orderedEntities = [@[rootSourceEntity, rootDestinationEntity] sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:NSStringFromSelector(@selector(name)) ascending:YES comparator:[self fixedLocaleCaseInsensitiveComparator]]]];
+    
+    NSEntityDescription *firstEntity = [orderedEntities firstObject];
+    NSEntityDescription *secondEntity = [orderedEntities lastObject];
+    
+    // 1st
+    *firstIDColumn = [NSString stringWithFormat:format, firstEntity.name];
+    *firstOrderColumn = [NSString stringWithFormat:orderFormat, firstEntity.name];
+    
+    // 2nd
+    *secondIDColumn = [NSString stringWithFormat:format, secondEntity.name];
+    *secondOrderColumn = [NSString stringWithFormat:orderFormat, secondEntity.name];
+    
+    // Return if the relationship.entity was first
+    return orderedEntities[0] == rootSourceEntity;
 }
 
 /// Create columns for both object IDs. @returns YES  if the relationship.entity was first
@@ -1351,6 +1401,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     
     [[request insertedObjects] enumerateObjectsUsingBlock:^(NSManagedObject *object, BOOL *stop) {
         
+        BOOL __block containsOrder = NO;
+        NSMutableArray * orderValues = [[NSMutableArray alloc] init];
+        
         // get values
         NSEntityDescription *entity = [object entity];
         NSMutableArray *keys = [NSMutableArray array];
@@ -1371,15 +1424,57 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     [keys addObject:key];
                     NSString *column = [NSString stringWithFormat:@"'%@'", [self foreignKeyColumnForRelationship:desc]];
                     [columns addObject:column];
+                    
+                    //NSLog(@"entity: %@", [self rootForEntity:desc.entity].name);
+                    //NSLog(@"destinationEntity: %@", [self rootForEntity:desc.destinationEntity].name);
+                    //NSLog(@"inverse == nil: %@", inverse == nil ? @"YES" : @"NO");
+                    //NSLog(@"inverse isToMany: %@", inverse.isToMany ? @"YES" : @"NO");
+                    
+                    // if an inverse relationship exists and if it is to-many
+                    if (inverse != nil && [inverse isToMany]) {
+                        NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
+                        
+                        //NSLog(@"Inverse Relationship Name: %@", [inverse name]);
+                        
+                        NSObject* values = [relationshipObject valueForKey:[inverse name]];
+                        
+                        //NSLog(@"VALUES: %@", values);
+                        //NSLog(@"Value class: %@", [values class]);
+                        //NSLog(@"is NSSet: %@", [values isKindOfClass:[NSSet class]] ? @"YES" : @"NO");
+                        //NSLog(@"is NSOrderedSet: %@", [values isKindOfClass:[NSOrderedSet class]] ? @"YES" : @"NO");
+                        
+                        if ([values isKindOfClass:[NSOrderedSet class]]) {
+                            containsOrder = YES;
+                            
+                            NSOrderedSet* orderedValues = (NSOrderedSet*) values;
+                            
+                            // highest order if not found
+                            NSNumber* orderSequence = @(INT_MAX);
+                            if ([orderedValues containsObject:object]) {
+                                orderSequence = @([orderedValues indexOfObject:object]);
+                            }
+                            
+                            [orderValues addObject:@{
+                                                     @"k":[NSString stringWithFormat:@"'%@_order'", [desc name]],
+                                                     @"v":orderSequence
+                                                     }];
+                        }
+                }
                 }
                 else if ([desc isToMany] && [inverse isToMany]) {
-                    if (![self handleInsertedRelationInSaveRequest:desc forObject:object error:error]) {
+                    if (![self handleUpdatedRelationInSaveRequest:desc forObject:object error:error]) {
                         success = NO;
                     }
                 }
                 
             }
         }];
+        
+        if (containsOrder) {
+            for (NSDictionary * dict in orderValues) {
+                [columns addObject:[dict objectForKey:@"k"]];
+            }
+        }
         
         // prepare statement
         NSString *string = nil;
@@ -1397,6 +1492,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                       [columns componentsJoinedByString:@", "],
                       [[NSArray cmdArrayWithObject:@"?" times:[columns count]] componentsJoinedByString:@", "]];
         }
+        
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // bind id
@@ -1404,13 +1500,22 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
         
         // bind properties
+        NSUInteger __block columnIndex;
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             // SQL indexes start at 1
-            NSUInteger columnIndex = idx + 1;
+            columnIndex = idx + 1;
             NSPropertyDescription *property = [properties objectForKey:obj];
             // Add 1 to column index as the first bind is the objectID
             [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:(int)columnIndex + 1];
         }];
+        
+        if (containsOrder) {
+            columnIndex++;
+            for (NSDictionary * dict in orderValues) {
+                sqlite3_bind_int(statement, columnIndex + 1, [[dict objectForKey:@"v"] integerValue]);
+                columnIndex++;
+            }
+        }
         
         // execute
         sqlite3_step(statement);
@@ -1426,55 +1531,37 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return success;
 }
 
-- (BOOL)handleInsertedRelationInSaveRequest:(NSRelationshipDescription *)relationship forObject:(NSManagedObject *)object error:(NSError **)error
-{
-    // Inverse
-    NSSet *inverseObjects = [object valueForKey:[relationship name]];
-    if ([inverseObjects count] == 0) {
-        // No objects to add so finish
-        return YES;
-    }
     
-    NSString *tableName = [self tableNameForRelationship:relationship];
-    
-    NSString *firstIDColumn;
-    NSString *secondIDColumn;
-    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn];
+- (int)nextOrderForColumnInRelationship:(NSRelationshipDescription *)relationship forObject:(NSManagedObject *)object andSource:(BOOL)source {
+    int order = 0;
     
     // Object
     unsigned long long objectID = [[self referenceObjectForObjectID:[object objectID]] unsignedLongLongValue];
     
-    NSString *values = [NSString stringWithFormat:(firstColumnIsSource ? @"%llu, ?" : @"?, %llu"), objectID];
-    NSString *string = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@) VALUES (%@);", tableName, firstIDColumn, secondIDColumn, values];
+    NSString *tableName = [self tableNameForRelationship:relationship];
     
-    __block BOOL success = YES;
+    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
     
-    [inverseObjects enumerateObjectsUsingBlock:^(NSManagedObject *obj, BOOL *stop) {
+    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
         
-        NSNumber *inverseObjectID = [self referenceObjectForObjectID:[obj objectID]];
+    NSString *string = [NSString stringWithFormat:
+                        @"SELECT MAX(%@) FROM %@ WHERE %@=%llu;",
+                        source ?
+                        (firstColumnIsSource ? firstOrderColumn : secondOrderColumn):
+                        (firstColumnIsSource ? secondOrderColumn : firstOrderColumn),
+                        tableName,
+                        source ?
+                        (firstColumnIsSource ? secondIDColumn : firstIDColumn):
+                        (firstColumnIsSource ? firstIDColumn : secondIDColumn),
+                        objectID];
         
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-        
-        // Add the related objects properties
-        sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedLongLongValue]);
-        
-        sqlite3_step(statement);
-        
-        int finalize = sqlite3_finalize(statement);
-        if (finalize != SQLITE_OK && finalize != SQLITE_CONSTRAINT) {
-            if (error != nil) {
-                *error = [self databaseError];
+    if (sqlite3_step(statement) == SQLITE_ROW) {
+        order = sqlite3_column_int(statement, 0);
             }
-            success = NO;
-        } else {
-            success = YES;
+    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
         }
-        
-        // Stop if we failed
-        *stop = !success;
-    }];
-    
-    return success;
+    return order + 1;
 }
 
 - (BOOL)handleUpdatedObjectsInSaveRequest:(NSSaveChangesRequest *)request cache:(NSMutableDictionary *)cache error:(NSError **)error {
@@ -1518,8 +1605,21 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 
                 // TODO: More edge case testing and handling
                 if (![desc isToMany]) {
+                    // find order!
                     NSString *column = [self foreignKeyColumnForRelationship:property];
+                    NSString *orderColumn = [NSString stringWithFormat:@"%@_order", [desc name]];
+                    NSNumber *orderSequence = @(0);
+                    
+                    NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
+                    NSSet* values = [relationshipObject valueForKey:[inverse name]];
+                    if ([values isKindOfClass:[NSOrderedSet class]]) {
+                        NSOrderedSet* orderedValues = (NSOrderedSet*) values;
+                        orderSequence = @([orderedValues indexOfObject:object]);
+                    }
+                    
                     [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
+                    [columns addObject:[NSString stringWithFormat:@"%@=%d", orderColumn, [orderSequence integerValue]]];
+                    
                     [keys addObject:key];
                 }
                 else if ([desc isToMany] && [inverse isToMany]) {
@@ -1567,7 +1667,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         // execute
         NSNumber *number = [self referenceObjectForObjectID:objectID];
-        sqlite3_bind_int64(statement, ((int)[columns count] + 1), [number unsignedLongLongValue]);
+        sqlite3_bind_int64(statement, ((int)[keys count] + 1), [number unsignedLongLongValue]);
         sqlite3_step(statement);
         
         // finish up
@@ -1586,13 +1686,122 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return success;
 }
 
-- (BOOL)handleUpdatedRelationInSaveRequest:(NSRelationshipDescription *)desc forObject:(NSManagedObject *)object error:(NSError **)error {
-    BOOL __block success = YES;
+
+- (BOOL)handleUpdatedRelationInSaveRequest:(NSRelationshipDescription *)relationship forObject:(NSManagedObject *)object error:(NSError **)error {
+    // Inverse
+    NSSet *inverseObjects = [object valueForKey:[relationship name]];
     
-    NSString *string = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@__objectid=?;",
-                        [self tableNameForRelationship:desc], [[self rootForEntity:[desc entity]] name]];
+    if ([inverseObjects count] == 0) {
+        // No objects to add so finish
+        return YES;
+    }
     
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+    NSString *tableName = [self tableNameForRelationship:relationship];
+    
+    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+    
+    BOOL firstColumnIsSource = [self relationships:relationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
+    
+    // Object
+    unsigned long long objectID = [[self referenceObjectForObjectID:[object objectID]] unsignedLongLongValue];
+    
+    NSString *values = [NSString stringWithFormat:(firstColumnIsSource ? @"%llu, ?, ?, ?" : @"?, %llu, ?, ?"), objectID];
+    NSString *insert = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@, %@, %@) VALUES (%@);", tableName, firstIDColumn, secondIDColumn, firstOrderColumn, secondOrderColumn, values];
+    NSString *update = [NSString stringWithFormat:@"UPDATE %@ SET %@ = ? WHERE %@ = ? AND %@ = ?", tableName, firstColumnIsSource ? secondOrderColumn : firstOrderColumn, firstIDColumn, secondIDColumn];
+    
+    __block BOOL success = YES;
+    int x = 1;
+    
+    NSMutableArray * inverseObjectIDs = [[NSMutableArray alloc] init];
+    
+    for (NSManagedObject *obj in inverseObjects) {
+        
+        NSNumber *inverseObjectID = [self referenceObjectForObjectID:[obj objectID]];
+        unsigned long long refObjectID = [[self referenceObjectForObjectID:[obj objectID]] unsignedLongLongValue];
+        
+        NSString *countQuery = [NSString stringWithFormat:@"SELECT COUNT(*) FROM %@ WHERE %@ = %llu AND %@ = %llu", tableName, firstIDColumn, firstColumnIsSource ? objectID : refObjectID, secondIDColumn, firstColumnIsSource ? refObjectID : objectID];
+        
+        if ([self hasRows:countQuery]) {
+            // relationship exists, update!
+            sqlite3_stmt *statement = [self preparedStatementForQuery:update];
+            
+            int ord = x;
+            
+            if (firstColumnIsSource) {
+                sqlite3_bind_int(statement, 1, ord);
+                sqlite3_bind_int64(statement, 2, objectID);
+                sqlite3_bind_int64(statement, 3, [inverseObjectID unsignedLongLongValue]);
+            } else {
+                sqlite3_bind_int(statement, 1, ord);
+                sqlite3_bind_int64(statement, 2, [inverseObjectID unsignedLongLongValue]);
+                sqlite3_bind_int64(statement, 3, objectID);
+            }
+            
+            sqlite3_step(statement);
+            
+            int finalize = sqlite3_finalize(statement);
+            if (finalize != SQLITE_OK && finalize != SQLITE_CONSTRAINT) {
+                if (error != nil) {
+                    *error = [self databaseError];
+                }
+                success = NO;
+            } else {
+                success = YES;
+            }
+            
+        } else {
+            // insert
+            
+            int firstOrder = [self nextOrderForColumnInRelationship:relationship forObject:obj andSource:YES];
+            int secondOrder = x;
+            
+            sqlite3_stmt *statement = [self preparedStatementForQuery:insert];
+            
+            // Add the related objects properties
+            sqlite3_bind_int64(statement, 1, [inverseObjectID unsignedLongLongValue]);
+            
+            if (firstColumnIsSource) {
+                sqlite3_bind_int(statement, 2, firstOrder);
+                sqlite3_bind_int(statement, 3, secondOrder);
+                //NSLog(@"%@ = %d, %@ = %d", firstOrderColumn, firstOrder, secondOrderColumn, secondOrder);
+            } else {
+                sqlite3_bind_int(statement, 2, secondOrder);
+                sqlite3_bind_int(statement, 3, firstOrder);
+                //NSLog(@"%@ = %d, %@ = %d", firstOrderColumn, secondOrder, secondOrderColumn, firstOrder);
+}
+
+            sqlite3_step(statement);
+            
+            int finalize = sqlite3_finalize(statement);
+            if (finalize != SQLITE_OK && finalize != SQLITE_CONSTRAINT) {
+                if (error != nil) {
+                    *error = [self databaseError];
+                }
+                success = NO;
+            } else {
+                success = YES;
+            }
+        }
+        
+        [inverseObjectIDs addObject:inverseObjectID];
+        
+        x++;
+        
+        if (!success)
+            break;
+    }
+    
+    if (success) {
+        // delete the rest of the relations
+        NSString *notInValues = [inverseObjectIDs componentsJoinedByString:@","];
+    
+        NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@=? AND %@ NOT IN (%@);",
+                                 [self tableNameForRelationship:relationship],
+                                 firstColumnIsSource ? firstIDColumn : secondIDColumn,
+                                 firstColumnIsSource ? secondIDColumn : firstIDColumn,
+                                 notInValues];
+    
+        sqlite3_stmt *statement = [self preparedStatementForQuery:deleteQuery];
     
     NSNumber *number = [self referenceObjectForObjectID:[object objectID]];
     sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
@@ -1602,8 +1811,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
         if (error != nil) { *error = [self databaseError]; }
         success = NO;
-    } else if (![self handleInsertedRelationInSaveRequest:desc forObject:object error:error]){
-        success = NO;
+        }
     }
     
     return success;
@@ -1668,6 +1876,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 # pragma mark - SQL helpers
+
+- (BOOL)hasRows:(NSString *)query {
+    int count = 0;
+    sqlite3_stmt *statement = [self preparedStatementForQuery:query];
+    if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
+        count = sqlite3_column_int(statement, 0);
+    }
+    sqlite3_finalize(statement);
+    return (count > 0);
+}
 
 - (BOOL)hasTable:(BOOL *)hasTable withName:(NSString*)name error:(NSError **)error {
     static NSString * const kSQL = @"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='%@';";
