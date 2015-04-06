@@ -132,12 +132,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
     }
     
-    NSPersistentStore *store = [persistentCoordinator
-                                addPersistentStoreWithType:EncryptedStoreType
-                                configuration:nil
-                                URL:databaseURL
-                                options:options
-                                error:error];
+    [persistentCoordinator addPersistentStoreWithType:EncryptedStoreType configuration:nil URL:databaseURL
+        options:options error:error];
 
     if (*error)
     {
@@ -2455,6 +2451,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 NSEntityDescription * e = [[[self persistentStoreCoordinator] managedObjectModel] entitiesByName][expressionDescription.name];
                 return [self newObjectIDForEntity:e referenceObject:number];
             }
+            return nil;
             break;
             
             /*  NSUndefinedAttributeType
