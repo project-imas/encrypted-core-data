@@ -1500,19 +1500,19 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
         
         // bind properties
-        NSUInteger __block columnIndex;
+        int __block columnIndex;
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             // SQL indexes start at 1
-            columnIndex = idx + 1;
+            columnIndex = (int)idx + 1;
             NSPropertyDescription *property = [properties objectForKey:obj];
             // Add 1 to column index as the first bind is the objectID
-            [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:(int)columnIndex + 1];
+            [self bindProperty:property withValue:[object valueForKey:obj] forKey:obj toStatement:statement atIndex:columnIndex + 1];
         }];
         
         if (containsOrder) {
             columnIndex++;
             for (NSDictionary * dict in orderValues) {
-                sqlite3_bind_int(statement, columnIndex + 1, [[dict objectForKey:@"v"] integerValue]);
+                sqlite3_bind_int(statement, columnIndex + 1, [[dict objectForKey:@"v"] intValue]);
                 columnIndex++;
             }
         }
@@ -1618,7 +1618,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     }
                     
                     [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
-                    [columns addObject:[NSString stringWithFormat:@"%@=%d", orderColumn, [orderSequence integerValue]]];
+                    [columns addObject:[NSString stringWithFormat:@"%@=%ld", orderColumn, (long)[orderSequence integerValue]]];
                     
                     [keys addObject:key];
                 }
@@ -2656,12 +2656,12 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
-			int len = strlen(str);
+			int len = (int)strlen(str);
 
 			if (str[0] == '\'' && str[len-1] == '\'')
-				sqlite3_bind_text(statement, (idx + 1), str+1, len-2, SQLITE_TRANSIENT);
+				sqlite3_bind_text(statement, (int)(idx + 1), str+1, len-2, SQLITE_TRANSIENT);
 			else
-				sqlite3_bind_text(statement, (idx + 1), str, len, SQLITE_TRANSIENT);
+				sqlite3_bind_text(statement, (int)(idx + 1), str, len, SQLITE_TRANSIENT);
         }
 
         // number
