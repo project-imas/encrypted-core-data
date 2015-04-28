@@ -684,8 +684,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
                     [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
                     NSMutableArray *bundles = [NSMutableArray array];
-                    [bundles addObjectsFromArray:[NSBundle allBundles]];
-                    [bundles addObjectsFromArray:[NSBundle allFrameworks]];
+                    [bundles addObject:[NSBundle mainBundle]];
                     NSManagedObjectModel *oldModel = [NSManagedObjectModel
                                                       mergedModelFromBundles:bundles
                                                       forStoreMetadata:metadata];
@@ -910,7 +909,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 #pragma mark - migration helpers
 
 - (BOOL)migrateFromModel:(NSManagedObjectModel *)fromModel toModel:(NSManagedObjectModel *)toModel error:(NSError **)error {
-    BOOL __block succuess = YES;
+    BOOL __block success = YES;
     
     // generate mapping model
     NSMappingModel *mappingModel = [NSMappingModel
@@ -939,27 +938,25 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         // add a new entity from final snapshot
         if (type == NSAddEntityMappingType) {
-            succuess = [self createTableForEntity:destinationEntity error:error];
+            success &= [self createTableForEntity:destinationEntity error:error];
         }
         
         // drop table for deleted entity
         else if (type == NSRemoveEntityMappingType) {
-            succuess = [self dropTableForEntity:sourceEntity];
+            success &= [self dropTableForEntity:sourceEntity];
         }
         
         // change an entity
         else if (type == NSTransformEntityMappingType) {
-            succuess = [self
+            success &= [self
                         alterTableForSourceEntity:sourceEntity
                         destinationEntity:destinationEntity
                         withMapping:entityMapping
                         error:error];
         }
-        
-        if (!succuess) { *stop = YES; }
     }];
     
-    return succuess;
+    return success;
 }
 
 - (BOOL)initializeDatabase:(NSError**)error {
