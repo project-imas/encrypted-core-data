@@ -726,6 +726,30 @@
     }];
 }
 
+-(void)test_predicateForObjectRelation_multipleAttributes {
+    NSError __block *error = nil;
+    NSUInteger count = 3;
+    NSFetchRequest __block *request = nil;
+    [self createUsersWithTagsDictionary:count];
+    
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSArray *users = [context executeFetchRequest:request error:&error];
+    
+    [users enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        error = nil;
+        request = [[NSFetchRequest alloc] initWithEntityName:@"Tag"];
+        NSString *name = [obj valueForKey:@"name"];
+        NSNumber *age = [obj valueForKey:@"age"];
+        [request setPredicate:
+         [NSPredicate predicateWithFormat:@"ANY hasUsers.name = %@ AND hasUsers.age = %@", name, age]];
+        NSArray *tags = [context executeFetchRequest:request error:&error];
+        XCTAssertNil(error, @"Unable to perform fetch request.");
+        XCTAssertEqual([tags count], count, @"Invalid number of results.");
+        NSManagedObject *tag = [tags lastObject];
+        XCTAssertNotNil(tag, @"No object found.");
+    }];
+}
+
 -(void)test_predicateEqualityComparison {
     NSError __block *error = nil;
     NSUInteger count = 3;

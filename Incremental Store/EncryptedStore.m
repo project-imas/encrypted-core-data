@@ -2009,10 +2009,18 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 - (NSString *) getJoinClause: (NSFetchRequest *) fetchRequest withPredicate:(NSPredicate*)predicate initial:(BOOL)initial{
-    
+    return [self getJoinClause:fetchRequest withPredicate:predicate initial:initial withStatements:nil];
+}
+
+- (NSString *) getJoinClause: (NSFetchRequest *) fetchRequest withPredicate:(NSPredicate*)predicate initial:(BOOL)initial withStatements: (NSMutableSet *) previousJoinStatementsSet {
     NSEntityDescription *entity = [fetchRequest entity];
     // We use a set to only add one join table per relationship.
-    NSMutableSet *joinStatementsSet = [NSMutableSet set];
+    NSMutableSet *joinStatementsSet;
+    if (previousJoinStatementsSet != nil) {
+        joinStatementsSet = previousJoinStatementsSet;
+    } else {
+        joinStatementsSet = [NSMutableSet set];
+    }
     // We use an array to ensure the order of join statements
     NSMutableArray *joinStatementsArray = [NSMutableArray array];
     
@@ -2032,7 +2040,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if ([predicate isKindOfClass:[NSCompoundPredicate class]]) {
         NSCompoundPredicate * compoundPred = (NSCompoundPredicate*) predicate;
         for (id subpred in [compoundPred subpredicates]){
-            [joinStatementsArray addObject:[self getJoinClause:fetchRequest withPredicate:subpred initial:NO]];
+            [joinStatementsArray addObject:[self getJoinClause:fetchRequest withPredicate:subpred initial:NO withStatements: joinStatementsSet]];
         }
     }
     else if ([predicate isKindOfClass:[NSComparisonPredicate class]]){
