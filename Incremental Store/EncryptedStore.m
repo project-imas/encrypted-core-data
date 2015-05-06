@@ -1204,7 +1204,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
     }];
     [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][[obj name]];
+        NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
+        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
         if (![relationship isToMany])
         {
             NSExpression *expression = [obj valueExpression];
