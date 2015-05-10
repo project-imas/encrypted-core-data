@@ -1199,10 +1199,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     
     // get columns
-    if ([destinationTableName isEqualToString:@"ecdStudentInformation"])
-    {
-        ;
-    }
     NSMutableArray *sourceColumns = [NSMutableArray array];
     NSMutableArray *destinationColumns = [NSMutableArray array];
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
