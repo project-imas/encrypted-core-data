@@ -7,12 +7,12 @@ Pod::Spec.new do |s|
     s.description   = %[
         Provides a Core Data store that encrypts all data that is persisted. Besides the initial setup, the usage is exactly the same as Core Data and can be used in existing projects that use Core Data.
     ]
-    s.homepage      = 'https://github.com/project-imas/encrypted-core-data/'
+    s.homepage      = 'https://github.com/MihaMajcen/encrypted-core-data/'
     s.authors       = {
         'MITRE' => 'imas-proj-list@lists.mitre.org'
     }
   
-    s.source        = { :git => 'https://github.com/project-imas/encrypted-core-data.git', :tag => '3.0' }
+    s.source        = { :git => 'https://github.com/MihaMajcen/encrypted-core-data.git', :tag => '3.0' }
   
     s.frameworks    = ['CoreData', 'Security']
     s.requires_arc  = true
