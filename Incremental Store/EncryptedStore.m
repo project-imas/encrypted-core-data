@@ -3192,10 +3192,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 {
     NSMutableDictionary * updateValues = [NSMutableDictionary dictionaryWithCapacity:self.allProperties.count];
     for (NSPropertyDescription * key in self.allProperties) {
-        id newValue = [changedValues objectForKey:key.name];
-        id value = newValue ?: [self valueForPropertyDescription:key];
-        if (value && ![value isEqual: [NSNull null]]) {
-            [updateValues setObject:value forKey:key.name];
+            @autoreleasepool {
+                id value = ([changedValues objectForKey:key.name] ? [changedValues objectForKey:key.name] : [self valueForPropertyDescription:key]);
+                if (value && ![value isEqual: [NSNull null]]) {
+                    [updateValues setObject:value forKey:key.name];
+                }
         }
     }
     [self updateWithValues:updateValues version:self.version+1];
