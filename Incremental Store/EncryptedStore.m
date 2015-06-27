@@ -798,44 +798,77 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
+    return [self setDatabasePassphrase:passphrase error:error];
+    // BOOL result;
+    // int status;
+    // if ([passphrase length] > 0) {
+    //     // Password provided, use it to key the DB
+    //     const char *string = [passphrase UTF8String];
+    //     status = sqlite3_key(database, string, (int)strlen(string));
+    //     string = NULL;
+    //     passphrase = nil;
+    // } else {
+    //     // No password
+    //     status = SQLITE_OK;
+    // }
 
+    // result = status == SQLITE_OK
+
+    // if (result) {
+    //     result = [self checkDatabaseStatusWithError:&error];
+    // }
+
+    // return (result);
+}
+
+- (BOOL)checkDatabaseStatusWithError:(NSError *__autoreleasing*)error {
     int status;
-    if ([passphrase length] > 0) {
-        // Password provided, use it to key the DB
-        const char *string = [passphrase UTF8String];
-        status = sqlite3_key(database, string, (int)strlen(string));
-        string = NULL;
-        passphrase = nil;
-    } else {
-        // No password
-        status = SQLITE_OK;
-    }
-
+    status = sqlite3_exec(database, (const char*) "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
     if (status == SQLITE_OK) {
-        // Check if the password is correct as per http://sqlcipher.net/sqlcipher-api/#key section "Testing the Key"
-        status = sqlite3_exec(database, (const char*) "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
-        if (status == SQLITE_OK) {
-            // Correct passcode
-        } else {
-            // Incorrect passcode
-            if (error) {
-                NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"Incorrect passcode"} mutableCopy];
-                // If we have a DB error keep it for extra info
-                NSError *underlyingError = [self databaseError];
-                if (underlyingError) {
-                    userInfo[NSUnderlyingErrorKey] = underlyingError;
-                }
-                *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
+        // Correct passcode
+    } else {
+        // Incorrect passcode
+        if (error) {
+            NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"Incorrect passcode"} mutableCopy];
+            // If we have a DB error keep it for extra info
+            NSError *underlyingError = [self databaseError];
+            if (underlyingError) {
+                userInfo[NSUnderlyingErrorKey] = underlyingError;
             }
+            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
         }
     }
     return (status == SQLITE_OK);
 }
 
-- (BOOL)changeDatabasePassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error {
-    NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
-
+- (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
+    BOOL result;
     int status;
+
+    if ([passphrase length] > 0) {
+        // Password provided, use it to key the DB
+        const char *string = [passphrase UTF8String];
+        status = sqlite3_rekey(database, string, (int)strlen(string));
+        string = NULL;
+        passphrase = nil;
+    } else {
+        // No password
+        status = SQLITE_OK;
+    }
+
+    result = status == SQLITE_OK;
+
+    if (result) {
+        result = [self checkDatabaseStatusWithError:error];
+    }
+
+    return result;
+}
+
+- (BOOL)setDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
+    BOOL result;
+    int status;
+
     if ([passphrase length] > 0) {
         // Password provided, use it to key the DB
         const char *string = [passphrase UTF8String];
@@ -847,41 +880,71 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         status = SQLITE_OK;
     }
 
-    if (status == SQLITE_OK) {
-        // Check if the password is correct as per http://sqlcipher.net/sqlcipher-api/#key section "Testing the Key"
-        status = sqlite3_exec(database, (const char*) "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
-        if (status == SQLITE_OK) {
-            // Correct passcode
-            const char *utf8NewPassphrase = [passphrase UTF8String];
-            status = sqlite3_rekey(database, utf8NewPassphrase, (int)strlen(utf8NewPassphrase));
-            string = NULL;
-            passphrase = nil;
-            if (status != SQLITE_OK) {
-                // Rekey failed
-                if (error) {
-                    NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"IncorrectNewPasscode passcode"} mutableCopy];
-                    // If we have a DB error keep it for extra info
-                    NSError *underlyingError = [self databaseError];
-                    if (underlyingError) {
-                        userInfo[NSUnderlyingErrorKey] = underlyingError;
-                    }
-                    *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
-                }
-            }
-        } else {
-            // Incorrect passcode
-            if (error) {
-                NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"IncorrectPasscode passcode"} mutableCopy];
-                // If we have a DB error keep it for extra info
-                NSError *underlyingError = [self databaseError];
-                if (underlyingError) {
-                    userInfo[NSUnderlyingErrorKey] = underlyingError;
-                }
-                *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
-            }
-        }
+    result = status == SQLITE_OK;
+
+    if (result) {
+        result = [self checkDatabaseStatusWithError:error];
     }
-    return (status == SQLITE_OK);
+
+    return result;
+}
+
+- (BOOL)changeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error {
+    BOOL result;
+    result = [self setDatabasePassphrase:oldPassphrase error:error];
+    if (result) {
+        // successfully unlocked
+        result = [self changeDatabasePassphrase:newPassphrase error:error];
+    }
+    return result;
+    // NSString *passphrase = oldPassphrase;//[[self options] objectForKey:EncryptedStorePassphraseKey];
+    // int status;
+    // if ([passphrase length] > 0) {
+    //     // Password provided, use it to key the DB
+    //     const char *string = [passphrase UTF8String];
+    //     status = sqlite3_key(database, string, (int)strlen(string));
+    //     string = NULL;
+    //     passphrase = nil;
+    // } else {
+    //     // No password
+    //     status = SQLITE_OK;
+    // }
+
+    // if (status == SQLITE_OK) {
+    //     // Check if the password is correct as per http://sqlcipher.net/sqlcipher-api/#key section "Testing the Key"
+    //     status = sqlite3_exec(database, (const char*) "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
+    //     if (status == SQLITE_OK) {
+    //         // Correct passcode
+    //         const char *utf8NewPassphrase = [newPassphrase UTF8String];
+    //         status = sqlite3_rekey(database, utf8NewPassphrase, (int)strlen(utf8NewPassphrase));
+    //         utf8NewPassphrase = NULL;
+    //         passphrase = nil;
+    //         if (status != SQLITE_OK) {
+    //             // Rekey failed
+    //             if (error) {
+    //                 NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"IncorrectNewPasscode passcode"} mutableCopy];
+    //                 // If we have a DB error keep it for extra info
+    //                 NSError *underlyingError = [self databaseError];
+    //                 if (underlyingError) {
+    //                     userInfo[NSUnderlyingErrorKey] = underlyingError;
+    //                 }
+    //                 *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
+    //             }
+    //         }
+    //     } else {
+    //         // Incorrect passcode
+    //         if (error) {
+    //             NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"IncorrectPasscode passcode"} mutableCopy];
+    //             // If we have a DB error keep it for extra info
+    //             NSError *underlyingError = [self databaseError];
+    //             if (underlyingError) {
+    //                 userInfo[NSUnderlyingErrorKey] = underlyingError;
+    //             }
+    //             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
+    //         }
+    //     }
+    // }
+    // return (status == SQLITE_OK);
 }
 
 -(BOOL)configureDatabaseCacheSize
