@@ -841,7 +841,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     result = status == SQLITE_OK;
 
     if (result) {
-        result = [self checkDatabaseStatusWithError:error] && !error;
+        result = [self checkDatabaseStatusWithError:error];
     }
 
     return result && (*error == nil);
@@ -900,7 +900,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             database = NULL;
         }
     }
-    
+
     else {
         // could not close databse? hm
         if (error) {
@@ -913,7 +913,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
         }
     }
-    
+
     return result && (*error == nil);
 }
 
