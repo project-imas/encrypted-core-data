@@ -1804,7 +1804,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             id property = [properties objectForKey:obj];
 #if USE_MANUAL_NODE_CACHE
             if (value && ![value isKindOfClass:[NSNull class]]) {
-                [cacheChanges setObject:value forKey:obj];
+                if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+                    [cacheChanges setObject:[value objectID] forKey:obj];
+                } else {
+                    [cacheChanges setObject:value forKey:obj];
+                }
             }
             else {
                 [cacheChanges setObject: [NSNull null] forKey: obj];
