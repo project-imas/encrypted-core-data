@@ -1761,11 +1761,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     NSNumber *orderSequence = @(0);
                     
                     NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
-                    NSSet* values = [relationshipObject valueForKey:[inverse name]];
-                    if ([values isKindOfClass:[NSOrderedSet class]]) {
-                        NSOrderedSet* orderedValues = (NSOrderedSet*) values;
-                        orderSequence = @([orderedValues indexOfObject:object]);
+                    if (inverse) {
+                        NSSet* values = [relationshipObject valueForKey:[inverse name]];
+                        if ([values isKindOfClass:[NSOrderedSet class]]) {
+                            NSOrderedSet* orderedValues = (NSOrderedSet*) values;
+                            orderSequence = @([orderedValues indexOfObject:object]);
+                        }
                     }
+                    
                     
                     [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
                     [columns addObject:[NSString stringWithFormat:@"%@=%ld", orderColumn, (long)[orderSequence integerValue]]];
