@@ -114,13 +114,17 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     if(dburl != nil) {
         if ([dburl isKindOfClass:[NSString class]]){
             databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
-            [[NSFileManager defaultManager] setAttributes:options ofItemAtPath:[ databaseURL absoluteString] error:nil];
             backup = NO;
         }
         else if ([dburl isKindOfClass:[NSURL class]]){
             databaseURL = dburl;
             backup = NO;
         }
+    }
+    
+    if (databaseURL)
+    {
+        [[NSFileManager defaultManager] setAttributes:options ofItemAtPath:[databaseURL absoluteString] error:nil];
     }
     
     if (backup){
