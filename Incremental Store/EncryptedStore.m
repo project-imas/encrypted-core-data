@@ -2,6 +2,7 @@
 // EncryptedStore.m
 //
 // Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
+// Modified by Maicon Peixinho - 7/17/15
 //
 
 #if !__has_feature(objc_arc)
