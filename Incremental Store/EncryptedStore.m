@@ -10,7 +10,6 @@
 
 #import <sqlite3.h>
 #import <objc/runtime.h>
-#import <limits.h>
 
 #import "EncryptedStore.h"
 
@@ -20,6 +19,8 @@ NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
 NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocation";
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
+
+static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
@@ -33,15 +34,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
  
  */
 + (NSArray *)cmdArrayWithObject:(id<NSCopying>)object times:(NSUInteger)times;
-
-/*
- 
- Mirrors the Ruby Array collect method. Iterates over the receiver's contents
- and calls the given block with each object collecting the return value in
- a new array.
- 
- */
-- (NSArray *)cmdCollect:(id (^) (id object))block;
 
 /*
  
@@ -274,7 +266,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 NSUInteger location = havingRange.location;
                 NSRange substrRange = NSMakeRange(location,length);
                 
-                NSInteger endHavingEnd = endHavingRange.location + endHavingRange.length;
+                NSUInteger endHavingEnd = endHavingRange.location + endHavingRange.length;
                 NSString *groupHaving = [NSString stringWithFormat: @" GROUP BY %@.__objectID %@ %@", table, [string substringWithRange:substrRange], [string substringWithRange:NSMakeRange(endHavingEnd, [string length] - endHavingEnd)]];
                 
                 // Rebuild entire SQL string
@@ -293,10 +285,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             while (sqlite3_step(statement) == SQLITE_ROW) {
-                unsigned long long primaryKey = sqlite3_column_int64(statement, 0);
+                int64_t primaryKey = sqlite3_column_int64(statement, 0);
                 NSEntityDescription * entityToFetch = nil;
                 if (shouldFetchEntityType) {
-                    long long entityType = sqlite3_column_int64(statement, 1);
+                    int64_t entityType = sqlite3_column_int64(statement, 1);
                     entityToFetch = [entityTypeCache objectForKey:@(entityType)];
                 }
                 if (!entityToFetch) {
@@ -317,7 +309,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         
         // return fetched dictionaries
         if (type == NSDictionaryResultType && [[fetchRequest propertiesToFetch] count] > 0) {
-            BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
             NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
             NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
             
@@ -364,7 +355,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             sqlite3_stmt *statement = [self preparedStatementForQuery:string];
             [self bindWhereClause:condition toStatement:statement];
             if (sqlite3_step(statement) == SQLITE_ROW) {
-                unsigned long long count = sqlite3_column_int64(statement, 0);
+                int64_t count = sqlite3_column_int64(statement, 0);
                 [results addObject:@(count)];
             }
             if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
@@ -566,7 +557,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             // If we need to get the type of the entity to make sure the eventual entity that gets created is of the correct subentity type
             NSEntityDescription *resolvedDestinationEntity = nil;
             if (shouldFetchDestinationEntityType) {
-                long long entityType = sqlite3_column_int64(statement, 1);
+                int64_t entityType = sqlite3_column_int64(statement, 1);
                 resolvedDestinationEntity = [entityTypeCache objectForKey:@(entityType)];
             }
             if (!resolvedDestinationEntity) {
@@ -667,7 +658,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
                 if (statement != NULL && sqlite3_step(statement) == SQLITE_ROW) {
                     const void *bytes = sqlite3_column_blob(statement, 0);
-                    unsigned int length = sqlite3_column_bytes(statement, 0);
+                    NSUInteger length = (NSUInteger)sqlite3_column_bytes(statement, 0);
                     NSData *data = [NSData dataWithBytes:bytes length:length];
                     metadata = [NSKeyedUnarchiver unarchiveObjectWithData:data];
                     [self setMetadata:metadata];
@@ -714,7 +705,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorMigrationFailed userInfo:userInfo];
                         }
                         return NO;
-					}
+                    }
                 }
                 
             }
@@ -804,8 +795,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // Password provided, use it to key the DB
         const char *string = [passphrase UTF8String];
         status = sqlite3_key(database, string, (int)strlen(string));
-        string = NULL;
-        passphrase = nil;
     } else {
         // No password
         status = SQLITE_OK;
@@ -901,9 +890,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                                                            range:NSMakeRange(0, [string length])];
             }
         }
-	}
+    }
     
-	(void)sqlite3_result_int(context, (int)numberOfMatches);
+    sqlite3_result_int(context, (int)numberOfMatches);
 }
 
 #pragma mark - migration helpers
@@ -1762,7 +1751,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                     
                     NSManagedObject * relationshipObject = [object valueForKey:[desc name]];
                     if (inverse) {
-                        NSSet* values = [relationshipObject valueForKey:[inverse name]];
+                        NSObject* values = [relationshipObject valueForKey:[inverse name]];
                         if ([values isKindOfClass:[NSOrderedSet class]]) {
                             NSOrderedSet* orderedValues = (NSOrderedSet*) values;
                             orderSequence = @([orderedValues indexOfObject:object]);
@@ -2140,7 +2129,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // We do need to detect the relationship though to know what table to prefix the key
         // with.
         
-        NSString *tableName = [self tableNameForEntity:fetchRequest.entity];
+        NSString *tableName = [self tableNameForEntity:entity];
         NSString *key = [desc key];
         if ([desc.key rangeOfString:@"."].location != NSNotFound) {
             NSArray *components = [desc.key componentsSeparatedByString:@"."];
@@ -2275,7 +2264,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSEntityDescription *currentEntity = rootEntity;
     NSString *fullJoinClause;
     NSString *lastTableName = [self tableNameForEntity:currentEntity];
-    for (int i = 0 ; i < keysArray.count; i++) {
+    for (NSUInteger i = 0 ; i < keysArray.count; i++) {
         
         // alt names for tables for safety
         NSString *relTableName = [self joinedTableNameForComponents:
@@ -2555,7 +2544,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // blob
         else if (type == NSBinaryDataAttributeType) {
             const void *bytes = sqlite3_column_blob(statement, index);
-            unsigned int length = sqlite3_column_bytes(statement, index);
+            NSUInteger length = (NSUInteger)sqlite3_column_bytes(statement, index);
             return [NSData dataWithBytes:bytes length:length];
         }
         
@@ -2567,7 +2556,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
             NSValueTransformer *transformer = [NSValueTransformer valueTransformerForName:name];
             const void *bytes = sqlite3_column_blob(statement, index);
-            unsigned int length = sqlite3_column_bytes(statement, index);
+            NSUInteger length = (NSUInteger)sqlite3_column_bytes(statement, index);
             if (length > 0) {
                 const BOOL isDefaultTransformer = [name isEqualToString:NSKeyedUnarchiveFromDataTransformerName];
                 NSData *data = [NSData dataWithBytes:bytes length:length];
@@ -2587,7 +2576,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
         NSEntityDescription *target = [(id)property destinationEntity];
         if ([self entityNeedsEntityTypeColumn:target]) {
-            long long entityType = sqlite3_column_int64(statement, index + 1);
+            int64_t entityType = sqlite3_column_int64(statement, index + 1);
             NSEntityDescription *resolvedTarget = [entityTypeCache objectForKey:@(entityType)];
             if (resolvedTarget) {
                 target = resolvedTarget;
@@ -2835,7 +2824,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // number
         else if ([obj isKindOfClass:[NSNumber class]]) {
             
-            switch (CFNumberGetType((CFNumberRef)obj)) {
+            switch (CFNumberGetType((__bridge CFNumberRef)obj)) {
                 case kCFNumberFloat32Type:
                 case kCFNumberFloat64Type:
                 case kCFNumberFloatType:
@@ -3156,14 +3145,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [array addObject:object];
     }
     return [array copy];
-}
-
-- (NSArray *)cmdCollect:(id (^) (id object))block {
-    NSMutableArray *array = [NSMutableArray arrayWithCapacity:[self count]];
-    [self enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        [array addObject:block(obj)];
-    }];
-    return array;
 }
 
 - (NSArray *)cmdFlatten {
