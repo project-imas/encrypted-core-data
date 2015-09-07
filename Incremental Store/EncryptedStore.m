@@ -2689,7 +2689,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static dispatch_once_t token;
     dispatch_once(&token, ^{
         operators = @{
-                      @(NSEqualToPredicateOperatorType)              : @{ @"operator" : @"=",      @"format" : @"'%@'" },
+                      @(NSEqualToPredicateOperatorType)              : @{ @"operator" : @"=",      @"format" : @"%@" },
                       @(NSNotEqualToPredicateOperatorType)           : @{ @"operator" : @"!=",     @"format" : @"%@" },
                       @(NSContainsPredicateOperatorType)             : @{ @"operator" : @"LIKE",   @"format" : @"%%%@%%" },
                       @(NSBeginsWithPredicateOperatorType)           : @{ @"operator" : @"LIKE",   @"format" : @"%@%%" },
