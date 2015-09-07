@@ -2023,6 +2023,27 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 
 # pragma mark - SQL helpers
 
+- (NSString*)escapedString:(NSString*)string allowWildcards:(BOOL)allowWildcards {
+    static NSRegularExpression* escapeRx = nil;
+    static NSRegularExpression* escapeRxWildcards = nil;
+    static NSRegularExpression* multiMatchConversionRx = nil;
+    static NSRegularExpression* singleMatchConversionRx = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        escapeRx = [NSRegularExpression regularExpressionWithPattern:@"[\\\\%_]" options:0 error:NULL];
+        escapeRxWildcards = [NSRegularExpression regularExpressionWithPattern:@"[%_]" options:0 error:NULL];
+        multiMatchConversionRx = [NSRegularExpression regularExpressionWithPattern:@"(?<!\\\\)((?:\\\\{2})*+)\\*" options:0 error:NULL];
+        singleMatchConversionRx = [NSRegularExpression regularExpressionWithPattern:@"(?<!\\\\)((?:\\\\{2})*+)\\?" options:0 error:NULL];
+    });
+    NSRegularExpression* escape = allowWildcards? escapeRxWildcards : escapeRx;
+    string = [escape stringByReplacingMatchesInString:string options:0 range:NSMakeRange(0, string.length) withTemplate:@"\\\\$0"];
+    if (allowWildcards) {
+        string = [multiMatchConversionRx stringByReplacingMatchesInString:string options:0 range:NSMakeRange(0, string.length) withTemplate:@"$1%"];
+        string = [singleMatchConversionRx stringByReplacingMatchesInString:string options:0 range:NSMakeRange(0, string.length) withTemplate:@"$1_"];
+    }
+    return string;
+}
+
 - (BOOL)hasRows:(NSString *)query {
     int count = 0;
     sqlite3_stmt *statement = [self preparedStatementForQuery:query];
@@ -2760,6 +2781,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
         else {
             query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
+            if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                query = [query stringByAppendingString:@" ESCAPE '\\'"];
+            }
         }
         
         NSMutableArray *comparisonBindings = [NSMutableArray arrayWithCapacity:2];
@@ -2813,12 +2837,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
-			int len = (int)strlen(str);
-
-			if (str[0] == '\'' && str[len-1] == '\'')
-				sqlite3_bind_text(statement, (int)(idx + 1), str+1, len-2, SQLITE_TRANSIENT);
-			else
-				sqlite3_bind_text(statement, (int)(idx + 1), str, len, SQLITE_TRANSIENT);
+            int len = (int)strlen(str);
+            sqlite3_bind_text(statement, (int)(idx + 1), str, len, SQLITE_TRANSIENT);
         }
 
         // number
@@ -3068,18 +3088,23 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         else if ([value isKindOfClass:[NSString class]]) {
             if ([predicate options] & NSCaseInsensitivePredicateOption) {
                 *operand = @"UPPER(?)";
+                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
+                    value = [self escapedString:value allowWildcards:isLike];
+                }
                 *bindings = [NSString stringWithFormat:
                              [operator objectForKey:@"format"],
-                             [[[value uppercaseString]
-                               stringByReplacingOccurrencesOfString:@"*" withString:@"%"]
-                              stringByReplacingOccurrencesOfString:@"?" withString:@"_"]];
+                             [value uppercaseString]];
             }
             else {
                 *operand = @"?";
+                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
+                    value = [self escapedString:value allowWildcards:isLike];
+                }
                 *bindings = [NSString stringWithFormat:
                              [operator objectForKey:@"format"],
-                             [[value stringByReplacingOccurrencesOfString:@"*" withString:@"%"]
-                                stringByReplacingOccurrencesOfString:@"?" withString:@"_"]];
+                             value];
             }
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
             NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
