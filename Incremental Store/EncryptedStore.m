@@ -248,6 +248,13 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSDictionary *condition = [self whereClauseWithFetchRequest:fetchRequest];
         NSDictionary *ordering = [self orderClause:fetchRequest forEntity:entity];
         NSString *limit = ([fetchRequest fetchLimit] > 0 ? [NSString stringWithFormat:@" LIMIT %lu", (unsigned long)[fetchRequest fetchLimit]] : @"");
+        if ([fetchRequest fetchOffset] > 0) {
+            NSString * offset = [NSString stringWithFormat:@" OFFSET %lu", (unsigned long)[fetchRequest fetchOffset]];
+            if ([limit isEqualToString:@""])
+                limit = offset;
+            else
+                limit = [limit stringByAppendingString:offset];
+        }
         BOOL isDistinctFetchEnabled = [fetchRequest returnsDistinctResults];
         
         // NOTE: this would probably clash with DISTINCT
