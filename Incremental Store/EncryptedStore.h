@@ -1,4 +1,4 @@
-// 
+//
 // EncryptedStore.h
 //
 // Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
@@ -39,6 +39,13 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
                                    passcode:(NSString *) passcode error:(NSError * __autoreleasing*)error;
 
+- (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error;
+- (BOOL)checkDatabaseStatusWithError:(NSError *__autoreleasing*)error;
+- (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+- (BOOL)setDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+// Warning! // This method could close database connection ( look at implementation for details )
+- (BOOL)validateDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+- (BOOL)changeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error;
 
 - (NSNumber *)maximumObjectIDInTable:(NSString *)table;
 - (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request;
