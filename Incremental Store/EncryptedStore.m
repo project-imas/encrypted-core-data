@@ -2,6 +2,7 @@
 // EncryptedStore.m
 //
 // Copyright 2012 - 2014 The MITRE Corporation, All Rights Reserved.
+// Modified by Maicon Peixinho - 7/17/15
 //
 
 #if !__has_feature(objc_arc)
@@ -427,7 +428,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     [columns addObject:typeColumn];
 
                     // Create the join
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
+                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ AS %@ ON %@.__objectid=%@.%@", destinationTable, destinationEntity.name, destinationEntity.name, table, column];
                     [typeJoins addObject:join];
 
                     // Mark that this relation needs a type lookup
