@@ -429,6 +429,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     // Create the join
                     NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
                     
+                    
                     // this part handles optional relationship
                     if (relationship.optional) {
                         join = [join stringByAppendingFormat:@" OR %@.%@ IS NULL", table, column];
