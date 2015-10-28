@@ -2556,9 +2556,10 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 - (void)bindProperty:(NSPropertyDescription *)property
            withValue:(id)value
               forKey:(NSString *)key
-         toStatement:(sqlite3_stmt *)statement
+         toStatement:(sqlite3_statement *)theStatement
              atIndex:(int)index {
-
+    sqlite3_stmt *statement = (sqlite3_stmt *)theStatement;
+    
     if (value && ![value isKindOfClass:[NSNull class]]) {
         if ([property isKindOfClass:[NSAttributeDescription class]]) {
             NSAttributeType type = [(id)property attributeType];
@@ -2628,9 +2629,11 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 }
 
 - (id)valueForProperty:(NSPropertyDescription *)property
-           inStatement:(sqlite3_stmt *)statement
+           inStatement:(sqlite3_statement *)theStatement
                atIndex:(int)index {
-
+    
+    sqlite3_stmt *statement = (sqlite3_stmt *)theStatement;
+    
     if (sqlite3_column_type(statement, index) == SQLITE_NULL) { return nil; }
 
     if ([property isKindOfClass:[NSAttributeDescription class]]) {
@@ -2931,7 +2934,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
  methods to a prepared SQLite statement
 
  */
-- (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_stmt *)statement {
+- (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_statement *)theStatement {
+    sqlite3_stmt *statement = (sqlite3_stmt *)theStatement;
     if (statement == NULL) { return; }
     NSArray *bindings = [clause objectForKey:@"bindings"];
 
