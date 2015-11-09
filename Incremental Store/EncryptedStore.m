@@ -1294,8 +1294,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
 
     // get columns
-    NSMutableArray *sourceColumns = [NSMutableArray array];
-    NSMutableArray *destinationColumns = [NSMutableArray array];
+    NSMutableArray *sourceColumns = [@[ @"__objectid"] mutableCopy];
+    NSMutableArray *destinationColumns = [@[ @"__objectid"] mutableCopy];
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSExpression *expression = [obj valueExpression];
         if (expression != nil) {
