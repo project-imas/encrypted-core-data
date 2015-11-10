@@ -673,6 +673,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 return NO;
             }
             
+#ifdef SQLITE_DETERMINISTIC
             //enable regexp
             sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
             
@@ -684,7 +685,20 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
             //enable combined case and diacritic insentitivity
             sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+#else
+            //enable regexp
+            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+
+            //enable case insentitivity
+            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCase, NULL, NULL);
+
+            //enable diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
             
+            //enable combined case and diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+#endif
+
             // ask if we have a metadata table
             BOOL hasTable = NO;
             if (![self hasMetadataTable:&hasTable error:error]) { return NO; }
