@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="6254" systemVersion="14B25" minimumToolsVersion="Xcode 4.3" macOSVersion="Automatic" iOSVersion="Automatic">
+    <entity name="ChildA" representedClassName="ISDChildA" parentEntity="Parent" syncable="YES">
+        <attribute name="attributeA" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="ChildB" representedClassName="ISDChildB" parentEntity="Parent" syncable="YES">
+        <attribute name="attributeB" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="Parent" representedClassName="ISDParent" isAbstract="YES" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="manyToManyInverse" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Root" inverseName="manyToMany" inverseEntity="Root" syncable="YES"/>
+        <relationship name="oneToManyInverse" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Root" inverseName="oneToMany" inverseEntity="Root" syncable="YES"/>
+        <relationship name="oneToOneInverse" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Root" inverseName="oneToOne" inverseEntity="Root" syncable="YES"/>
+    </entity>
+    <entity name="Root" representedClassName="ISDRoot" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="manyToMany" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Parent" inverseName="manyToManyInverse" inverseEntity="Parent" syncable="YES"/>
+        <relationship name="oneToMany" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Parent" inverseName="oneToManyInverse" inverseEntity="Parent" syncable="YES"/>
+        <relationship name="oneToOne" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Parent" inverseName="oneToOneInverse" inverseEntity="Parent" syncable="YES"/>
+        <relationship name="recursiveManyToMany" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Root" inverseName="recursiveManyToManyInverse" inverseEntity="Root" syncable="YES"/>
+        <relationship name="recursiveManyToManyInverse" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Root" inverseName="recursiveManyToMany" inverseEntity="Root" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="ChildA" positionX="-119" positionY="144" width="128" height="58"/>
+        <element name="ChildB" positionX="79" positionY="144" width="128" height="58"/>
+        <element name="Parent" positionX="-20" positionY="8" width="128" height="103"/>
+        <element name="Root" positionX="-236" positionY="8" width="128" height="133"/>
+    </elements>
+</model>

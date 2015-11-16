@@ -1,8 +1,0 @@
-//
-// Prefix header for all source files of the 'Incremental Store Tests' target in the 'Incremental Store Tests' project
-//
-
-#ifdef __OBJC__
-    #import <UIKit/UIKit.h>
-    #import <Foundation/Foundation.h>
-#endif

@@ -6,15 +6,18 @@
     <entity name="Post" syncable="YES">
         <attribute name="body" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="tags" optional="YES" attributeType="Transformable" syncable="YES"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="comments" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Comment" inverseName="parent" inverseEntity="Comment" syncable="YES"/>
         <relationship name="user" optional="YES" minCount="1" maxCount="1" deletionRule="Cascade" destinationEntity="User" inverseName="posts" inverseEntity="User" syncable="YES"/>
     </entity>
-    <entity name="Tag" syncable="YES">
+    <entity name="RootTag" isAbstract="YES" syncable="YES"/>
+    <entity name="Tag" parentEntity="RootTag" syncable="YES">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="hasUsers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="User" inverseName="hasTags" inverseEntity="User" syncable="YES"/>
     </entity>
     <entity name="User" syncable="YES">
+        <attribute name="admin" optional="YES" attributeType="Boolean" syncable="YES"/>
         <attribute name="age" optional="YES" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="hasTags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tag" inverseName="hasUsers" inverseEntity="Tag" syncable="YES"/>
@@ -22,8 +25,9 @@
     </entity>
     <elements>
         <element name="Comment" positionX="97" positionY="-13" width="128" height="58"/>
-        <element name="Post" positionX="-144" positionY="-45" width="128" height="118"/>
-        <element name="Tag" positionX="-144" positionY="36" width="128" height="73"/>
-        <element name="User" positionX="-360" positionY="54" width="128" height="103"/>
+        <element name="Post" positionX="-144" positionY="-45" width="128" height="133"/>
+        <element name="RootTag" positionX="-99" positionY="117" width="128" height="43"/>
+        <element name="Tag" positionX="-99" positionY="197" width="128" height="73"/>
+        <element name="User" positionX="-360" positionY="54" width="128" height="118"/>
     </elements>
 </model>
