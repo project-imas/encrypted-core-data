@@ -16,5 +16,7 @@
 @dynamic oneToMany;
 @dynamic oneToOne;
 @dynamic manyToMany;
+@dynamic multipleOneToManyChildA;
+@dynamic multipleOneToManyChildB;
 
 @end
