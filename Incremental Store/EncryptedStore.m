@@ -427,7 +427,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     [columns addObject:typeColumn];
 
                     // Create the join if the objects in the relationship belong to different tables
-                    if (destinationTable != table) {
+                    if (![destinationTable isEqualToString:table]) {
                         NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
 
 
