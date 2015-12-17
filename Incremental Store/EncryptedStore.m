@@ -426,13 +426,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 if ([self entityNeedsEntityTypeColumn:destinationEntity]) {
                     // Get the destination table for the type look up
                     NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-                    
+                    NSString *destinationAlias = [NSString stringWithFormat:@"T%lul",(unsigned long)destinationEntity.hash];
+                  
+                  
                     // Add teh type column to the query
-                    NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationTable];
+                    NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationAlias];
                     [columns addObject:typeColumn];
                     
                     // Create the join
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
+                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias,destinationAlias, table, column];
                     
                     
                     // this part handles optional relationship
