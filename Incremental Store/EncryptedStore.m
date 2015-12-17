@@ -1112,6 +1112,17 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return entityIds;
 }
 
+- (NSDictionary*)relationshipsForEntity: (NSEntityDescription*) entity {
+    NSMutableDictionary *relationships = [[entity relationshipsByName] mutableCopy];
+    
+    for (NSEntityDescription *subentity in entity.subentities) {
+      [relationships addEntriesFromDictionary:[self relationshipsForEntity:subentity]];
+    }
+       
+    return relationships;
+  
+}
+
 - (NSArray*)columnNamesForEntity:(NSEntityDescription*)entity
                      indexedOnly:(BOOL)indexedOnly
                      quotedNames:(BOOL)quotedNames {
@@ -1268,11 +1279,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                             error:(NSError**)error {
     NSString *string;
     sqlite3_stmt *statement;
-    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [sourceEntity name]];
+  
+    NSEntityDescription *rootSourceEntity = [self rootForEntity:sourceEntity];
+    NSEntityDescription *rootDestinationEntity = [self rootForEntity:destinationEntity];
+  
+    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [rootSourceEntity name]];
     NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
-    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [destinationEntity name]];
+    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [rootDestinationEntity name]];
 
-    if (![self dropIndicesForEntity:destinationEntity error:error]) {
+    if (![self dropIndicesForEntity:rootDestinationEntity error:error]) {
         return NO;
     }
 
@@ -1287,31 +1302,46 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
         return NO;
     }
-    
-    // create new table
-    // TODO - add some tests around this. I think with a child entity
-    // this won't actually create a table and the above initialized
-    // destinationTableName will be wrong. It should be the table name
-    // of the root entity in the inheritance tree.
-    // Some work should be done to ensure that we work with the
-    // correct table even if the migration only involves child
-    // entities.
-    if (![self createTableForEntity:destinationEntity error:error]) {
+
+    // create destination table
+    if (![self createTableForEntity:rootDestinationEntity error:error]) {
         return NO;
     }
-    
-    // get columns
-    NSMutableArray *sourceColumns = [NSMutableArray array];
-    NSMutableArray *destinationColumns = [NSMutableArray array];
+  
+    // create a dictionary that tells us where the field data is coming from
+    NSMutableDictionary *columnMappings = [NSMutableDictionary dictionary];
+  
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSExpression *expression = [obj valueExpression];
         if (expression != nil) {
-            [destinationColumns addObject:[NSString stringWithFormat:@"'%@'", [obj name]]];
-            NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
-            [sourceColumns addObject:source];
+          NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
+          [columnMappings setObject:[obj name] forKey:source];
         }
     }];
-    
+  
+    // get all columns, parent entity may have other children
+    NSMutableArray *sourceColumns = [NSMutableArray array];
+    [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (![sourceColumns containsObject:column]) {
+          [sourceColumns addObject:column];
+        }
+        if (![columnMappings objectForKey:column]) {
+          [columnMappings setObject:column forKey:column];
+        }
+    }];
+  
+    // destination is made up of source columns combined with any mapped columns
+    NSMutableArray *destinationColumns = [NSMutableArray array];
+    [sourceColumns enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+      NSString *mappedField = [columnMappings objectForKey:column];
+      if (mappedField) {
+        [destinationColumns addObject:mappedField];
+      } else {
+        [destinationColumns addObject:column];
+      }
+    }];
+  
+    // add in fields for relationships
     [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
         NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
@@ -1327,29 +1357,32 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
     }];
-    
-    // copy data
-    if (destinationEntity.subentities.count > 0) {
-        string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ ('__entityType', %@)"
-                  @"SELECT %ld, %@ "
-                  @"FROM %@",
-                  destinationTableName,
-                  [destinationColumns componentsJoinedByString:@", "],
-                  destinationEntity.typeHash,
-                  [sourceColumns componentsJoinedByString:@", "],
-                  temporaryTableName];
-    } else {
-        string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ (%@)"
-                  @"SELECT %@ "
-                  @"FROM %@",
-                  destinationTableName,
-                  [destinationColumns componentsJoinedByString:@", "],
-                  [sourceColumns componentsJoinedByString:@", "],
-                  temporaryTableName];
-        
+  
+    // ensure we copy any relationships for sub entities that aren't included in the mapping
+    NSDictionary *allRelationships = [self relationshipsForEntity:rootSourceEntity];
+    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL * _Nonnull stop) {
+      NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
+      if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
+        [sourceColumns addObject:foreignKeyColumn];
+        [destinationColumns addObject:foreignKeyColumn];
+      }
+    }];
+  
+    // copy entity types for sub entity
+    if (rootDestinationEntity.subentities.count > 0) {
+        [sourceColumns addObject:@"__entityType"];
+        [destinationColumns addObject:@"__entityType"];
     }
+  
+    string = [NSString stringWithFormat:
+              @"INSERT INTO %@ (%@)"
+              @"SELECT %@ "
+              @"FROM %@",
+              destinationTableName,
+              [destinationColumns componentsJoinedByString:@", "],
+              [sourceColumns componentsJoinedByString:@", "],
+              temporaryTableName];
+  
     statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
