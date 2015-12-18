@@ -554,9 +554,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         sqlite3_bind_int64(statement, 1, key);
         
     } else {
-        // one-to-many relationship, foreign key exists in desination entity table
+        // one-to-many relationship, foreign key exists in destination entity table
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-        
+      
+        NSAssert(inverseRelationship!=nil,@"1 to many relationship %@ - %@ must have an inverse",sourceEntity.name,destinationEntity.name);
+                 
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID%@ FROM %@ WHERE %@=? ORDER BY %@ ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
@@ -1308,6 +1310,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         return NO;
     }
   
+    // GOAL: copy all columns from source table to destination table that still exist in the destination table
+  
+    // make an array of valid destination columns, some may have been removed
+    NSMutableArray *validDestinationColumns = [NSMutableArray array];
+    [[self columnNamesForEntity:rootDestinationEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+        [validDestinationColumns addObject:column];
+    }];
+  
     // create a dictionary that tells us where the field data is coming from
     NSMutableDictionary *columnMappings = [NSMutableDictionary dictionary];
   
@@ -1322,7 +1332,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // get all columns, parent entity may have other children
     NSMutableArray *sourceColumns = [NSMutableArray array];
     [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
-        if (![sourceColumns containsObject:column]) {
+        if (![sourceColumns containsObject:column] && [validDestinationColumns containsObject:column]) {
           [sourceColumns addObject:column];
         }
         if (![columnMappings objectForKey:column]) {
@@ -1336,7 +1346,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
       NSString *mappedField = [columnMappings objectForKey:column];
       if (mappedField) {
         [destinationColumns addObject:mappedField];
-      } else {
+      } else if ([validDestinationColumns containsObject:column]){
         [destinationColumns addObject:column];
       }
     }];
@@ -2274,7 +2284,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static BOOL debug = NO;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
-        debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
+      debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
     });
     if (debug)
     {NSLog(@"SQL DEBUG: %@", query); }
@@ -2536,21 +2546,21 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         case NSObjectIDAttributeType:
             return @"__objectID";
             break;
-        
+            
             /*  NSUndefinedAttributeType
-             *  NSInteger16AttributeType
-             *  NSInteger32AttributeType
-             *  NSInteger64AttributeType
              *  NSDecimalAttributeType
-             *  NSDoubleAttributeType
-             *  NSFloatAttributeType
              *  NSStringAttributeType
              *  NSBooleanAttributeType
              *  NSDateAttributeType
              *  NSBinaryDataAttributeType
              *  NSTransformableAttributeType
              */
-            
+        case NSInteger16AttributeType:
+        case NSInteger32AttributeType:
+        case NSInteger64AttributeType:
+        case NSFloatAttributeType:
+        case NSDoubleAttributeType:
+            return [self columnForExpressionDescription:expressionDescription];
         default:
             return @"";
             break;
@@ -2566,7 +2576,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [columns addObject:[self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]];
             }
         } else if ([prop isKindOfClass:[NSExpressionDescription class]]) {
-            [columns addObject:[self expressionDescriptionTypeString:(NSExpressionDescription *)prop]];
+            NSExpressionDescription *expression = (NSExpressionDescription*) prop;
+            NSString *column = [self expressionDescriptionTypeString:expression];
+            [columns addObject:column];
         } else {
             [columns addObject:[NSString stringWithFormat:@"%@",prop.name]];
         }
@@ -2754,7 +2766,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     
     else if ([property isKindOfClass:[NSExpressionDescription class]]) {
-        NSNumber *number = @(sqlite3_column_int64(statement, index));
+        NSNumber *number = @(sqlite3_column_double(statement, index));
         return [self expressionDescriptionTypeValue:(NSExpressionDescription *)property withReferenceNumber:number];
     }
     
@@ -2779,19 +2791,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             break;
             
             /*  NSUndefinedAttributeType
-             *  NSInteger16AttributeType
-             *  NSInteger32AttributeType
-             *  NSInteger64AttributeType
              *  NSDecimalAttributeType
-             *  NSDoubleAttributeType
-             *  NSFloatAttributeType
              *  NSStringAttributeType
              *  NSBooleanAttributeType
              *  NSDateAttributeType
              *  NSBinaryDataAttributeType
              *  NSTransformableAttributeType
              */
-            
+        case NSInteger64AttributeType:
+        case NSInteger32AttributeType:
+        case NSInteger16AttributeType:
+        case NSDoubleAttributeType:
+        case NSFloatAttributeType:
+            return number;
+            break;
         default:
             return nil;
             break;
@@ -3304,6 +3317,32 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [[enitity relationshipsByName] objectForKey:name];
 }
 
+#pragma mark - expression descriptions
+
+- (NSString*) columnForExpressionDescription: (NSExpressionDescription*) expressionDescription {
+    NSExpression *expression = expressionDescription.expression;
+    switch (expression.expressionType) {
+        case NSFunctionExpressionType:
+            return [self columnForFunctionExpressionDescription: expressionDescription];
+            break;
+            
+        default:
+            break;
+    }
+    return nil;
+}
+
+- (NSString*) columnForFunctionExpressionDescription: (NSExpressionDescription*) expressionDescription {
+    NSExpression *expression = expressionDescription.expression;
+    NSString *function = expression.function;
+    if([function isEqualToString:@"sum:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"sum(%@)",[arguments componentsJoinedByString:@","]];
+    }
+    
+    return nil;
+
+}
 @end
 
 #pragma mark - category implementations
