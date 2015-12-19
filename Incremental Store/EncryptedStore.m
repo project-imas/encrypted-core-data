@@ -430,18 +430,20 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     // Add teh type column to the query
                     NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationTable];
                     [columns addObject:typeColumn];
-                    
-                    // Create the join
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
-                    
-                    
-                    // this part handles optional relationship
-                    if (relationship.optional) {
-                        join = [join stringByAppendingFormat:@" OR %@.%@ IS NULL", table, column];
+
+                    // Create the join if the objects in the relationship belong to different tables
+                    if (![destinationTable isEqualToString:table]) {
+                        NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
+
+
+                        // this part handles optional relationship
+                        if (relationship.optional) {
+                            join = [join stringByAppendingFormat:@" OR %@.%@ IS NULL", table, column];
+                        }
+
+                        [typeJoins addObject:join];
                     }
-                    
-                    [typeJoins addObject:join];
-                    
+
                     // Mark that this relation needs a type lookup
                     [entityTypes addObject:key];
                 }
