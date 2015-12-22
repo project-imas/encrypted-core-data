@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="6244" systemVersion="13F34" minimumToolsVersion="Xcode 4.3" macOSVersion="Automatic" iOSVersion="Automatic">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15C50" minimumToolsVersion="Xcode 4.3">
     <entity name="BaseStatusUpdate" isAbstract="YES" syncable="YES">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
@@ -9,13 +9,19 @@
     <entity name="Job" isAbstract="YES" syncable="YES">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
-    <entity name="JobStatusUpdate" parentEntity="BaseStatusUpdate" syncable="YES"/>
+    <entity name="JobStatusUpdate" parentEntity="BaseStatusUpdate" syncable="YES">
+        <relationship name="projectUpdate" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ProjectStatusUpdate" inverseName="jobStatus" inverseEntity="ProjectStatusUpdate" syncable="YES"/>
+    </entity>
     <entity name="LightweightJob" parentEntity="Job" syncable="YES"/>
+    <entity name="ProjectStatusUpdate" parentEntity="BaseStatusUpdate" syncable="YES">
+        <relationship name="jobStatus" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="JobStatusUpdate" inverseName="projectUpdate" inverseEntity="JobStatusUpdate" syncable="YES"/>
+    </entity>
     <elements>
-        <element name="Job" positionX="-137" positionY="-144" width="128" height="58"/>
-        <element name="LightweightJob" positionX="-207" positionY="0" width="128" height="45"/>
-        <element name="FullJob" positionX="-63" positionY="-0" width="128" height="58"/>
         <element name="BaseStatusUpdate" positionX="106" positionY="-144" width="128" height="58"/>
-        <element name="JobStatusUpdate" positionX="106" positionY="2" width="128" height="43"/>
+        <element name="FullJob" positionX="-63" positionY="-0" width="128" height="58"/>
+        <element name="Job" positionX="-137" positionY="-144" width="128" height="58"/>
+        <element name="JobStatusUpdate" positionX="106" positionY="2" width="128" height="60"/>
+        <element name="LightweightJob" positionX="-207" positionY="0" width="128" height="45"/>
+        <element name="ProjectStatusUpdate" positionX="-54" positionY="-63" width="128" height="60"/>
     </elements>
 </model>

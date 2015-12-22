@@ -426,13 +426,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 if ([self entityNeedsEntityTypeColumn:destinationEntity]) {
                     // Get the destination table for the type look up
                     NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-                    
+                    NSString *destinationAlias = [NSString stringWithFormat:@"T%lul",(unsigned long)destinationEntity.hash];
+                  
+                  
                     // Add teh type column to the query
-                    NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationTable];
+                    NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationAlias];
                     [columns addObject:typeColumn];
                     
                     // Create the join
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ ON %@.__objectid=%@.%@", destinationTable, destinationTable, table, column];
+                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias,destinationAlias, table, column];
                     
                     
                     // this part handles optional relationship
@@ -552,9 +554,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         sqlite3_bind_int64(statement, 1, key);
         
     } else {
-        // one-to-many relationship, foreign key exists in desination entity table
+        // one-to-many relationship, foreign key exists in destination entity table
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-        
+      
+        NSAssert(inverseRelationship!=nil,@"1 to many relationship %@ - %@ must have an inverse",sourceEntity.name,destinationEntity.name);
+                 
         NSString *string = [NSString stringWithFormat:
                             @"SELECT __objectID%@ FROM %@ WHERE %@=? ORDER BY %@ ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
@@ -1110,6 +1114,17 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return entityIds;
 }
 
+- (NSDictionary*)relationshipsForEntity: (NSEntityDescription*) entity {
+    NSMutableDictionary *relationships = [[entity relationshipsByName] mutableCopy];
+    
+    for (NSEntityDescription *subentity in entity.subentities) {
+      [relationships addEntriesFromDictionary:[self relationshipsForEntity:subentity]];
+    }
+       
+    return relationships;
+  
+}
+
 - (NSArray*)columnNamesForEntity:(NSEntityDescription*)entity
                      indexedOnly:(BOOL)indexedOnly
                      quotedNames:(BOOL)quotedNames {
@@ -1266,11 +1281,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                             error:(NSError**)error {
     NSString *string;
     sqlite3_stmt *statement;
-    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [sourceEntity name]];
+  
+    NSEntityDescription *rootSourceEntity = [self rootForEntity:sourceEntity];
+    NSEntityDescription *rootDestinationEntity = [self rootForEntity:destinationEntity];
+  
+    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [rootSourceEntity name]];
     NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
-    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [destinationEntity name]];
+    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [rootDestinationEntity name]];
 
-    if (![self dropIndicesForEntity:destinationEntity error:error]) {
+    if (![self dropIndicesForEntity:rootDestinationEntity error:error]) {
         return NO;
     }
 
@@ -1285,31 +1304,54 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
         return NO;
     }
-    
-    // create new table
-    // TODO - add some tests around this. I think with a child entity
-    // this won't actually create a table and the above initialized
-    // destinationTableName will be wrong. It should be the table name
-    // of the root entity in the inheritance tree.
-    // Some work should be done to ensure that we work with the
-    // correct table even if the migration only involves child
-    // entities.
-    if (![self createTableForEntity:destinationEntity error:error]) {
+
+    // create destination table
+    if (![self createTableForEntity:rootDestinationEntity error:error]) {
         return NO;
     }
-    
-    // get columns
-    NSMutableArray *sourceColumns = [NSMutableArray array];
-    NSMutableArray *destinationColumns = [NSMutableArray array];
+  
+    // GOAL: copy all columns from source table to destination table that still exist in the destination table
+  
+    // make an array of valid destination columns, some may have been removed
+    NSMutableArray *validDestinationColumns = [NSMutableArray array];
+    [[self columnNamesForEntity:rootDestinationEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
+        [validDestinationColumns addObject:column];
+    }];
+  
+    // create a dictionary that tells us where the field data is coming from
+    NSMutableDictionary *columnMappings = [NSMutableDictionary dictionary];
+  
     [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSExpression *expression = [obj valueExpression];
         if (expression != nil) {
-            [destinationColumns addObject:[NSString stringWithFormat:@"'%@'", [obj name]]];
-            NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
-            [sourceColumns addObject:source];
+          NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
+          [columnMappings setObject:[obj name] forKey:source];
         }
     }];
-    
+  
+    // get all columns, parent entity may have other children
+    NSMutableArray *sourceColumns = [NSMutableArray array];
+    [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * stop) {
+        if (![sourceColumns containsObject:column] && [validDestinationColumns containsObject:column]) {
+          [sourceColumns addObject:column];
+        }
+        if (![columnMappings objectForKey:column]) {
+          [columnMappings setObject:column forKey:column];
+        }
+    }];
+  
+    // destination is made up of source columns combined with any mapped columns
+    NSMutableArray *destinationColumns = [NSMutableArray array];
+    [sourceColumns enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
+      NSString *mappedField = [columnMappings objectForKey:column];
+      if (mappedField) {
+        [destinationColumns addObject:mappedField];
+      } else if ([validDestinationColumns containsObject:column]){
+        [destinationColumns addObject:column];
+      }
+    }];
+  
+    // add in fields for relationships
     [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
         NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
@@ -1325,29 +1367,32 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
     }];
-    
-    // copy data
-    if (destinationEntity.subentities.count > 0) {
-        string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ ('__entityType', %@)"
-                  @"SELECT %ld, %@ "
-                  @"FROM %@",
-                  destinationTableName,
-                  [destinationColumns componentsJoinedByString:@", "],
-                  destinationEntity.typeHash,
-                  [sourceColumns componentsJoinedByString:@", "],
-                  temporaryTableName];
-    } else {
-        string = [NSString stringWithFormat:
-                  @"INSERT INTO %@ (%@)"
-                  @"SELECT %@ "
-                  @"FROM %@",
-                  destinationTableName,
-                  [destinationColumns componentsJoinedByString:@", "],
-                  [sourceColumns componentsJoinedByString:@", "],
-                  temporaryTableName];
-        
+  
+    // ensure we copy any relationships for sub entities that aren't included in the mapping
+    NSDictionary *allRelationships = [self relationshipsForEntity:rootSourceEntity];
+    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL *stop) {
+      NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
+      if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
+        [sourceColumns addObject:foreignKeyColumn];
+        [destinationColumns addObject:foreignKeyColumn];
+      }
+    }];
+  
+    // copy entity types for sub entity
+    if (rootDestinationEntity.subentities.count > 0) {
+        [sourceColumns addObject:@"__entityType"];
+        [destinationColumns addObject:@"__entityType"];
     }
+  
+    string = [NSString stringWithFormat:
+              @"INSERT INTO %@ (%@)"
+              @"SELECT %@ "
+              @"FROM %@",
+              destinationTableName,
+              [destinationColumns componentsJoinedByString:@", "],
+              [sourceColumns componentsJoinedByString:@", "],
+              temporaryTableName];
+  
     statement = [self preparedStatementForQuery:string];
     sqlite3_step(statement);
     if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
@@ -2239,7 +2284,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     static BOOL debug = NO;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
-        debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
+      debug = [[NSUserDefaults standardUserDefaults] boolForKey:@"com.apple.CoreData.SQLDebug"];
     });
     if (debug)
     {NSLog(@"SQL DEBUG: %@", query); }
@@ -2501,21 +2546,21 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         case NSObjectIDAttributeType:
             return @"__objectID";
             break;
-        
+            
             /*  NSUndefinedAttributeType
-             *  NSInteger16AttributeType
-             *  NSInteger32AttributeType
-             *  NSInteger64AttributeType
              *  NSDecimalAttributeType
-             *  NSDoubleAttributeType
-             *  NSFloatAttributeType
              *  NSStringAttributeType
              *  NSBooleanAttributeType
              *  NSDateAttributeType
              *  NSBinaryDataAttributeType
              *  NSTransformableAttributeType
              */
-            
+        case NSInteger16AttributeType:
+        case NSInteger32AttributeType:
+        case NSInteger64AttributeType:
+        case NSFloatAttributeType:
+        case NSDoubleAttributeType:
+            return [self columnForExpressionDescription:expressionDescription];
         default:
             return @"";
             break;
@@ -2531,7 +2576,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                 [columns addObject:[self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]];
             }
         } else if ([prop isKindOfClass:[NSExpressionDescription class]]) {
-            [columns addObject:[self expressionDescriptionTypeString:(NSExpressionDescription *)prop]];
+            NSExpressionDescription *expression = (NSExpressionDescription*) prop;
+            NSString *column = [self expressionDescriptionTypeString:expression];
+            [columns addObject:column];
         } else {
             [columns addObject:[NSString stringWithFormat:@"%@",prop.name]];
         }
@@ -2719,7 +2766,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     
     else if ([property isKindOfClass:[NSExpressionDescription class]]) {
-        NSNumber *number = @(sqlite3_column_int64(statement, index));
+        NSNumber *number = @(sqlite3_column_double(statement, index));
         return [self expressionDescriptionTypeValue:(NSExpressionDescription *)property withReferenceNumber:number];
     }
     
@@ -2744,19 +2791,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             break;
             
             /*  NSUndefinedAttributeType
-             *  NSInteger16AttributeType
-             *  NSInteger32AttributeType
-             *  NSInteger64AttributeType
              *  NSDecimalAttributeType
-             *  NSDoubleAttributeType
-             *  NSFloatAttributeType
              *  NSStringAttributeType
              *  NSBooleanAttributeType
              *  NSDateAttributeType
              *  NSBinaryDataAttributeType
              *  NSTransformableAttributeType
              */
-            
+        case NSInteger64AttributeType:
+        case NSInteger32AttributeType:
+        case NSInteger16AttributeType:
+        case NSDoubleAttributeType:
+        case NSFloatAttributeType:
+            return number;
+            break;
         default:
             return nil;
             break;
@@ -3269,6 +3317,32 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [[enitity relationshipsByName] objectForKey:name];
 }
 
+#pragma mark - expression descriptions
+
+- (NSString*) columnForExpressionDescription: (NSExpressionDescription*) expressionDescription {
+    NSExpression *expression = expressionDescription.expression;
+    switch (expression.expressionType) {
+        case NSFunctionExpressionType:
+            return [self columnForFunctionExpressionDescription: expressionDescription];
+            break;
+            
+        default:
+            break;
+    }
+    return nil;
+}
+
+- (NSString*) columnForFunctionExpressionDescription: (NSExpressionDescription*) expressionDescription {
+    NSExpression *expression = expressionDescription.expression;
+    NSString *function = expression.function;
+    if([function isEqualToString:@"sum:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"sum(%@)",[arguments componentsJoinedByString:@","]];
+    }
+    
+    return nil;
+
+}
 @end
 
 #pragma mark - category implementations
