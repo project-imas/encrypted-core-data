@@ -1314,7 +1314,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
   
     // make an array of valid destination columns, some may have been removed
     NSMutableArray *validDestinationColumns = [NSMutableArray array];
-    [[self columnNamesForEntity:rootDestinationEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+    [[self columnNamesForEntity:rootDestinationEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
         [validDestinationColumns addObject:column];
     }];
   
@@ -1331,7 +1331,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
   
     // get all columns, parent entity may have other children
     NSMutableArray *sourceColumns = [NSMutableArray array];
-    [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+    [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * stop) {
         if (![sourceColumns containsObject:column] && [validDestinationColumns containsObject:column]) {
           [sourceColumns addObject:column];
         }
@@ -1342,7 +1342,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
   
     // destination is made up of source columns combined with any mapped columns
     NSMutableArray *destinationColumns = [NSMutableArray array];
-    [sourceColumns enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * _Nonnull stop) {
+    [sourceColumns enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
       NSString *mappedField = [columnMappings objectForKey:column];
       if (mappedField) {
         [destinationColumns addObject:mappedField];
@@ -1370,7 +1370,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
   
     // ensure we copy any relationships for sub entities that aren't included in the mapping
     NSDictionary *allRelationships = [self relationshipsForEntity:rootSourceEntity];
-    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL * _Nonnull stop) {
+    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL *stop) {
       NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
       if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
         [sourceColumns addObject:foreignKeyColumn];
