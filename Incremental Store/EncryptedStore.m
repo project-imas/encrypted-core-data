@@ -115,7 +115,10 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     if (databaseURL)
     {
-        [[NSFileManager defaultManager] setAttributes:options ofItemAtPath:[databaseURL absoluteString] error:nil];
+        NSMutableDictionary *fileAttributes = [options mutableCopy];
+        [fileAttributes removeObjectsForKeys:@[EncryptedStorePassphraseKey, EncryptedStoreDatabaseLocation]];
+        
+        [[NSFileManager defaultManager] setAttributes:[fileAttributes copy] ofItemAtPath:[databaseURL absoluteString] error:nil];
     }
     
     if (backup){
