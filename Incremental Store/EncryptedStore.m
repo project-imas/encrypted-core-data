@@ -1386,6 +1386,9 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [sourceColumns addObject:@"__entityType"];
         [destinationColumns addObject:@"__entityType"];
     }
+    
+    [sourceColumns addObject:@"__objectid"];
+    [destinationColumns addObject:@"__objectid"];
   
     string = [NSString stringWithFormat:
               @"INSERT INTO %@ (%@)"
