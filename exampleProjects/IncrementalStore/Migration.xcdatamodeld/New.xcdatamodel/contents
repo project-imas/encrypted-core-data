@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15C50" minimumToolsVersion="Xcode 4.3">
+    <entity name="BaseUpdate" isAbstract="YES" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="timeStamp" optional="YES" attributeType="Date" syncable="YES"/>
+    </entity>
+    <entity name="Task" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="newAttribute" optional="YES" attributeType="Integer 16" defaultValueString="0" syncable="YES"/>
+        <relationship name="statusUpdates" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="TaskStatusUpdate" inverseName="task" inverseEntity="TaskStatusUpdate" syncable="YES"/>
+    </entity>
+    <entity name="TaskGroupStatusUpdate" parentEntity="BaseUpdate" syncable="YES">
+        <relationship name="taskStatus" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="TaskStatusUpdate" inverseName="projectUpdate" inverseEntity="TaskStatusUpdate" syncable="YES"/>
+    </entity>
+    <entity name="TaskStatusUpdate" parentEntity="BaseUpdate" syncable="YES">
+        <attribute name="updateText" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="projectUpdate" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TaskGroupStatusUpdate" inverseName="taskStatus" inverseEntity="TaskGroupStatusUpdate" syncable="YES"/>
+        <relationship name="task" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Task" inverseName="statusUpdates" inverseEntity="Task" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="BaseUpdate" positionX="106" positionY="-144" width="128" height="75"/>
+        <element name="Task" positionX="-137" positionY="-144" width="128" height="90"/>
+        <element name="TaskGroupStatusUpdate" positionX="-54" positionY="-63" width="128" height="60"/>
+        <element name="TaskStatusUpdate" positionX="106" positionY="2" width="128" height="90"/>
+    </elements>
+</model>
