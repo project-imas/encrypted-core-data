@@ -2965,6 +2965,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         bindings = [[comparisonBindings cmdFlatten] mutableCopy];
     }
     
+    else if ([predicate isEqual:[NSPredicate predicateWithValue:YES]]) {
+        query = @"1";
+    }
+    
+    else if ([predicate isEqual:[NSPredicate predicateWithValue:NO]]) {
+        query = @"0";
+    }
+
     NSString *entityWhere = nil;
     if (request.entity.superentity != nil) {
         if (request.entity.subentities.count > 0 && request.includesSubentities) {

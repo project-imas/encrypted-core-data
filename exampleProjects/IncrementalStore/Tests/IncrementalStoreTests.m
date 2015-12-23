@@ -850,4 +850,49 @@
     XCTAssertEqual(totalAge.integerValue, expectedAge, @"Incorrect total %ld expected %ld",(long)totalAge.integerValue,(long)expectedAge);
 }
 
+-(void)test_predicateWithBoolValue
+{
+    const NSUInteger usersCount = 30;
+    
+    [self createUsers:usersCount];
+    
+    NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSError *error;
+    
+    // Test true predicate
+    req.predicate = [NSPredicate predicateWithValue:YES];
+    NSUInteger count = [context countForFetchRequest:req error:&error];
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertTrue(count == usersCount, @"Incorrect fetch count.");
+    
+    // Test false predicate
+    req.predicate = [NSPredicate predicateWithValue:NO];
+    count = [context countForFetchRequest:req error:&error];
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertTrue(count == 0, @"Incorrect fetch count.");
+}
+
+-(void)test_predicateCompound
+{
+    const NSUInteger usersCount = 30;
+    
+    [self createUsers:usersCount];
+    
+    __block NSError *error = nil;
+    
+    [@{ [NSPredicate predicateWithFormat:@"TRUEPREDICATE && FALSEPREDICATE"] : @(0),
+        [NSPredicate predicateWithFormat:@"TRUEPREDICATE || FALSEPREDICATE"] : @(usersCount),
+        [NSPredicate predicateWithFormat:@"!TRUEPREDICATE"] : @(0),
+        } enumerateKeysAndObjectsUsingBlock:^(NSPredicate *predicate, NSNumber *expectedCount, BOOL *stop) {
+            
+            NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+            req.predicate = predicate;
+            
+            NSUInteger count = [context countForFetchRequest:req error:&error];
+            
+            XCTAssertFalse(count == NSNotFound, @"Error with fetch: %@", error);
+            XCTAssertEqual(count, [expectedCount unsignedIntegerValue], @"Incorrect fetch count");
+        }];
+}
+
 @end
