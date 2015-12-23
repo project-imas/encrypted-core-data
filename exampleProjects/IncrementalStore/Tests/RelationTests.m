@@ -177,7 +177,24 @@
     childBManyToMany.attributeB = @"String for child B - 4";
     [childBManyToMany addManyToManyInverseObject:root];
     [childBManyToMany addManyToManyInverseObject:manyRoot];
-    
+
+    //////////////////////////
+    // Multiple One-to-many //
+    //////////////////////////
+
+    // Insert child A
+    ISDChildA *childAMultipleOneToMany = [ISDChildA insertInManagedObjectContext:context];
+    childAMultipleOneToMany.attributeA = @"String for child A - 6";
+    childAMultipleOneToMany.multipleOneToMany = root;
+
+    // Insert child B
+    ISDChildB *childBMultipleOneToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBMultipleOneToMany.attributeB = @"String for child B - 5";
+    childBMultipleOneToMany.multipleOneToMany = root;
+
+    childBMultipleOneToMany = [ISDChildB insertInManagedObjectContext:context];
+    childBMultipleOneToMany.attributeB = @"String for child B - 6";
+    childBMultipleOneToMany.multipleOneToMany = root;
     
     // Save
     NSError *error = nil;
@@ -221,6 +238,18 @@
         // Just for fun check the objects
         XCTAssertTrue([childrenA containsObject:childAManyToMany], @"Inserted ChildA isn't in the many-to-many set");
         XCTAssertTrue([childrenB containsObject:childBManyToMany], @"Inserted ChildB isn't in the many-to-many set");
+    }
+
+    // Test multiple one-to-many from cache
+    {
+        NSSet *oneToManyChildA = root.multipleOneToManyChildA;
+        NSSet *oneToManyChildB = root.multipleOneToManyChildB;
+        XCTAssertEqual([oneToManyChildA count], (NSUInteger)1, @"The number of multiple one-to-many child A relations is wrong.");
+        XCTAssertEqual([oneToManyChildB count], (NSUInteger)2, @"The number of multiple one-to-many child B relations is wrong.");
+
+        // Check the objects
+        XCTAssertTrue([oneToManyChildA anyObject] == childAMultipleOneToMany, @"Inserted ChildA object isn't the same");
+        XCTAssertTrue([oneToManyChildB containsObject:childBMultipleOneToMany], @"Inserted ChildB isn't in the set");
     }
 }
 
@@ -294,6 +323,20 @@
     [self checkManyToManyWithChildACount:2 childBCount:3];
 }
 
+
+/**
+ Multiple one-to-many is designed to test the case where one entity (Root) has two one-to-many
+ relationships that are queried using a shared attribute.
+ */
+-(void)testFetchingMultipleOneToManyFromDatabase
+{
+    // Make sure we're loading directly from DB
+    [self resetCoordinator];
+    [self createCoordinator];
+
+    [self checkMultipleOneToManyWithChildACount:1 childBCount:2];
+}
+
 #pragma mark - Check methods
 
 /// Checks that the root object has the correct number of one-to-many relational ChildA and ChildB objects
@@ -351,6 +394,17 @@
     
     XCTAssertEqual([childrenA count], childACount, @"Wrong ChildA count");
     XCTAssertEqual([childrenB count], childBCount, @"Wrong ChildB count");
+}
+
+/// Checks that the root object has the correct number of multiple one-to-many relational ChildA and ChildB objects
+-(void)checkMultipleOneToManyWithChildACount:(NSUInteger)childACount childBCount:(NSUInteger)childBCount
+{
+    ISDRoot *fetchedRoot = [self fetchRootObject];
+    NSSet *multipleChildA = fetchedRoot.multipleOneToManyChildA;
+    NSSet *multipleChildB = fetchedRoot.multipleOneToManyChildB;
+
+    XCTAssertEqual([multipleChildA count], childACount, @"Wrong ChildA count");
+    XCTAssertEqual([multipleChildB count], childBCount, @"Wrong ChildB count");
 }
 
 @end

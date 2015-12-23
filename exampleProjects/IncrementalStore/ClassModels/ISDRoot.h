@@ -17,6 +17,9 @@
 @property (nonatomic, retain) NSSet *oneToMany;
 @property (nonatomic, retain) ISDParent *oneToOne;
 @property (nonatomic, retain) NSSet *manyToMany;
+@property (nonatomic, retain) NSSet *multipleOneToManyChildA;
+@property (nonatomic, retain) NSSet *multipleOneToManyChildB;
+
 @end
 
 @interface ISDRoot (CoreDataGeneratedAccessors)
@@ -30,5 +33,15 @@
 - (void)removeManyToManyObject:(ISDParent *)value;
 - (void)addManyToMany:(NSSet *)values;
 - (void)removeManyToMany:(NSSet *)values;
+
+- (void)addMultipleOneToManyChildAObject:(ISDParent *)value;
+- (void)removeMultipleOneToManyChildAObject:(ISDParent *)value;
+- (void)addMultipleOneToManyChildA:(NSSet *)values;
+- (void)removeMultipleOneToManyChildA:(NSSet *)values;
+
+- (void)addMultipleOneToManyChildBObject:(ISDParent *)value;
+- (void)removeMultipleOneToManyChildBObject:(ISDParent *)value;
+- (void)addMultipleOneToManyChildB:(NSSet *)values;
+- (void)removeMultipleOneToManyChildB:(NSSet *)values;
 
 @end

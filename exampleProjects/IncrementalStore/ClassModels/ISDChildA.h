@@ -14,5 +14,6 @@
 @interface ISDChildA : ISDParent
 
 @property (nonatomic, retain) NSString * attributeA;
+@property (nonatomic, retain) ISDRoot *multipleOneToMany;
 
 @end

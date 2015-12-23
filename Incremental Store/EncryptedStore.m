@@ -62,6 +62,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @property (nonatomic, readonly) long typeHash;
 
+/// Recursively returns an array of this NSEntityDescription's typeHash, along with all of its subentities'.
+@property (nonatomic, readonly) NSArray *typeHashSubhierarchy;
+
 @end
 
 @implementation EncryptedStore {
@@ -430,23 +433,20 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     // Get the destination table for the type look up
                     NSString *destinationTable = [self tableNameForEntity:destinationEntity];
                     NSString *destinationAlias = [NSString stringWithFormat:@"T%lul",(unsigned long)destinationEntity.hash];
-                  
-                  
+
                     // Add teh type column to the query
                     NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationAlias];
                     [columns addObject:typeColumn];
-                    
-                    // Create the join
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias,destinationAlias, table, column];
-                    
-                    
+
+                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias, destinationAlias, table, column];
+
                     // this part handles optional relationship
                     if (relationship.optional) {
                         join = [join stringByAppendingFormat:@" OR %@.%@ IS NULL", table, column];
                     }
-                    
+
                     [typeJoins addObject:join];
-                    
+
                     // Mark that this relation needs a type lookup
                     [entityTypes addObject:key];
                 }
@@ -559,15 +559,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     } else {
         // one-to-many relationship, foreign key exists in destination entity table
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-      
-        NSAssert(inverseRelationship!=nil,@"1 to many relationship %@ - %@ must have an inverse",sourceEntity.name,destinationEntity.name);
-                 
+
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT __objectID%@ FROM %@ WHERE %@=? ORDER BY %@ ASC",
+                            @"SELECT __objectID%@ FROM %@ WHERE %@ AND %@=? ORDER BY %@ ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             destinationTable,
+                            [NSString stringWithFormat:@"__entityType IN %@", [destinationEntity typeHashSubhierarchy]],
                             [self foreignKeyColumnForRelationship:inverseRelationship],
                             [NSString stringWithFormat:@"%@_order", inverseRelationship.name]];
+
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
     }
@@ -3419,6 +3419,15 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
 {
     long hash = (long)self.name.hash;
     return hash;
+}
+
+-(NSArray *)typeHashSubhierarchy
+{
+    NSMutableArray *hashes = [NSMutableArray arrayWithObject:[NSNumber numberWithLong:self.typeHash]];
+    for (NSEntityDescription *entity in self.subentities) {
+        [hashes addObjectsFromArray: entity.typeHashSubhierarchy];
+    }
+    return hashes;
 }
 
 @end
