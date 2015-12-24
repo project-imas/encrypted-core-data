@@ -2834,9 +2834,30 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
  */
 - (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request {
     NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:[request predicate]];
-    if ([(NSString*)result[@"query"] length] > 0) {
+    NSString *query = result[@"query"];
+    
+    if (request.entity.superentity != nil) {
+        NSString *entityWhere = nil;
+        if (request.entity.subentities.count > 0 && request.includesSubentities) {
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType IN (%@)",
+                           [self tableNameForEntity:request.entity],
+                           [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
+        } else {
+            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %ld",
+                           [self tableNameForEntity:request.entity],
+                           request.entity.typeHash];
+        }
+        
+        if (query.length > 0) {
+            query = [@[ entityWhere, query ] componentsJoinedByString:@" AND "];
+        } else {
+            query = entityWhere;
+        }
+    }
+    
+    if (query.length > 0) {
         NSMutableDictionary *mutableResult = [result mutableCopy];
-        mutableResult[@"query"] = [NSString stringWithFormat:@" WHERE %@", result[@"query"]];
+        mutableResult[@"query"] = [NSString stringWithFormat:@" WHERE %@", query];
         result = mutableResult;
     }
     
@@ -2973,24 +2994,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         query = @"0";
     }
 
-    NSString *entityWhere = nil;
-    if (request.entity.superentity != nil) {
-        if (request.entity.subentities.count > 0 && request.includesSubentities) {
-            entityWhere = [NSString stringWithFormat:@"%@.__entityType IN (%@)",
-                           [self tableNameForEntity:request.entity],
-                           [[self entityIdsForEntity:request.entity] componentsJoinedByString:@", "]];
-        } else {
-            entityWhere = [NSString stringWithFormat:@"%@.__entityType = %ld",
-                           [self tableNameForEntity:request.entity],
-                           request.entity.typeHash];
-        }
-        
-        if (query.length > 0) {
-            query = [@[ entityWhere, query ] componentsJoinedByString:@" AND "];
-        } else {
-            query = entityWhere;
-        }
-    }
     return @{ @"query": query,
               @"bindings": bindings };
 }
