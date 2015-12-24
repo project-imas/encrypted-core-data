@@ -81,6 +81,7 @@
     for (NSUInteger i = 0; i < count; i++) {
         id object = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
         [object setValue:[NSString stringWithFormat:@"%lu username",(unsigned long)i] forKey:@"name"];
+        [object setValue:[NSNumber numberWithInteger:i] forKey:@"age"];
     }
     error = nil;
     BOOL save = [context save:&error];
@@ -811,6 +812,87 @@
            XCTAssertFalse(count == NSNotFound, @"Error with fetch: %@", error);
            XCTAssertEqual(count, [expectedCount unsignedIntegerValue], @"Incorrect fetch count");
     }];
+}
+
+-(void)test_sumExpression {
+    
+    [self createUsers:10];
+    
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    
+    NSEntityDescription *entityDescription = [NSEntityDescription
+                                              entityForName:@"User" inManagedObjectContext:context];
+    
+    [fetchRequest setEntity:entityDescription];
+    [fetchRequest setResultType:NSDictionaryResultType];
+    
+    NSExpression *expression = [NSExpression expressionForKeyPath:@"age"];
+    NSExpression *sumExpression = [NSExpression expressionForFunction:@"sum:"
+                                                            arguments:[NSArray arrayWithObject:expression]];
+    NSExpressionDescription *sumExpressionDescription = [[NSExpressionDescription alloc] init];
+    [sumExpressionDescription setName:@"total age"];
+    [sumExpressionDescription setExpression:sumExpression];
+    [sumExpressionDescription setExpressionResultType:NSInteger64AttributeType];
+    
+    [fetchRequest setPropertiesToFetch:@[sumExpressionDescription]];
+    
+    NSError *error = nil;
+    NSArray *age = [context executeFetchRequest:fetchRequest error:&error];
+    XCTAssertNil(error, @"Error running query %@",error);
+    XCTAssertNotNil(age, @"No Results");
+    XCTAssertEqual(age.count, 1, @"Incorrect fetch count");
+    
+    NSDictionary *results = [age firstObject];
+    
+    NSInteger expectedAge = 45;
+    
+    NSNumber *totalAge = [results objectForKey:@"total age"];
+    XCTAssertEqual(totalAge.integerValue, expectedAge, @"Incorrect total %ld expected %ld",(long)totalAge.integerValue,(long)expectedAge);
+}
+
+-(void)test_predicateWithBoolValue
+{
+    const NSUInteger usersCount = 30;
+    
+    [self createUsers:usersCount];
+    
+    NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    NSError *error;
+    
+    // Test true predicate
+    req.predicate = [NSPredicate predicateWithValue:YES];
+    NSUInteger count = [context countForFetchRequest:req error:&error];
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertTrue(count == usersCount, @"Incorrect fetch count.");
+    
+    // Test false predicate
+    req.predicate = [NSPredicate predicateWithValue:NO];
+    count = [context countForFetchRequest:req error:&error];
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertTrue(count == 0, @"Incorrect fetch count.");
+}
+
+-(void)test_predicateCompound
+{
+    const NSUInteger usersCount = 30;
+    
+    [self createUsers:usersCount];
+    
+    __block NSError *error = nil;
+    
+    [@{ [NSPredicate predicateWithFormat:@"TRUEPREDICATE && FALSEPREDICATE"] : @(0),
+        [NSPredicate predicateWithFormat:@"TRUEPREDICATE || FALSEPREDICATE"] : @(usersCount),
+        [NSPredicate predicateWithFormat:@"!TRUEPREDICATE"] : @(0),
+        } enumerateKeysAndObjectsUsingBlock:^(NSPredicate *predicate, NSNumber *expectedCount, BOOL *stop) {
+            
+            NSFetchRequest *req = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+            req.predicate = predicate;
+            
+            NSUInteger count = [context countForFetchRequest:req error:&error];
+            
+            XCTAssertFalse(count == NSNotFound, @"Error with fetch: %@", error);
+            XCTAssertEqual(count, [expectedCount unsignedIntegerValue], @"Incorrect fetch count");
+        }];
 }
 
 @end

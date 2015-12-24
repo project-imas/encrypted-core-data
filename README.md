@@ -3,16 +3,6 @@
 
 Provides a Core Data store that encrypts all data that is persisted.  Besides the initial setup, the usage is exactly the same as Core Data and can be used in existing projects that use Core Data.
 
-# What's New in ECD 2.0 (as of 6/20/14)
-- Many to Many relationship support 
-- Upgraded to SqlCipher v3.1.0 
-- Moved away from OpenSSL to Apple's, FIPS compliant, CommonCrypto
-- Better unit test support
-- Better SQLite cache support
-- Support for more sort descriptors
-- Closed many of the outstanding issues
-- Tested working in iOS 6.0 - 7.1
-
 # Vulnerabilities Addressed
 
 1. SQLite database is not encrypted, contents are in plain text
@@ -48,7 +38,7 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 
 # Using EncryptedStore
 
-EncryptedStore is known to work successfully on iOS versions 6.0 through 7.1.
+EncryptedStore is known to work successfully on iOS versions 6.0 through 9.2.
 
 If you wish to set a custom cache size and/or custom database URL:
 create an NSDictionary to set the options for your EncryptedStore, replacing customPasscode, customCacheSize, and/or customDatabaseURL:
@@ -87,7 +77,7 @@ If there are issues you can add `-com.apple.CoreData.SQLDebug 1` to see all stat
 - One-to-many relationships
 - Many-to-Many relationships (NEW)
 - Predicates
-- Inherited entities (Thanks to [NachoMan](https://github.com/NachoMan/))
+- Inherited entities
 
 Missing features and known bugs are maintained on the [issue tracker](https://github.com/project-imas/encrypted-core-data/issues?state=open)
 

@@ -12,5 +12,6 @@
 @implementation ISDChildB
 
 @dynamic attributeB;
+@dynamic multipleOneToMany;
 
 @end
