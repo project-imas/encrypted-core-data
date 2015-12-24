@@ -13,6 +13,8 @@
 
 #import "EncryptedStore.h"
 
+typedef sqlite3_stmt sqlite3_statement;
+
 NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
