@@ -13,8 +13,6 @@ typedef struct _options {
     int * cache_size;
 } EncryptedStoreOptions;
 
-typedef void* sqlite3_statement;
-
 extern NSString * const EncryptedStoreType;
 extern NSString * const EncryptedStorePassphraseKey;
 extern NSString * const EncryptedStoreErrorDomain;
@@ -46,21 +44,6 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 // Warning! // This method could close database connection ( look at implementation for details )
 - (BOOL)validateDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
 - (BOOL)changeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error;
-
-- (NSNumber *)maximumObjectIDInTable:(NSString *)table;
-- (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request;
-- (void)bindWhereClause:(NSDictionary *)clause toStatement:(sqlite3_statement *)statement;
-- (NSString *)columnsClauseWithProperties:(NSArray *)properties;
-- (NSString *) joinedTableNameForComponents: (NSArray *) componentsArray forRelationship:(BOOL)forRelationship;
-- (id)valueForProperty:(NSPropertyDescription *)property
-           inStatement:(sqlite3_statement *)statement
-               atIndex:(int)index;
-- (NSString *)foreignKeyColumnForRelationship:(NSRelationshipDescription *)relationship;
-- (void)bindProperty:(NSPropertyDescription *)property
-           withValue:(id)value
-              forKey:(NSString *)key
-         toStatement:(sqlite3_statement *)statement
-             atIndex:(int)index;
 
 
 @end
