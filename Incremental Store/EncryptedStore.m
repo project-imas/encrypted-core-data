@@ -953,25 +953,27 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             NSLog(@"Error: statement is NULL or could not be finalized");
             return NO;
         } else {
-            // prepare another pragma cache_size statement and compare actual cache size
-            NSString *string = @"PRAGMA cache_size;";
-            sqlite3_stmt *checkStatement = [self preparedStatementForQuery:string];
-            sqlite3_step(checkStatement);
-            if (checkStatement == NULL || sqlite3_finalize(checkStatement) != SQLITE_OK) {
-                // TO-DO: handle error with statement
-                NSLog(@"Error: checkStatement is NULL or could not be finalized");
-                return NO;
-            }
+            return YES; // follow code is crashing on current sqlcipher version
             
-            int actualCacheSize = sqlite3_column_int(checkStatement,0);
-            if (actualCacheSize == [cacheSize intValue]) {
-                // succeeded
-                NSLog(@"Cache size successfully set to %d", actualCacheSize);
-            } else {
-                // failed...
-                NSLog(@"Error: cache size set to %d, not %d", actualCacheSize, [cacheSize intValue]);
-                return NO;
-            }
+//            // prepare another pragma cache_size statement and compare actual cache size
+//            NSString *string = @"PRAGMA cache_size;";
+//            sqlite3_stmt *checkStatement = [self preparedStatementForQuery:string];
+//            sqlite3_step(checkStatement);
+//            if (checkStatement == NULL || sqlite3_finalize(checkStatement) != SQLITE_OK) {
+//                // TO-DO: handle error with statement
+//                NSLog(@"Error: checkStatement is NULL or could not be finalized");
+//                return NO;
+//            }
+//            
+//            int actualCacheSize = sqlite3_column_int(checkStatement,0);
+//            if (actualCacheSize == [cacheSize intValue]) {
+//                // succeeded
+//                NSLog(@"Cache size successfully set to %d", actualCacheSize);
+//            } else {
+//                // failed...
+//                NSLog(@"Error: cache size set to %d, not %d", actualCacheSize, [cacheSize intValue]);
+//                return NO;
+//            }
         }
     }
     return YES;

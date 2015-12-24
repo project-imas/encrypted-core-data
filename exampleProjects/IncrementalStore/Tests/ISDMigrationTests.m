@@ -95,7 +95,8 @@
     NSDictionary *options = @{
                               EncryptedStorePassphraseKey : @"DB_KEY_HERE",
                               NSMigratePersistentStoresAutomaticallyOption : @YES,
-                              NSInferMappingModelAutomaticallyOption : @YES
+                              NSInferMappingModelAutomaticallyOption : @YES,
+                              EncryptedStoreCacheSize: @1000
                               };
     NSURL *URL = [self.class databaseURL];
     NSLog(@"Working with database at URL: %@", URL);
