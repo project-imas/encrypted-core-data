@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="5064" systemVersion="13E28" minimumToolsVersion="Xcode 4.3" macOSVersion="Automatic" iOSVersion="Automatic">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15C50" minimumToolsVersion="Xcode 4.3">
     <entity name="Comment" parentEntity="Post" syncable="YES">
         <relationship name="parent" optional="YES" minCount="1" maxCount="1" deletionRule="Nullify" destinationEntity="Post" inverseName="comments" inverseEntity="Post" syncable="YES"/>
+    </entity>
+    <entity name="Nickname" syncable="YES">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="nicknames" inverseEntity="User" syncable="YES"/>
     </entity>
     <entity name="Post" syncable="YES">
         <attribute name="body" optional="YES" attributeType="String" syncable="YES"/>
@@ -21,13 +25,15 @@
         <attribute name="age" optional="YES" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="hasTags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tag" inverseName="hasUsers" inverseEntity="Tag" syncable="YES"/>
+        <relationship name="nicknames" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Nickname" inverseName="user" inverseEntity="Nickname" syncable="YES"/>
         <relationship name="posts" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Post" inverseName="user" inverseEntity="Post" syncable="YES"/>
     </entity>
     <elements>
         <element name="Comment" positionX="97" positionY="-13" width="128" height="58"/>
         <element name="Post" positionX="-144" positionY="-45" width="128" height="133"/>
-        <element name="RootTag" positionX="-99" positionY="117" width="128" height="43"/>
+        <element name="RootTag" positionX="-99" positionY="117" width="128" height="45"/>
         <element name="Tag" positionX="-99" positionY="197" width="128" height="73"/>
-        <element name="User" positionX="-360" positionY="54" width="128" height="118"/>
+        <element name="User" positionX="-360" positionY="54" width="128" height="135"/>
+        <element name="Nickname" positionX="-153" positionY="99" width="128" height="75"/>
     </elements>
 </model>

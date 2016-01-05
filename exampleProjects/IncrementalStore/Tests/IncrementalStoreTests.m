@@ -82,10 +82,16 @@
         id object = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
         [object setValue:[NSString stringWithFormat:@"%lu username",(unsigned long)i] forKey:@"name"];
         [object setValue:[NSNumber numberWithInteger:i] forKey:@"age"];
+        id nickname = [NSEntityDescription insertNewObjectForEntityForName:@"Nickname" inManagedObjectContext:context];
+        [nickname setValue:object forKey:@"user"];
+        [nickname setValue:[NSString stringWithFormat:@"%lu nickname",(unsigned long)i] forKey:@"name"];
     }
+    
     error = nil;
     BOOL save = [context save:&error];
     XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
+    
+    [context reset];
     
     // test count
     error = nil;
@@ -93,7 +99,6 @@
     NSUInteger testCount = [context countForFetchRequest:request error:&error];
     XCTAssertNil(error, @"Could not execute fetch request.");
     XCTAssertEqual(testCount, count, @"The number of users is wrong.");
-    
 }
 
 - (void)createUsers:(NSUInteger)count adminCount:(NSUInteger)adminCount {
@@ -113,6 +118,8 @@
     error = nil;
     BOOL save = [context save:&error];
     XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
+    
+    [context reset];
     
     // test count
     error = nil;
@@ -147,6 +154,8 @@
     error = nil;
     BOOL save = [context save:&error];
     XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
+    
+    [context reset];
     
     // test count
     error = nil;
@@ -185,6 +194,7 @@
     NSError *error = nil;
     BOOL save = [context save:&error];
     XCTAssertTrue(save, @"Error saving context.\n%@",error);
+    [context reset];
     
     return retval;
 }
@@ -203,6 +213,7 @@
     NSError *error = nil;
     BOOL save = [context save:&error];
     XCTAssertTrue(save, @"Error saving context.\n%@",error);
+    [context reset];
     
     // test count (is it necessary?)
     error = nil;
@@ -357,6 +368,26 @@
     
 }
 
+- (void)test_createUserNicknames {
+    NSUInteger limit = 1;
+    [self createUsers:limit];
+    NSError *error = nil;
+    NSFetchRequest *request;
+
+    // fetch user
+    error = nil;
+    request = [[NSFetchRequest alloc] initWithEntityName:@"User"];
+    [request setFetchLimit:limit];
+    NSArray *users = [context executeFetchRequest:request error:&error];
+    XCTAssertNil(error, @"Unable to perform fetch request.");
+    XCTAssertEqual([users count], limit, @"Invalid number of results.");
+    NSManagedObject *user = [users lastObject];
+    XCTAssertNotNil(user, @"No user found.");
+    NSSet *nickNames = [user valueForKey:@"nicknames"];
+    XCTAssertEqual(nickNames.count, 1,@"Nicknames not found!");
+    
+}
+
 - (void)test_createUserAndSetNilValue {
     NSUInteger limit = 1;
     [self createUsers:limit];
@@ -443,6 +474,8 @@
     [context deleteObject:user];
     save = [context save:&error];
     XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
+
+    [context reset];
     
     // make sure we have one less user
     error = nil;

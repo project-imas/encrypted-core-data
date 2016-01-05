@@ -566,7 +566,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             @"SELECT __objectID%@ FROM %@ WHERE %@ AND %@=? ORDER BY %@ ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             destinationTable,
-                            [NSString stringWithFormat:@"__entityType IN %@", [destinationEntity typeHashSubhierarchy]],
+                            shouldFetchDestinationEntityType ? [NSString stringWithFormat:@"__entityType IN %@", [destinationEntity typeHashSubhierarchy]] : @"1==1",
                             [self foreignKeyColumnForRelationship:inverseRelationship],
                             [NSString stringWithFormat:@"%@_order", inverseRelationship.name]];
 
@@ -1783,7 +1783,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         
         // prepare statement
         NSString *string = nil;
-        if (entity.superentity != nil) {
+        if ([self entityNeedsEntityTypeColumn:entity]) {
             string = [NSString stringWithFormat:
                       @"INSERT INTO %@ ('__entityType', %@) VALUES(%ld, %@);",
                       [self tableNameForEntity:entity],
@@ -2840,7 +2840,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:[request predicate]];
     NSString *query = result[@"query"];
     
-    if (request.entity.superentity != nil) {
+    if ([self entityNeedsEntityTypeColumn:request.entity]) {
         NSString *entityWhere = nil;
         if (request.entity.subentities.count > 0 && request.includesSubentities) {
             entityWhere = [NSString stringWithFormat:@"%@.__entityType IN (%@)",
