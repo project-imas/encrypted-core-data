@@ -22,7 +22,7 @@ Pod::Spec.new do |s|
     s.source_files  = 'Incremental Store/**/*.{h,m}'
     s.public_header_files   = 'Incremental Store/EncryptedStore.h'
   
-    s.dependency 'SQLCipher', '~> 3.1.0'
+    s.dependency 'SQLCipher', '~> 3.3.0'
   
     s.xcconfig      = {
         'OTHER_CFLAGS' => '$(inherited) -DSQLITE_HAS_CODEC -DSQLCIPHER_CRYPTO_CC'
