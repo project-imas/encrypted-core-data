@@ -309,6 +309,20 @@
     [self checkOneToOneWithChildA:YES childB:NO];
 }
 
+-(void)testFetchingOneToOneNilFromCache
+{
+    [self checkOneToOneNil];
+}
+
+-(void)testFetchingOneToOneNilFromDatabase
+{
+    // Make sure we're loading directly from DB
+    [self resetCoordinator];
+    [self createCoordinator];
+    
+    [self checkOneToOneNil];
+}
+
 -(void)testFetchingManyToManyFromCache
 {
     [self checkManyToManyWithChildACount:2 childBCount:3];
@@ -380,6 +394,12 @@
         XCTAssertTrue([child isKindOfClass:[ISDChildB class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
         XCTAssertFalse([child isKindOfClass:[ISDChildA class]], @"One-to-one child is of wrong class, got: %@, expecting: %@", NSStringFromClass([child class]), NSStringFromClass([ISDChildB class]));
     }
+}
+  
+-(void)checkOneToOneNil
+{
+    ISDRoot *fetchedRoot = [self fetchRootObject];
+    XCTAssert(fetchedRoot.oneToOneNil == nil, @"We didn't set it, should be nil");
 }
 
 /// Checks that the root object has the correct number of many-to-many relational ChildA and ChildB objects

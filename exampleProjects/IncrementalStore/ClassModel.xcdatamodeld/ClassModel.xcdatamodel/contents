@@ -13,6 +13,7 @@
         <relationship name="manyToManyInverse" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Root" inverseName="manyToMany" inverseEntity="Root" syncable="YES"/>
         <relationship name="oneToManyInverse" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Root" inverseName="oneToMany" inverseEntity="Root" syncable="YES"/>
         <relationship name="oneToOneInverse" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Root" inverseName="oneToOne" inverseEntity="Root" syncable="YES"/>
+        <relationship name="oneToOneNilInverse" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Root" inverseName="oneToOneNil" inverseEntity="Root" syncable="YES"/>
     </entity>
     <entity name="Root" representedClassName="ISDRoot" syncable="YES">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
@@ -21,13 +22,14 @@
         <relationship name="multipleOneToManyChildB" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ChildB" inverseName="multipleOneToMany" inverseEntity="ChildB" syncable="YES"/>
         <relationship name="oneToMany" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Parent" inverseName="oneToManyInverse" inverseEntity="Parent" syncable="YES"/>
         <relationship name="oneToOne" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Parent" inverseName="oneToOneInverse" inverseEntity="Parent" syncable="YES"/>
+        <relationship name="oneToOneNil" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Parent" inverseName="oneToOneNilInverse" inverseEntity="Parent" syncable="YES"/>
         <relationship name="recursiveManyToMany" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Root" inverseName="recursiveManyToManyInverse" inverseEntity="Root" syncable="YES"/>
         <relationship name="recursiveManyToManyInverse" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Root" inverseName="recursiveManyToMany" inverseEntity="Root" syncable="YES"/>
     </entity>
     <elements>
         <element name="ChildA" positionX="-119" positionY="144" width="128" height="75"/>
         <element name="ChildB" positionX="79" positionY="144" width="128" height="75"/>
-        <element name="Parent" positionX="-20" positionY="8" width="128" height="103"/>
-        <element name="Root" positionX="-236" positionY="8" width="128" height="165"/>
+        <element name="Parent" positionX="-20" positionY="8" width="128" height="120"/>
+        <element name="Root" positionX="-236" positionY="8" width="128" height="180"/>
     </elements>
 </model>

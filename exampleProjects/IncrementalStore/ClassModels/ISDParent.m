@@ -15,6 +15,7 @@
 @dynamic name;
 @dynamic oneToManyInverse;
 @dynamic oneToOneInverse;
+@dynamic oneToOneNilInverse;
 @dynamic manyToManyInverse;
 
 @end

@@ -414,6 +414,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     
     // enumerate properties
     NSDictionary *properties = [entity propertiesByName];
+    __block NSUInteger tableAliasIndex = 0;
     [properties enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSPropertyDescription *obj, BOOL *stop) {
         if ([obj isKindOfClass:[NSAttributeDescription class]]) {
             [columns addObject:[NSString stringWithFormat:@"%@.%@", table, key]];
@@ -434,18 +435,15 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 if ([self entityNeedsEntityTypeColumn:destinationEntity]) {
                     // Get the destination table for the type look up
                     NSString *destinationTable = [self tableNameForEntity:destinationEntity];
-                    NSString *destinationAlias = [NSString stringWithFormat:@"T%lul",(unsigned long)destinationEntity.hash];
+                    NSString *destinationAlias = [NSString stringWithFormat:@"t%lu", (unsigned long)tableAliasIndex];
+                    tableAliasIndex++;
 
                     // Add teh type column to the query
                     NSString *typeColumn = [NSString stringWithFormat:@"%@.__entityType", destinationAlias];
                     [columns addObject:typeColumn];
 
-                    NSString *join = [NSString stringWithFormat:@" INNER JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias, destinationAlias, table, column];
-
-                    // this part handles optional relationship
-                    if (relationship.optional) {
-                        join = [join stringByAppendingFormat:@" OR %@.%@ IS NULL", table, column];
-                    }
+                    // Use LEFT JOIN as a relationship can be optional
+                    NSString *join = [NSString stringWithFormat:@" LEFT JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias, destinationAlias, table, column];
 
                     [typeJoins addObject:join];
 

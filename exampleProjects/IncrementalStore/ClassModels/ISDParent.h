@@ -16,6 +16,7 @@
 @property (nonatomic, retain) NSString * name;
 @property (nonatomic, retain) ISDRoot *oneToManyInverse;
 @property (nonatomic, retain) ISDRoot *oneToOneInverse;
+@property (nonatomic, retain) ISDRoot *oneToOneNilInverse;
 @property (nonatomic, retain) NSSet *manyToManyInverse;
 @end
 
