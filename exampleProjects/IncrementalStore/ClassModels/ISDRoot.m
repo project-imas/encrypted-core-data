@@ -15,6 +15,7 @@
 @dynamic name;
 @dynamic oneToMany;
 @dynamic oneToOne;
+@dynamic oneToOneNil;
 @dynamic manyToMany;
 @dynamic multipleOneToManyChildA;
 @dynamic multipleOneToManyChildB;

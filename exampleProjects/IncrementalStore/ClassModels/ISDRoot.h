@@ -16,6 +16,7 @@
 @property (nonatomic, retain) NSString * name;
 @property (nonatomic, retain) NSSet *oneToMany;
 @property (nonatomic, retain) ISDParent *oneToOne;
+@property (nonatomic, retain) ISDParent *oneToOneNil;
 @property (nonatomic, retain) NSSet *manyToMany;
 @property (nonatomic, retain) NSSet *multipleOneToManyChildA;
 @property (nonatomic, retain) NSSet *multipleOneToManyChildB;
