@@ -704,22 +704,26 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                                                       mergedModelFromBundles:bundles
                                                       forStoreMetadata:metadata];
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
+                    
+                    // this is not an error, no migration is needed
+                    if ([[oldModel entityVersionHashesByName] isEqualToDictionary:[newModel entityVersionHashesByName]]) {
+                        return YES;
+                    }
+                    
                     if (oldModel && newModel) {
                         
-                        if (![oldModel isEqual:newModel]) {
-                            // run migrations
-                            if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
-                                return NO;
-                            }
-                            
-                            // update metadata
-                            NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                            [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                            [self setMetadata:mutableMetadata];
-                            if (![self saveMetadata]) {
-                                if (error) { *error = [self databaseError]; }
-                                return NO;
-                            }
+                        // run migrations
+                        if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
+                            return NO;
+                        }
+                        
+                        // update metadata
+                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                        [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
+                        [self setMetadata:mutableMetadata];
+                        if (![self saveMetadata]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
                         }
                         
                     } else {
