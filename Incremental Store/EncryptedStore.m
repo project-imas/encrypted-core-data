@@ -23,6 +23,8 @@ NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocati
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
 
 static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
+static void dbsqliteStringBetween(sqlite3_context *context, int argc, sqlite3_value **argv);
+static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_value **argv);
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
@@ -666,6 +668,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             
             //enable regexp
             sqlite3_create_function(database, "REGEXP", 2, SQLITE_ANY, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            sqlite3_create_function(database, "ECDSTRINGOPERATION", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, dbsqliteStringOperation, NULL, NULL);
+            sqlite3_create_function(database, "ECDSTRINGBETWEEN", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, dbsqliteStringBetween, NULL, NULL);
             
             // ask if we have a metadata table
             BOOL hasTable = NO;
@@ -1013,6 +1017,222 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
 	}
     sqlite3_result_int(context, (int)numberOfMatches);
+}
+
+static void dbsqliteStringBetween(sqlite3_context *context, int argc, sqlite3_value **argv) {
+    @autoreleasepool {
+        assert(argc == 4);
+        
+        // if any of the operands is NULL, return NULL
+        if (sqlite3_value_type(argv[0]) == SQLITE_NULL ||
+            sqlite3_value_type(argv[1]) == SQLITE_NULL ||
+            sqlite3_value_type(argv[2]) == SQLITE_NULL) {
+            sqlite3_result_null(context);
+            return;
+        }
+        
+        const char *operand = (const char *)sqlite3_value_text(argv[1]);
+        const char *rangeLow = (const char *)sqlite3_value_text(argv[2]);
+        const char *rangeHigh = (const char *)sqlite3_value_text(argv[2]);
+        NSComparisonPredicateOptions options = sqlite3_value_int64(argv[3]);
+        
+        NSString *operandString = [[NSString alloc] initWithBytesNoCopy:(void *)operand
+                                                                 length:strlen(operand)
+                                                               encoding:NSUTF8StringEncoding
+                                                           freeWhenDone:NO];
+        
+        NSString *rangeLowString = [[NSString alloc] initWithBytesNoCopy:(void *)rangeLow
+                                                                  length:strlen(rangeLow)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSString *rangeHighString = [[NSString alloc] initWithBytesNoCopy:(void *)rangeHigh
+                                                                   length:strlen(rangeHigh)
+                                                                 encoding:NSUTF8StringEncoding
+                                                             freeWhenDone:NO];
+        
+        NSStringCompareOptions comparisonOptions = 0;
+        
+        if (options & NSCaseInsensitivePredicateOption) {
+            comparisonOptions |= NSCaseInsensitiveSearch;
+        }
+        
+        if (options & NSDiacriticInsensitivePredicateOption) {
+            comparisonOptions |= NSDiacriticInsensitiveSearch;
+        }
+        
+        BOOL result =
+            [operandString compare:rangeLowString options:comparisonOptions] != NSOrderedAscending &&
+            [rangeHighString compare:operandString options:comparisonOptions] != NSOrderedAscending;
+        
+        sqlite3_result_int(context, result);
+    }
+}
+
+static NSString *formatComparisonPredicateOptions(NSComparisonPredicateOptions options) {
+    // special-case the most common options
+    if (options == 0) {
+        return @"";
+    }
+    
+    if (options == NSCaseInsensitivePredicateOption) {
+        return @"[c]";
+    }
+    
+    // the general case
+    NSMutableString *optionsString = [NSMutableString stringWithCapacity:5];
+    
+    [optionsString appendString:@"["];
+    
+    if (options & NSCaseInsensitivePredicateOption) {
+        [optionsString appendString:@"c"];
+    }
+    
+    if (options & NSDiacriticInsensitivePredicateOption) {
+        [optionsString appendString:@"d"];
+    }
+    
+    if (options & NSNormalizedPredicateOption) {
+        [optionsString appendString:@"n"];
+    }
+    
+    [optionsString appendString:@"]"];
+    
+    return [optionsString copy];
+}
+
+static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_value **argv) {
+    @autoreleasepool {
+        assert(argc == 4);
+        
+        // must have an operator
+        if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+            sqlite3_result_error(context, "NULL operator passed to ECDSTRINGOPERATION", -1);
+            return;
+        }
+        
+        // if any of the two operands is NULL, return NULL
+        if (sqlite3_value_type(argv[1]) == SQLITE_NULL || sqlite3_value_type(argv[2]) == SQLITE_NULL) {
+            sqlite3_result_null(context);
+            return;
+        }
+        
+        NSPredicateOperatorType operation = sqlite3_value_int64(argv[0]);
+        const char *operand1 = (const char *)sqlite3_value_text(argv[1]);
+        const char *operand2 = (const char *)sqlite3_value_text(argv[2]);
+        NSComparisonPredicateOptions options = sqlite3_value_int64(argv[3]);
+        
+        NSString *operand1String = [[NSString alloc] initWithBytesNoCopy:(void *)operand1
+                                                                  length:strlen(operand1)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSString *operand2String = [[NSString alloc] initWithBytesNoCopy:(void *)operand2
+                                                                  length:strlen(operand2)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSStringCompareOptions comparisonOptions = 0;
+        
+        if (options & NSNormalizedPredicateOption) {
+            comparisonOptions = NSLiteralSearch;
+        }
+        else {
+            if (options & NSCaseInsensitivePredicateOption) {
+                comparisonOptions |= NSCaseInsensitiveSearch;
+            }
+            
+            if (options & NSDiacriticInsensitivePredicateOption) {
+                comparisonOptions |= NSDiacriticInsensitiveSearch;
+            }
+        }
+        
+        switch (operation) {
+            case NSLessThanPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedAscending);
+                return;
+                
+            case NSLessThanOrEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedDescending);
+                return;
+                
+            case NSGreaterThanPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedDescending);
+                return;
+                
+            case NSGreaterThanOrEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedAscending);
+                return;
+                
+            case NSEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedSame);
+                return;
+                
+            case NSNotEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedSame);
+                return;
+                
+            case NSMatchesPredicateOperatorType: {
+                // TODO: we should probably memoize the predicate
+                NSString *matchesPredicateFormat = [NSString stringWithFormat:@"SELF MATCHES%@ %%@",
+                                                    formatComparisonPredicateOptions(options)];
+                
+                BOOL matchesResult = [[NSPredicate predicateWithFormat:matchesPredicateFormat,
+                                       operand2String] evaluateWithObject:operand1String];
+                
+                sqlite3_result_int(context, !!matchesResult);
+                return;
+            }
+                
+            case NSLikePredicateOperatorType: {
+                // TODO: we should probably memoize the predicate
+                NSString *likePredicateFormat = [NSString stringWithFormat:@"SELF LIKE%@ %%@",
+                                                 formatComparisonPredicateOptions(options)];
+                
+                BOOL likeResult = [[NSPredicate predicateWithFormat:likePredicateFormat,
+                                    operand2String] evaluateWithObject:operand1String];
+                
+                sqlite3_result_int(context, !!likeResult);
+                break;
+            }
+                
+            case NSBeginsWithPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String
+                                                      options:NSAnchoredSearch | comparisonOptions];
+
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSEndsWithPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String
+                                                      options:NSAnchoredSearch | NSBackwardsSearch | comparisonOptions];
+
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSInPredicateOperatorType: {
+                NSRange range = [operand2String rangeOfString:operand1String options:comparisonOptions];
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSContainsPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String options:comparisonOptions];
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            default:
+                break;
+        }
+        
+        NSString *errorString = [NSString stringWithFormat:@"unsupported operator type %lu for ECDSTRINGOPERATION",
+                                 (unsigned long)operation];
+        
+        sqlite3_result_error(context, errorString.UTF8String, -1);
+    }
 }
 
 #pragma mark - migration helpers
@@ -2968,9 +3188,75 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
         else {
-            query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
-            if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                query = [query stringByAppendingString:@" ESCAPE '\\'"];
+            BOOL isStringOperation = NO;
+
+            if (comparisonPredicate.options) {
+                switch (comparisonPredicate.predicateOperatorType) {
+                    case NSLessThanPredicateOperatorType:
+                    case NSLessThanOrEqualToPredicateOperatorType:
+                    case NSGreaterThanPredicateOperatorType:
+                    case NSGreaterThanOrEqualToPredicateOperatorType:
+                    case NSEqualToPredicateOperatorType:
+                    case NSNotEqualToPredicateOperatorType:
+                    case NSMatchesPredicateOperatorType:
+                    case NSLikePredicateOperatorType:
+                    case NSBeginsWithPredicateOperatorType:
+                    case NSEndsWithPredicateOperatorType:
+                    case NSInPredicateOperatorType:
+                    case NSContainsPredicateOperatorType: {
+                        if (comparisonPredicate.predicateOperatorType == NSInPredicateOperatorType) {
+                            if (comparisonPredicate.rightExpression.expressionType != NSConstantValueExpressionType || ![comparisonPredicate.rightExpression.constantValue isKindOfClass:[NSString class]]) {
+                                // not an error, this IN is just not a string operation
+                                break;
+                            }
+                        }
+                        
+                        if (comparisonPredicate.predicateOperatorType == NSContainsPredicateOperatorType) {
+                            if (comparisonPredicate.leftExpression.expressionType != NSConstantValueExpressionType || ![comparisonPredicate.leftExpression.constantValue isKindOfClass:[NSString class]]) {
+                                // not an error, this CONTAINS is just not a string operation
+                                break;
+                            }
+                        }
+                        
+                        isStringOperation = YES;
+                        
+                        query = [NSString stringWithFormat:@"ECDSTRINGOPERATION(%@, %@, %@, %@)",
+                                 @(comparisonPredicate.predicateOperatorType),
+                                 leftOperand,
+                                 rightOperand,
+                                 @(comparisonPredicate.options)];
+                        
+                        break;
+                    }
+                        
+                    case NSBetweenPredicateOperatorType: {
+                        if (comparisonPredicate.rightExpression.expressionType != NSConstantValueExpressionType ||
+                            ![comparisonPredicate.rightExpression.constantValue isKindOfClass:[NSArray class]]) {
+                            // TODO: we should emit a warning if we can't handle the operand types
+                            break;
+                        }
+                        
+                        NSArray *range = comparisonPredicate.rightExpression.constantValue;
+                        rightBindings = @[range[0], range[1]];
+                        isStringOperation = YES;
+                        
+                        query = [NSString stringWithFormat:@"ECDSTRINGBETWEEN(%@, ?, ?, %@)",
+                                 leftOperand,
+                                 @(comparisonPredicate.options)];
+                        
+                        break;
+                    }
+                        
+                    default:
+                        break;
+                }
+            }
+            
+            if (!isStringOperation) {
+                query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
+                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                    query = [query stringByAppendingString:@" ESCAPE '\\'"];
+                }
             }
         }
         
@@ -3264,26 +3550,14 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
         else if ([value isKindOfClass:[NSString class]]) {
-            if ([predicate options] & NSCaseInsensitivePredicateOption) {
-                *operand = @"UPPER(?)";
-                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
-                    value = [self escapedString:value allowWildcards:isLike];
-                }
-                *bindings = [NSString stringWithFormat:
-                             [operator objectForKey:@"format"],
-                             [value uppercaseString]];
+            *operand = @"?";
+            if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
+                value = [self escapedString:value allowWildcards:isLike];
             }
-            else {
-                *operand = @"?";
-                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
-                    value = [self escapedString:value allowWildcards:isLike];
-                }
-                *bindings = [NSString stringWithFormat:
-                             [operator objectForKey:@"format"],
-                             value];
-            }
+            *bindings = [NSString stringWithFormat:
+                         [operator objectForKey:@"format"],
+                         value];
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
             NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
             *operand = @"?";
