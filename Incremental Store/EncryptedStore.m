@@ -15,6 +15,10 @@
 
 typedef sqlite3_stmt sqlite3_statement;
 
+#ifndef SQLITE_DETERMINISTIC
+#define SQLITE_DETERMINISTIC 0
+#endif
+
 NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
