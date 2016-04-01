@@ -417,7 +417,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     __block NSUInteger tableAliasIndex = 0;
     [properties enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSPropertyDescription *obj, BOOL *stop) {
         if ([obj isKindOfClass:[NSAttributeDescription class]]) {
-            [columns addObject:[NSString stringWithFormat:@"%@.%@", table, key]];
+            [columns addObject:[NSString stringWithFormat:@"\"%@.%@\"", table, key]];
             [keys addObject:key];
         }
         else if ([obj isKindOfClass:[NSRelationshipDescription class]]) {
@@ -428,7 +428,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             // Handle many-to-one and one-to-one
             if (![relationship isToMany]) {
                 NSString *column = [self foreignKeyColumnForRelationship:relationship];
-                [columns addObject:[NSString stringWithFormat:@"%@.%@", table, column]];
+                [columns addObject:[NSString stringWithFormat:@"\"%@.%@\"", table, column]];
                 [keys addObject:key];
                 
                 // We need to fetch the direct entity not its super type
@@ -443,7 +443,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     [columns addObject:typeColumn];
 
                     // Use LEFT JOIN as a relationship can be optional
-                    NSString *join = [NSString stringWithFormat:@" LEFT JOIN %@ as %@ ON %@.__objectid=%@.%@", destinationTable, destinationAlias, destinationAlias, table, column];
+                    NSString *join = [NSString stringWithFormat:@" LEFT JOIN %@ as %@ ON %@.__objectid=\"%@.%@\"", destinationTable, destinationAlias, destinationAlias, table, column];
 
                     [typeJoins addObject:join];
 
@@ -551,7 +551,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         }
         
         NSString *orderColumn = firstColumnIsSource ? secondOrderColumn : firstOrderColumn;
-        NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=? ORDER BY %@ ASC", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn, orderColumn];
+        NSString *string = [NSString stringWithFormat:@"SELECT %@%@ FROM %@%@ WHERE %@=? ORDER BY \"%@\" ASC", destinationIDColumn, destinationTypeColumn, relationTable, join, sourceIDColumn, orderColumn];
         
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
@@ -561,7 +561,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         NSString *destinationTable = [self tableNameForEntity:destinationEntity];
 
         NSString *string = [NSString stringWithFormat:
-                            @"SELECT __objectID%@ FROM %@ WHERE %@ AND %@=? ORDER BY %@ ASC",
+                            @"SELECT __objectID%@ FROM %@ WHERE %@ AND %@=? ORDER BY \"%@\" ASC",
                             shouldFetchDestinationEntityType ? @", __entityType" : @"",
                             destinationTable,
                             shouldFetchDestinationEntityType ? [NSString stringWithFormat:@"__entityType IN %@", [destinationEntity typeHashSubhierarchy]] : @"1==1",
@@ -1899,7 +1899,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         [changedAttributes enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
             id property = [properties objectForKey:key];
             if ([property isKindOfClass:[NSAttributeDescription class]]) {
-                [columns addObject:[NSString stringWithFormat:@"%@=?", key]];
+                [columns addObject:[NSString stringWithFormat:@"\"%@\"=?", key]];
                 [keys addObject:key];
             }
             else if ([property isKindOfClass:[NSRelationshipDescription class]]) {
@@ -1921,8 +1921,8 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                             orderSequence = @([orderedValues indexOfObject:object]);
                         }
                     }
-                    [columns addObject:[NSString stringWithFormat:@"%@=?", column]];
-                    [columns addObject:[NSString stringWithFormat:@"%@=%ld", orderColumn, (long)[orderSequence integerValue]]];
+                    [columns addObject:[NSString stringWithFormat:@"\"%@\"=?", column]];
+                    [columns addObject:[NSString stringWithFormat:@"\"%@\"=%ld", orderColumn, (long)[orderSequence integerValue]]];
                     
                     [keys addObject:key];
                 }
@@ -2327,7 +2327,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
         
         [columns addObject:[NSString stringWithFormat:
-                            @"%@.%@ %@ %@",
+                            @"\"%@.%@\" %@ %@",
                             tableName,
                             key,
                             collate,
