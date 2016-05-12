@@ -698,28 +698,38 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 NSDictionary *options = [self options];
                 if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
                     [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
+                    NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
+                    
+                    // check that a migration is required first:
+                    if ([newModel isConfiguration:nil compatibleWithStoreMetadata:metadata]){
+                        return YES;
+                    }
+                    
+                    // load the old model:
                     NSMutableArray *bundles = [NSMutableArray array];
                     [bundles addObject:[NSBundle mainBundle]];
-                    NSManagedObjectModel *oldModel = [NSManagedObjectModel
-                                                      mergedModelFromBundles:bundles
-                                                      forStoreMetadata:metadata];
-                    NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
+                    NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:bundles
+                                                                                 forStoreMetadata:metadata];
+                    
                     if (oldModel && newModel) {
                         
-                        if (![oldModel isEqual:newModel]) {
-                            // run migrations
-                            if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
-                                return NO;
-                            }
-                            
-                            // update metadata
-                            NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                            [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                            [self setMetadata:mutableMetadata];
-                            if (![self saveMetadata]) {
-                                if (error) { *error = [self databaseError]; }
-                                return NO;
-                            }
+                        // no migration is needed if the old and new models are identical:
+                        if ([[oldModel entityVersionHashesByName] isEqualToDictionary:[newModel entityVersionHashesByName]]) {
+                            return YES;
+                        }
+                        
+                        // run migrations
+                        if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
+                            return NO;
+                        }
+                        
+                        // update metadata
+                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                        [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
+                        [self setMetadata:mutableMetadata];
+                        if (![self saveMetadata]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
                         }
                         
                     } else {
@@ -729,7 +739,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorMigrationFailed userInfo:userInfo];
                         }
                         return NO;
-					}
+                    }
                 }
                 
             }
