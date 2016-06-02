@@ -3368,6 +3368,25 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         NSArray *arguments = expression.arguments;
         return [NSString stringWithFormat:@"sum(%@)",[arguments componentsJoinedByString:@","]];
     }
+    else if([function isEqualToString:@"average:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"avg(%@)",[arguments componentsJoinedByString:@","]];
+    }
+    
+    else if([function isEqualToString:@"count:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"count(%@)",[arguments componentsJoinedByString:@","]];
+    }
+    
+    else if([function isEqualToString:@"min:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"min(%@)",[arguments componentsJoinedByString:@","]];
+    }
+    
+    else if([function isEqualToString:@"max:"]) {
+        NSArray *arguments = expression.arguments;
+        return [NSString stringWithFormat:@"max(%@)",[arguments componentsJoinedByString:@","]];
+    }
     
     return nil;
 
