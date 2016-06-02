@@ -1384,13 +1384,21 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }];
   
     // ensure we copy any relationships for sub entities that aren't included in the mapping
-    NSDictionary *allRelationships = [self relationshipsForEntity:rootSourceEntity];
-    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL *stop) {
-      NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
-      if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
-        [sourceColumns addObject:foreignKeyColumn];
-        [destinationColumns addObject:foreignKeyColumn];
-      }
+    // also make sure that the destination entity actually has such a relationship before the copy
+    NSDictionary *sourceRelationships = [self relationshipsForEntity:rootSourceEntity];
+    NSDictionary *destinationRelationships = [self relationshipsForEntity:destinationEntity];
+    
+    [sourceRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL *stop) {
+        NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
+        if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
+            
+            if ([destinationRelationships objectForKey:key]) {
+                [sourceColumns addObject:foreignKeyColumn];
+                [destinationColumns addObject:foreignKeyColumn];
+            }
+            
+            
+        }
     }];
   
     // copy entity types for sub entity
