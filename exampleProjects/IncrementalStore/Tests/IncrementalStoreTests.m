@@ -928,4 +928,38 @@
         }];
 }
 
+- (void)test_aggregateFunctions {
+    NSArray *data = @[@1, @2, @3, @4, @7];
+    
+    for (NSNumber *obj in data) {
+        NSManagedObject *add = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+        [add setValue:obj forKey:@"age"];
+    }
+    [context save:nil];
+    
+    NSSet*(^query)(NSString*)  =  ^(NSString *function){
+        NSExpressionDescription *expressionDescription = [NSExpressionDescription new];
+        expressionDescription.name = @"age";
+        expressionDescription.expression = [NSExpression expressionForFunction:function arguments:@[[NSExpression expressionForKeyPath:@"age"]]];
+        expressionDescription.expressionResultType = NSDoubleAttributeType;
+        NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"User"];
+        req.propertiesToFetch = @[expressionDescription];
+        req.resultType = NSDictionaryResultType;
+        
+        NSDictionary * result = [context executeFetchRequest:req error:nil].firstObject;
+        return result[@"age"];
+    };
+    
+    XCTAssertEqualObjects(query(@"sum:"), @17);
+    XCTAssertEqualObjects(query(@"count:"), @5);
+    XCTAssertEqualObjects(query(@"min:"), @1);
+    XCTAssertEqualObjects(query(@"max:"), @7);
+    XCTAssertEqualObjects(query(@"average:"), @3.4);
+    
+    //unsupported in default sqlite store
+    //XCTAssertEqualObjects(query(@"median:"), @0);
+    //XCTAssertEqualObjects(query(@"mode:"), @0);
+    //XCTAssertEqualObjects(query(@"stddev:"), @0);
+}
+
 @end
