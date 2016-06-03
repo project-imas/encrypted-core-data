@@ -962,4 +962,46 @@
     //XCTAssertEqualObjects(query(@"stddev:"), @0);
 }
 
+- (void)test_stringComparision {
+    NSArray *data = @[@"testa", @"testą", @"TESTĄ", @"TESTA"];
+    
+    for (NSString *obj in data) {
+        NSManagedObject *add = [NSEntityDescription insertNewObjectForEntityForName:@"Post" inManagedObjectContext:context];
+        [add setValue:obj forKey:@"title"];
+    }
+    [context save:nil];
+    
+    NSSet*(^query)(NSString*, NSString*)  =  ^(NSString *query, NSString *value){
+        NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"Post"];
+        req.predicate = [NSPredicate predicateWithFormat:query, value];
+        NSArray *queryResult = [context executeFetchRequest:req error:nil];
+        NSMutableSet *result = [NSMutableSet new];
+        
+        for (NSManagedObject *obj in queryResult) {
+            [result addObject:[obj valueForKey:@"title"]];
+        }
+        
+        return result;
+    };
+    NSArray* expected;
+    
+    expected = @[@"testa"];
+    XCTAssertEqualObjects(query(@"title like %@", @"testa"), [NSSet setWithArray:expected]);
+    
+    expected = @[@"testa", @"TESTA"];
+    XCTAssertEqualObjects(query(@"title like[c] %@", @"testa"), [NSSet setWithArray:expected]);
+    
+    expected = @[@"testa", @"testą"];
+    XCTAssertEqualObjects(query(@"title like[d] %@", @"testa"), [NSSet setWithArray:expected]);
+    
+    expected = data;
+    XCTAssertEqualObjects(query(@"title like[cd] %@", @"testa"), [NSSet setWithArray:expected]);
+    
+    expected = @[@"testą"];
+    XCTAssertEqualObjects(query(@"title like %@", @"testą"), [NSSet setWithArray:expected]);
+    
+    expected = data;
+    XCTAssertEqualObjects(query(@"TRUEPREDICATE", nil), [NSSet setWithArray:expected]);
+}
+
 @end

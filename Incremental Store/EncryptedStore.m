@@ -23,6 +23,9 @@ NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocati
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
 
 static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
+static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv);
+static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const char **argv);
+static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv);
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
@@ -664,9 +667,38 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // load metadata
         BOOL success = [self performInTransaction:^{
             
-            //enable regexp
-            sqlite3_create_function(database, "REGEXP", 2, SQLITE_ANY, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            //make 'LIKE' case-sensitive
+            sqlite3_stmt *setPragma = [self preparedStatementForQuery:@"PRAGMA case_sensitive_like = true;"];
+            if (!setPragma || sqlite3_step(setPragma) != SQLITE_DONE || sqlite3_finalize(setPragma) != SQLITE_OK) {
+                return NO;
+            }
             
+#ifdef SQLITE_DETERMINISTIC
+            //enable regexp
+            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            
+            //enable case insentitivity
+            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCase, NULL, NULL);
+
+            //enable diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
+
+            //enable combined case and diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+#else
+            //enable regexp
+            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+
+            //enable case insentitivity
+            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCase, NULL, NULL);
+
+            //enable diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
+            
+            //enable combined case and diacritic insentitivity
+            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+#endif
+
             // ask if we have a metadata table
             BOOL hasTable = NO;
             if (![self hasMetadataTable:&hasTable error:error]) { return NO; }
@@ -1023,6 +1055,51 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
         }
 	}
     sqlite3_result_int(context, (int)numberOfMatches);
+}
+
+static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv) {
+    assert(argc == 1);
+    NSString* string;
+    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
+
+    /*Safeguard against null returns*/
+    if (aux) {
+        string = [NSString stringWithUTF8String:aux];
+        string = [string stringByFoldingWithOptions:NSCaseInsensitiveSearch locale:nil];
+        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_result_text(context, nil, -1, NULL);
+    }
+}
+
+static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const char **argv) {
+    assert(argc == 1);
+    NSString* string;
+    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
+
+    /*Safeguard against null returns*/
+    if (aux) {
+        string = [NSString stringWithUTF8String:aux];
+        string = [string stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
+        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_result_text(context, nil, -1, NULL);
+    }
+}
+
+static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv) {
+    assert(argc == 1);
+    NSString* string;
+    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
+
+    /*Safeguard against null returns*/
+    if (aux) {
+        string = [NSString stringWithUTF8String:aux];
+        string = [string stringByFoldingWithOptions:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch locale:nil];
+        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_result_text(context, nil, -1, NULL);
+    }
 }
 
 #pragma mark - migration helpers
@@ -3247,7 +3324,16 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
                      [self joinedTableNameForComponents:[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count -1)] forRelationship:NO], lastComponentName];
             }
         }
+        NSComparisonPredicateOptions options = [predicate options];
+        if ((options & NSCaseInsensitivePredicateOption) && (options & NSDiacriticInsensitivePredicateOption)) {
+            *operand = [@[@"STRIP_CASE_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
+        } else if (options & NSCaseInsensitivePredicateOption) {
+            *operand = [@[@"STRIP_CASE(", value, @")"] componentsJoinedByString:@""];
+        } else if (options & NSDiacriticInsensitivePredicateOption) {
+            *operand = [@[@"STRIP_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
+        } else {
         *operand = value;
+    }
     }
     else if (type == NSEvaluatedObjectExpressionType) {
         *operand = @"__objectid";
@@ -3282,26 +3368,20 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
             }
         }
         else if ([value isKindOfClass:[NSString class]]) {
-            if ([predicate options] & NSCaseInsensitivePredicateOption) {
-                *operand = @"UPPER(?)";
                 if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
                     BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
                     value = [self escapedString:value allowWildcards:isLike];
                 }
-                *bindings = [NSString stringWithFormat:
-                             [operator objectForKey:@"format"],
-                             [value uppercaseString]];
+            NSComparisonPredicateOptions options = [predicate options];
+            if ((options & NSCaseInsensitivePredicateOption) && (options & NSDiacriticInsensitivePredicateOption)) {
+                value = [value stringByFoldingWithOptions:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch locale:nil];
+            } else if (options & NSCaseInsensitivePredicateOption) {
+                value = [value stringByFoldingWithOptions:NSCaseInsensitiveSearch locale:nil];
+            } else if (options & NSDiacriticInsensitivePredicateOption) {
+                value = [value stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
             }
-            else {
                 *operand = @"?";
-                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
-                    value = [self escapedString:value allowWildcards:isLike];
-                }
-                *bindings = [NSString stringWithFormat:
-                             [operator objectForKey:@"format"],
-                             value];
-            }
+            *bindings = [NSString stringWithFormat:[operator objectForKey:@"format"], value];
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
             NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
             *operand = @"?";
