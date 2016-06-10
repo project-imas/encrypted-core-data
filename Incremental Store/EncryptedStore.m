@@ -69,6 +69,12 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 @end
 
+@interface EncryptedStore ()
+
+@property(copy) NSDictionary <NSString *,NSData *> *storeModelVersionHashes;
+
+@end
+
 @implementation EncryptedStore {
     
     // database resources
@@ -643,6 +649,29 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
     return EncryptedStoreType;
 }
 
+- (NSDictionary<NSString *,id> *)metadata
+{
+    NSDictionary<NSString *,id> *superMetadata = super.metadata;
+    if (!superMetadata) {
+        return nil;
+    }
+    
+    NSMutableDictionary<NSString *,id> *metadata = [NSMutableDictionary dictionaryWithDictionary:superMetadata];
+    if (self.storeModelVersionHashes) {
+        metadata[NSStoreModelVersionHashesKey] = self.storeModelVersionHashes;
+    }
+    return metadata;
+}
+
+- (void)setMetadata:(NSDictionary<NSString *,id> *)metadata
+{
+    NSDictionary <NSString *,NSData *> *storeModelVersionHashes = metadata[NSStoreModelVersionHashesKey];
+    if (storeModelVersionHashes) {
+        self.storeModelVersionHashes = storeModelVersionHashes;
+    }
+    [super setMetadata:metadata];
+}
+
 #pragma mark - metadata helpers
 
 - (BOOL)loadMetadata:(NSError **)error {
@@ -694,54 +723,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 }
                 sqlite3_finalize(statement);
                 
-                // run migrations
-                NSDictionary *options = [self options];
-                if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
-                    [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
-                    NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
-                    
-                    // check that a migration is required first:
-                    if ([newModel isConfiguration:nil compatibleWithStoreMetadata:metadata]){
-                        return YES;
-                    }
-                    
-                    // load the old model:
-                    NSMutableArray *bundles = [NSMutableArray array];
-                    [bundles addObject:[NSBundle mainBundle]];
-                    NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:bundles
-                                                                                 forStoreMetadata:metadata];
-                    
-                    if (oldModel && newModel) {
-                        
-                        // no migration is needed if the old and new models are identical:
-                        if ([[oldModel entityVersionHashesByName] isEqualToDictionary:[newModel entityVersionHashesByName]]) {
-                            return YES;
-                        }
-                        
-                        // run migrations
-                        if (![self migrateFromModel:oldModel toModel:newModel error:error]) {
-                            return NO;
-                        }
-                        
-                        // update metadata
-                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                        [mutableMetadata setObject:[newModel entityVersionHashesByName] forKey:NSStoreModelVersionHashesKey];
-                        [self setMetadata:mutableMetadata];
-                        if (![self saveMetadata]) {
-                            if (error) { *error = [self databaseError]; }
-                            return NO;
-                        }
-                        
-                    } else {
-                        NSLog(@"Failed to create NSManagedObject models for migration.");
-                        if (error) {
-                            NSDictionary * userInfo = @{EncryptedStoreErrorMessageKey : @"Missing old model, cannot migrate database"};
-                            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorMigrationFailed userInfo:userInfo];
-                        }
-                        return NO;
-                    }
-                }
-                
             }
             
             // this is a new store
@@ -765,7 +746,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 // create and set metadata
                 NSDictionary *metadata = @{
                                            NSStoreUUIDKey : [[self class] identifierForNewStoreAtURL:[self URL]],
-                                           NSStoreTypeKey : [self type]
+                                           NSStoreTypeKey : [self type],
+                                           NSStoreModelVersionHashesKey : self.persistentStoreCoordinator.managedObjectModel.entityVersionHashesByName,
                                            };
                 [self setMetadata:metadata];
                 if (![self saveMetadata]) {
