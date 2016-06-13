@@ -700,7 +700,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             BOOL hasTable = NO;
             if (![self hasMetadataTable:&hasTable error:error]) { return NO; }
             
-            // load existing metadata and optionally run migrations
+            // load existing metadata
             if (hasTable) {
                 
                 // load
@@ -1007,64 +1007,7 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     sqlite3_result_int(context, (int)numberOfMatches);
 }
 
-#pragma mark - migration helpers
-
-- (BOOL)migrateFromModel:(NSManagedObjectModel *)fromModel toModel:(NSManagedObjectModel *)toModel error:(NSError **)error {
-    BOOL __block success = YES;
-    
-    // generate mapping model
-    NSMappingModel *mappingModel = [NSMappingModel
-                                    inferredMappingModelForSourceModel:fromModel
-                                    destinationModel:toModel
-                                    error:error];
-    if (mappingModel == nil) { return NO; }
-    
-    // grab entity snapshots
-    NSDictionary *sourceEntities = [fromModel entitiesByName];
-    NSDictionary *destinationEntities = [toModel entitiesByName];
-    
-    // enumerate over entities
-    [[mappingModel entityMappings] enumerateObjectsUsingBlock:^(NSEntityMapping *entityMapping, NSUInteger idx, BOOL *stop) {
-        
-        // get names
-        NSString *sourceEntityName = [entityMapping sourceEntityName];
-        NSString *destinationEntityName = [entityMapping destinationEntityName];
-        
-        // get entity descriptions
-        NSEntityDescription *sourceEntity = [sourceEntities objectForKey:sourceEntityName];
-        NSEntityDescription *destinationEntity = [destinationEntities objectForKey:destinationEntityName];
-        
-        // get mapping type
-        NSEntityMappingType type = [entityMapping mappingType];
-        
-        // add a new entity from final snapshot
-        if (type == NSAddEntityMappingType) {
-            success &= [self createTableForEntity:destinationEntity error:error];
-        }
-        
-        // drop table for deleted entity
-        else if (type == NSRemoveEntityMappingType) {
-            success &= [self dropTableForEntity:sourceEntity];
-        }
-        
-        // change an entity
-        else if (type == NSTransformEntityMappingType) {
-            success &= [self
-                        alterTableForSourceEntity:sourceEntity
-                        destinationEntity:destinationEntity
-                        withMapping:entityMapping
-                        error:error];
-            if (success)
-            {
-                success &= [self alterRelationshipForSourceEntity:sourceEntity
-                                                destinationEntity:destinationEntity
-                                                      withMapping:entityMapping
-                                                            error:error];
-            }
-        }
-    }];
-    return success;
-}
+#pragma mark - helpers
 
 - (BOOL)initializeDatabase:(NSError**)error {
     BOOL __block success = YES;
@@ -1109,17 +1052,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     }
     
     return entityIds;
-}
-
-- (NSDictionary*)relationshipsForEntity: (NSEntityDescription*) entity {
-    NSMutableDictionary *relationships = [[entity relationshipsByName] mutableCopy];
-    
-    for (NSEntityDescription *subentity in entity.subentities) {
-      [relationships addEntriesFromDictionary:[self relationshipsForEntity:subentity]];
-    }
-       
-    return relationships;
-  
 }
 
 - (NSArray*)columnNamesForEntity:(NSEntityDescription*)entity
@@ -1234,179 +1166,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return YES;
 }
 
-- (BOOL)dropIndicesForEntity:(NSEntityDescription *)entity error:(NSError **)error
-{
-    if (entity.superentity) {
-        return YES;
-    }
-
-    NSArray * indexedColumns = [self columnNamesForEntity:entity indexedOnly:YES quotedNames:NO];
-    NSString * tableName = [self tableNameForEntity:entity];
-    for (NSString * column in indexedColumns) {
-        NSString * query = [NSString stringWithFormat:
-                            @"DROP INDEX IF EXISTS %@_%@_INDEX",
-                            tableName,
-                            column];
-        sqlite3_stmt *statement = [self preparedStatementForQuery:query];
-        sqlite3_step(statement);
-        BOOL result = (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
-        if (!result && error) {
-            *error = [self databaseError];
-            return result;
-        }
-    }
-    return YES;
-}
-
-- (BOOL)dropTableForEntity:(NSEntityDescription *)entity {
-    NSString *name = [self tableNameForEntity:entity];
-    return [self dropTableNamed:name];
-}
-
-- (BOOL)dropTableNamed:(NSString *)name {
-    NSString *string = [NSString stringWithFormat:
-                        @"DROP TABLE %@;",
-                        name];
-    sqlite3_stmt *statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    return (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK);
-}
-
-- (BOOL)alterTableForSourceEntity:(NSEntityDescription *)sourceEntity
-                destinationEntity:(NSEntityDescription *)destinationEntity
-                      withMapping:(NSEntityMapping *)mapping
-                            error:(NSError**)error {
-    NSString *string;
-    sqlite3_stmt *statement;
-  
-    NSEntityDescription *rootSourceEntity = [self rootForEntity:sourceEntity];
-    NSEntityDescription *rootDestinationEntity = [self rootForEntity:destinationEntity];
-  
-    NSString *sourceEntityName = [NSString stringWithFormat:@"ecd%@", [rootSourceEntity name]];
-    NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", sourceEntityName];
-    NSString *destinationTableName = [NSString stringWithFormat:@"ecd%@", [rootDestinationEntity name]];
-
-    if (![self dropIndicesForEntity:rootDestinationEntity error:error]) {
-        return NO;
-    }
-
-    // move existing table to temporary new table
-    string = [NSString stringWithFormat:
-              @"ALTER TABLE %@ "
-              @"RENAME TO %@;",
-              sourceEntityName,
-              temporaryTableName];
-    statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
-        return NO;
-    }
-
-    // create destination table
-    if (![self createTableForEntity:rootDestinationEntity error:error]) {
-        return NO;
-    }
-  
-    // GOAL: copy all columns from source table to destination table that still exist in the destination table
-  
-    // make an array of valid destination columns, some may have been removed
-    NSMutableArray *validDestinationColumns = [NSMutableArray array];
-    [[self columnNamesForEntity:rootDestinationEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
-        [validDestinationColumns addObject:column];
-    }];
-  
-    // create a dictionary that tells us where the field data is coming from
-    NSMutableDictionary *columnMappings = [NSMutableDictionary dictionary];
-  
-    [[mapping attributeMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSExpression *expression = [obj valueExpression];
-        if (expression != nil) {
-          NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
-          [columnMappings setObject:[obj name] forKey:source];
-        }
-    }];
-  
-    // get all columns, parent entity may have other children
-    NSMutableArray *sourceColumns = [NSMutableArray array];
-    [[self columnNamesForEntity:rootSourceEntity indexedOnly:NO quotedNames:NO] enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL * stop) {
-        if (![sourceColumns containsObject:column] && [validDestinationColumns containsObject:column]) {
-          [sourceColumns addObject:column];
-        }
-        if (![columnMappings objectForKey:column]) {
-          [columnMappings setObject:column forKey:column];
-        }
-    }];
-  
-    // destination is made up of source columns combined with any mapped columns
-    NSMutableArray *destinationColumns = [NSMutableArray array];
-    [sourceColumns enumerateObjectsUsingBlock:^(NSString *column, NSUInteger idx, BOOL *stop) {
-      NSString *mappedField = [columnMappings objectForKey:column];
-      if (mappedField) {
-        [destinationColumns addObject:mappedField];
-      } else if ([validDestinationColumns containsObject:column]){
-        [destinationColumns addObject:column];
-      }
-    }];
-  
-    // add in fields for relationships
-    [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
-        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
-        if (![relationship isToMany])
-        {
-            NSExpression *expression = [obj valueExpression];
-            if (expression != nil) {
-                NSString *destination = [self foreignKeyColumnForRelationshipName:[obj name]];
-                [destinationColumns addObject:destination];
-                NSString *source = [[[expression arguments] objectAtIndex:0] constantValue];
-                source = [self foreignKeyColumnForRelationshipName:source];
-                [sourceColumns addObject:source];
-            }
-        }
-    }];
-  
-    // ensure we copy any relationships for sub entities that aren't included in the mapping
-    NSDictionary *allRelationships = [self relationshipsForEntity:rootSourceEntity];
-    [allRelationships enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSRelationshipDescription *relationship, BOOL *stop) {
-      NSString *foreignKeyColumn = [self foreignKeyColumnForRelationshipName:relationship.name];
-      if (![relationship isToMany] && ![sourceColumns containsObject:foreignKeyColumn]) {
-        [sourceColumns addObject:foreignKeyColumn];
-        [destinationColumns addObject:foreignKeyColumn];
-      }
-    }];
-  
-    // copy entity types for sub entity
-    if (rootDestinationEntity.subentities.count > 0) {
-        [sourceColumns addObject:@"__entityType"];
-        [destinationColumns addObject:@"__entityType"];
-    }
-    
-    [sourceColumns addObject:@"__objectid"];
-    [destinationColumns addObject:@"__objectid"];
-  
-    string = [NSString stringWithFormat:
-              @"INSERT INTO %@ (%@)"
-              @"SELECT %@ "
-              @"FROM %@",
-              destinationTableName,
-              [destinationColumns componentsJoinedByString:@", "],
-              [sourceColumns componentsJoinedByString:@", "],
-              temporaryTableName];
-  
-    statement = [self preparedStatementForQuery:string];
-    sqlite3_step(statement);
-    if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
-        return NO;
-    }
-    
-    // delete old table
-    if (![self dropTableNamed:temporaryTableName]) {
-        return NO;
-    }
-    
-    return YES;
-}
-
 - (BOOL)createTableForRelationship:(NSRelationshipDescription *)relationship error:(NSError **)error
 {
     NSString *firstIDColumn;
@@ -1434,105 +1193,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return YES;
 }
 
-- (BOOL)alterRelationshipForSourceEntity:(NSEntityDescription *)sourceEntity
-                       destinationEntity:(NSEntityDescription *)destinationEntity
-                             withMapping:(NSEntityMapping *)mapping
-                                   error:(NSError**)error
-{
-    // locate all the many-to-many relationship tables
-    BOOL __block success = YES;
-    
-    [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
-        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
-        if ([relationship isToMany] && [relationship.inverseRelationship isToMany] && [destinationRelationship isToMany] && [destinationRelationship.inverseRelationship isToMany])
-        {
-            sqlite3_stmt *statement;
-            NSString *oldTableName = [self tableNameForPreviousRelationship:destinationRelationship];
-            
-            //check if table exists
-            BOOL tableExists = NO;
-            NSString *checkExistenceOfTable = [NSString stringWithFormat:@"SELECT count(*) FROM %@", oldTableName];
-            statement = [self preparedStatementForQuery:checkExistenceOfTable];
-            sqlite3_step(statement);
-            if (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK)
-            {
-                tableExists = YES;
-            }
-            
-            //if tableExists = YES; it probably means we haven't upgraded the table yet.
-            if (tableExists)
-            {
-                NSString *newTableName = [self tableNameForRelationship:destinationRelationship];
-                NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", oldTableName];
-                
-                //rename old table
-                NSString *string = [NSString stringWithFormat:
-                                    @"ALTER TABLE %@ "
-                                    @"RENAME TO %@;",
-                                    oldTableName,
-                                    temporaryTableName];
-                statement = [self preparedStatementForQuery:string];
-                sqlite3_step(statement);
-                
-                if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK)
-                {
-                    success &= NO;
-                    return;
-                }
-                
-                //create new table
-                if (![self createTableForRelationship:destinationRelationship error:error])
-                {
-                    success &= NO;
-                    return;
-                }
-                
-                //insert records
-                NSString *firstIDColumn;
-                NSString *secondIDColumn;
-                NSString *firstOrderColumn;
-                NSString *secondOrderColumn;
-                [self relationships:destinationRelationship firstIDColumn:&firstIDColumn secondIDColumn:&secondIDColumn firstOrderColumn:&firstOrderColumn secondOrderColumn:&secondOrderColumn];
-                
-                NSString *previousFirstIDColumn;
-                NSString *previousSecondIDColumn;
-                NSString *previousFirstOrderColumn;
-                NSString *previousSecondOrderColumn;
-                [self previousRelationships:destinationRelationship firstIDColumn:&previousFirstIDColumn secondIDColumn:&previousSecondIDColumn firstOrderColumn:&previousFirstOrderColumn secondOrderColumn:&previousSecondOrderColumn];
-                
-                string = [NSString stringWithFormat:
-                          @"INSERT INTO %@ (%@)"
-                          @"SELECT %@ "
-                          @"FROM %@",
-                          newTableName,
-                          [@[firstIDColumn, secondIDColumn, firstOrderColumn, secondOrderColumn] componentsJoinedByString:@", "],
-                          [@[previousFirstIDColumn, previousSecondIDColumn, previousFirstOrderColumn, previousSecondOrderColumn] componentsJoinedByString:@", "],
-                          temporaryTableName];
-                statement = [self preparedStatementForQuery:string];
-                sqlite3_step(statement);
-                if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
-                    success &= NO;
-                    return;
-                }
-                
-                
-                //drop old temporary table
-                if (![self dropTableNamed:temporaryTableName])
-                {
-                    success &= NO;
-                    return;
-                }
-                
-                
-            }
-
-        }
-    }];
-    
-    return success;
-}
-
 /// Performs case insensitive comparsion using the fixed EN-US POSIX locale
 -(NSComparator)fixedLocaleCaseInsensitiveComparator
 {
@@ -1553,12 +1213,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 
-- (NSString *)tableNameForPreviousRelationship:(NSRelationshipDescription *)relationship
-{
-    NSRelationshipDescription *inverse = [relationship inverseRelationship];
-    NSArray *names = [@[([relationship renamingIdentifier] ? [relationship renamingIdentifier] : [relationship name]), ([inverse renamingIdentifier] ? [inverse renamingIdentifier] : [inverse name])] sortedArrayUsingComparator:[self fixedLocaleCaseInsensitiveComparator]];
-    return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
-}
 /// Create columns for both object IDs. @returns YES  if the relationship.entity was first
 -(BOOL)relationships:(NSRelationshipDescription *)relationship firstIDColumn:(NSString *__autoreleasing*)firstIDColumn secondIDColumn:(NSString *__autoreleasing*)secondIDColumn firstOrderColumn:(NSString *__autoreleasing*)firstOrderColumn secondOrderColumn:(NSString *__autoreleasing*)secondOrderColumn
 {
@@ -1594,46 +1248,6 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     // 2nd
     *secondIDColumn = [NSString stringWithFormat:format, secondEntity.name];
     *secondOrderColumn = [NSString stringWithFormat:orderFormat, secondEntity.name];
-    
-    // Return if the relationship.entity was first
-    return orderedEntities[0] == rootSourceEntity;
-}
-
-/// Create columns for both object IDs. @returns YES  if the relationship.entity was first
--(BOOL)previousRelationships:(NSRelationshipDescription *)relationship firstIDColumn:(NSString *__autoreleasing*)firstIDColumn secondIDColumn:(NSString *__autoreleasing*)secondIDColumn firstOrderColumn:(NSString *__autoreleasing*)firstOrderColumn secondOrderColumn:(NSString *__autoreleasing*)secondOrderColumn
-{
-    NSParameterAssert(firstIDColumn);
-    NSParameterAssert(secondIDColumn);
-    NSParameterAssert(firstOrderColumn);
-    NSParameterAssert(secondOrderColumn);
-    
-    NSEntityDescription *rootSourceEntity = [self rootForEntity:relationship.entity];
-    NSEntityDescription *rootDestinationEntity = [self rootForEntity:relationship.destinationEntity];
-    
-    static NSString *format = @"%@__objectid";
-    static NSString *orderFormat = @"%@_order";
-    
-    if ([rootSourceEntity isEqual:rootDestinationEntity]) {
-        *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
-        *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
-        *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootSourceEntity.name stringByAppendingString:@"_1"]];
-        *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
-        
-        return YES;
-    }
-    
-    NSArray *orderedEntities = [@[rootSourceEntity, rootDestinationEntity] sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:NSStringFromSelector(@selector(name)) ascending:YES comparator:[self fixedLocaleCaseInsensitiveComparator]]]];
-    
-    NSEntityDescription *firstEntity = [orderedEntities firstObject];
-    NSEntityDescription *secondEntity = [orderedEntities lastObject];
-    
-    // 1st
-    *firstIDColumn = [NSString stringWithFormat:format, (firstEntity.renamingIdentifier ? firstEntity.renamingIdentifier : firstEntity.name)];
-    *firstOrderColumn = [NSString stringWithFormat:orderFormat, (firstEntity.renamingIdentifier ? firstEntity.renamingIdentifier : firstEntity.name)];
-    
-    // 2nd
-    *secondIDColumn = [NSString stringWithFormat:format, (secondEntity.renamingIdentifier ? secondEntity.renamingIdentifier : secondEntity.name)];
-    *secondOrderColumn = [NSString stringWithFormat:orderFormat, (secondEntity.renamingIdentifier ? secondEntity.renamingIdentifier : secondEntity.name)];
     
     // Return if the relationship.entity was first
     return orderedEntities[0] == rootSourceEntity;

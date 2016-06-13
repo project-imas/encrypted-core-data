@@ -23,7 +23,6 @@ extern NSString * const EncryptedStoreCacheSize;
 typedef NS_ENUM(NSInteger, EncryptedStoreError)
 {
     EncryptedStoreErrorIncorrectPasscode = 6000,
-    EncryptedStoreErrorMigrationFailed
 };
 
 @interface EncryptedStore : NSIncrementalStore
