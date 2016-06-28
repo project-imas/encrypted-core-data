@@ -255,14 +255,24 @@
 
 -(ISDRoot *)fetchRootObject
 {
+  return [self fetchRootObjectByName:@"root"];
+}
+
+-(ISDRoot *)fetchManyRootObject
+{
+  return [self fetchRootObjectByName:@"manyRoot"];
+}
+
+-(ISDRoot *)fetchRootObjectByName:(NSString *)name
+{
     NSError *error = nil;
     NSFetchRequest *request = [ISDRoot fetchRequest];
-    request.predicate = [NSPredicate predicateWithFormat:@"name == %@", @"root"];
+    request.predicate = [NSPredicate predicateWithFormat:@"name == %@", name];
     NSArray *results = [context executeFetchRequest:request error:&error];
     XCTAssertNotNil(results, @"Could not execute fetch request.");
     XCTAssertEqual([results count], (NSUInteger)1, @"The number of root objects is wrong.");
     ISDRoot *root = [results firstObject];
-    XCTAssertEqualObjects(root.name, @"root", @"The name of the root object is wrong.");
+    XCTAssertEqualObjects(root.name, name, @"The name of the root object is wrong. It should be '%@' but it is '%@'", name, [root.name copy]);
     return root;
 }
 
@@ -337,6 +347,31 @@
     [self checkManyToManyWithChildACount:2 childBCount:3];
 }
 
+- (void)testDeleteAllManyToManyFromDatabase
+{
+  // Remove all many to many relationships
+  ISDRoot *fetchedRoot = [self fetchRootObject];
+  [fetchedRoot removeManyToMany:fetchedRoot.manyToMany];
+  ISDRoot *fetchedManyRoot = [self fetchManyRootObject];
+  [fetchedManyRoot removeManyToMany:fetchedManyRoot.manyToMany];
+  
+  XCTAssertEqual(0, fetchedRoot.manyToMany.count + fetchedManyRoot.manyToMany.count, @"The total number of many-to-many relationships after removing all of them in memory should be 0");
+  
+  // Save into database
+  NSError *error = nil;
+  BOOL save = [context save:&error];
+  XCTAssertTrue(save, @"Unable to perform save.\n%@", error);
+  
+  // Invalidate any existing NSManagedObject
+  [context reset];
+  fetchedRoot = nil;
+  fetchedManyRoot = nil;
+  
+  // Verify that relationships have been removed from database
+  fetchedRoot = [self fetchRootObject];
+  fetchedManyRoot = [self fetchManyRootObject];
+  XCTAssertEqual(0, fetchedRoot.manyToMany.count + fetchedManyRoot.manyToMany.count, @"The total number of relationships when fetching from database after removing all of them & saving should be 0");
+}
 
 /**
  Multiple one-to-many is designed to test the case where one entity (Root) has two one-to-many

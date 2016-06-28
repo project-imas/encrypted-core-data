@@ -2094,11 +2094,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     // Inverse
     NSSet *inverseObjects = [object valueForKey:[relationship name]];
     
-    if ([inverseObjects count] == 0) {
-        // No objects to add so finish
-        return YES;
-    }
-    
     NSString *tableName = [self tableNameForRelationship:relationship];
     
     NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
