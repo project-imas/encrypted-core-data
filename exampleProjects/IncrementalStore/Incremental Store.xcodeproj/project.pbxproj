@@ -40,6 +40,10 @@
 		65CE88581C2940E3006478BC /* ISDMigrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 65CE88571C2940E3006478BC /* ISDMigrationTests.m */; };
 		65CE885F1C29443E006478BC /* Migration.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 65CE885C1C29443E006478BC /* Migration.xcdatamodeld */; };
 		661D95AF1954821900581737 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 661D95AE1954821900581737 /* Security.framework */; };
+		66418E761D2BB93000546D5B /* ConcurrencyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 66418E751D2BB93000546D5B /* ConcurrencyTests.m */; };
+		66418E8A1D2BBDDD00546D5B /* SingleDefaultStoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 66418E861D2BBDDD00546D5B /* SingleDefaultStoreManager.m */; };
+		66418E8B1D2BBDDD00546D5B /* SingleEncryptedStoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 66418E891D2BBDDD00546D5B /* SingleEncryptedStoreManager.m */; };
+		66418E951D2C19D000546D5B /* DoubleEncryptedStoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 66418E941D2C19D000546D5B /* DoubleEncryptedStoreManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +120,14 @@
 		65CE885E1C29443E006478BC /* New.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = New.xcdatamodel; sourceTree = "<group>"; };
 		65CE88601C295448006478BC /* New.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = New.xcdatamodel; sourceTree = "<group>"; };
 		661D95AE1954821900581737 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		66418E751D2BB93000546D5B /* ConcurrencyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ConcurrencyTests.m; sourceTree = "<group>"; };
+		66418E851D2BBDDD00546D5B /* SingleDefaultStoreManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SingleDefaultStoreManager.h; sourceTree = "<group>"; };
+		66418E861D2BBDDD00546D5B /* SingleDefaultStoreManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SingleDefaultStoreManager.m; sourceTree = "<group>"; };
+		66418E871D2BBDDD00546D5B /* PersistenceManagerDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PersistenceManagerDelegate.h; sourceTree = "<group>"; };
+		66418E881D2BBDDD00546D5B /* SingleEncryptedStoreManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SingleEncryptedStoreManager.h; sourceTree = "<group>"; };
+		66418E891D2BBDDD00546D5B /* SingleEncryptedStoreManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SingleEncryptedStoreManager.m; sourceTree = "<group>"; };
+		66418E931D2C19D000546D5B /* DoubleEncryptedStoreManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DoubleEncryptedStoreManager.h; sourceTree = "<group>"; };
+		66418E941D2C19D000546D5B /* DoubleEncryptedStoreManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DoubleEncryptedStoreManager.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,12 +254,14 @@
 		440E851519B3A1B0002542D1 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				66418E841D2BBD9000546D5B /* Concurrency Helpers */,
 				440E852319B3A1E1002542D1 /* IncrementalStoreTests.m */,
 				440E852419B3A1E1002542D1 /* PasswordTests.m */,
 				440E852519B3A1E1002542D1 /* RelationTests.m */,
 				440B67DC19D1E52100C28112 /* SubEntityTests.m */,
 				65CE88571C2940E3006478BC /* ISDMigrationTests.m */,
 				440E851619B3A1B0002542D1 /* Supporting Files */,
+				66418E751D2BB93000546D5B /* ConcurrencyTests.m */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -277,6 +291,20 @@
 				444AF95219B3814500B1F2A1 /* ISDModelCategories.m */,
 			);
 			path = ClassModels;
+			sourceTree = "<group>";
+		};
+		66418E841D2BBD9000546D5B /* Concurrency Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				66418E851D2BBDDD00546D5B /* SingleDefaultStoreManager.h */,
+				66418E861D2BBDDD00546D5B /* SingleDefaultStoreManager.m */,
+				66418E871D2BBDDD00546D5B /* PersistenceManagerDelegate.h */,
+				66418E881D2BBDDD00546D5B /* SingleEncryptedStoreManager.h */,
+				66418E891D2BBDDD00546D5B /* SingleEncryptedStoreManager.m */,
+				66418E931D2C19D000546D5B /* DoubleEncryptedStoreManager.h */,
+				66418E941D2C19D000546D5B /* DoubleEncryptedStoreManager.m */,
+			);
+			path = "Concurrency Helpers";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -420,8 +448,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				65CE88581C2940E3006478BC /* ISDMigrationTests.m in Sources */,
+				66418E951D2C19D000546D5B /* DoubleEncryptedStoreManager.m in Sources */,
+				66418E8B1D2BBDDD00546D5B /* SingleEncryptedStoreManager.m in Sources */,
 				440E852719B3A1E1002542D1 /* PasswordTests.m in Sources */,
+				66418E8A1D2BBDDD00546D5B /* SingleDefaultStoreManager.m in Sources */,
 				440B67DD19D1E52100C28112 /* SubEntityTests.m in Sources */,
+				66418E761D2BB93000546D5B /* ConcurrencyTests.m in Sources */,
 				440E852619B3A1E1002542D1 /* IncrementalStoreTests.m in Sources */,
 				440E852819B3A1E1002542D1 /* RelationTests.m in Sources */,
 			);
