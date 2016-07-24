@@ -1680,7 +1680,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         *firstIDColumn = [NSString stringWithFormat:format, [rootSourceEntity.name stringByAppendingString:@"_1"]];
         *secondIDColumn = [NSString stringWithFormat:format, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
         *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootSourceEntity.name stringByAppendingString:@"_1"]];
-        *firstOrderColumn = [NSString stringWithFormat:orderFormat, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
+        *secondOrderColumn = [NSString stringWithFormat:orderFormat, [rootDestinationEntity.name stringByAppendingString:@"_2"]];
         
         return YES;
     }
