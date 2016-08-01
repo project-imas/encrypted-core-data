@@ -1197,7 +1197,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                                     operand2String] evaluateWithObject:operand1String];
                 
                 sqlite3_result_int(context, !!likeResult);
-                break;
+                return;
             }
                 
             case NSBeginsWithPredicateOperatorType: {
