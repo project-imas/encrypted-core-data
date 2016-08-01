@@ -3592,16 +3592,7 @@ static BOOL isCollection(Class class)
                      [self joinedTableNameForComponents:[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count -1)] forRelationship:NO], lastComponentName];
             }
         }
-        NSComparisonPredicateOptions options = [predicate options];
-        if ((options & NSCaseInsensitivePredicateOption) && (options & NSDiacriticInsensitivePredicateOption)) {
-            *operand = [@[@"STRIP_CASE_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
-        } else if (options & NSCaseInsensitivePredicateOption) {
-            *operand = [@[@"STRIP_CASE(", value, @")"] componentsJoinedByString:@""];
-        } else if (options & NSDiacriticInsensitivePredicateOption) {
-            *operand = [@[@"STRIP_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
-        } else {
         *operand = value;
-    }
     }
     else if (type == NSEvaluatedObjectExpressionType) {
         *operand = @"__objectid";
