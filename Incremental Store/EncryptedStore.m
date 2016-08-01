@@ -3213,11 +3213,18 @@ static BOOL isCollection(Class class)
                      bindings:&rightBindings];
         
         // build result and return
-        if (rightOperand && !rightBindings) {
-            if([[operator objectForKey:@"operator"] isEqualToString:@"!="]) {
-                query = [@[leftOperand, @"IS NOT", rightOperand] componentsJoinedByString:@" "];
+        if ([rightOperandClass isEqual:[NSNull class]] && (comparisonPredicate.predicateOperatorType == NSEqualToPredicateOperatorType || comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType)) {
+            if(comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType) {
+                query = [@[leftOperand, @"IS NOT NULL"] componentsJoinedByString:@" "];
             } else {
-                query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
+                query = [@[leftOperand, @"IS NULL"] componentsJoinedByString:@" "];
+            }
+        }
+        else if ([leftOperandClass isEqual:[NSNull class]] && (comparisonPredicate.predicateOperatorType == NSEqualToPredicateOperatorType || comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType)) {
+            if(comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType) {
+                query = [@[rightOperand, @"IS NOT NULL"] componentsJoinedByString:@" "];
+            } else {
+                query = [@[rightOperand, @"IS NULL"] componentsJoinedByString:@" "];
             }
         }
         else {
