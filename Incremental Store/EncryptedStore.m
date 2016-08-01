@@ -3248,6 +3248,33 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                         
                         isStringOperation = YES;
                         
+                        // Re-parse the expressions with a dummy operator that formats the operand/bindings verbatim
+                        operator = @{ @"operator" : @"ECDSTRINGOPERATION", @"format" : @"%@" };
+                        
+                        // left expression
+                        leftOperand = nil;
+                        leftOperandClass = Nil;
+                        leftBindings = nil;
+                        [self parseExpression:comparisonPredicate.leftExpression
+                                  inPredicate:comparisonPredicate
+                               inFetchRequest:request
+                                     operator:operator
+                                      operand:&leftOperand
+                                       ofType:&leftOperandClass
+                                     bindings:&leftBindings];
+                        
+                        // right expression
+                        rightOperand = nil;
+                        rightOperandClass = Nil;
+                        rightBindings = nil;
+                        [self parseExpression:comparisonPredicate.rightExpression
+                                  inPredicate:comparisonPredicate
+                               inFetchRequest:request
+                                     operator:operator
+                                      operand:&rightOperand
+                                       ofType:&rightOperandClass
+                                     bindings:&rightBindings];
+                        
                         query = [NSString stringWithFormat:@"ECDSTRINGOPERATION(%@, %@, %@, %@)",
                                  @(comparisonPredicate.predicateOperatorType),
                                  leftOperand,
