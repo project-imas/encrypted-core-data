@@ -671,12 +671,6 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // load metadata
         BOOL success = [self performInTransaction:^{
             
-            //make 'LIKE' case-sensitive
-            sqlite3_stmt *setPragma = [self preparedStatementForQuery:@"PRAGMA case_sensitive_like = true;"];
-            if (!setPragma || sqlite3_step(setPragma) != SQLITE_DONE || sqlite3_finalize(setPragma) != SQLITE_OK) {
-                return NO;
-            }
-            
             //enable regexp
             sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
             sqlite3_create_function(database, "ECDSTRINGOPERATION", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, dbsqliteStringOperation, NULL, NULL);
@@ -3230,7 +3224,8 @@ static BOOL isCollection(Class class)
         else {
             BOOL isStringOperation = NO;
 
-            if (comparisonPredicate.options) {
+            // Note: SQLite's LIKE is case-insensitive, so if we want a case-sensitive LIKE, we have to use ECDSTRINGOPERATION
+            if (comparisonPredicate.options || comparisonPredicate.predicateOperatorType == NSLikePredicateOperatorType) {
                 switch (comparisonPredicate.predicateOperatorType) {
                     case NSLessThanPredicateOperatorType:
                     case NSLessThanOrEqualToPredicateOperatorType:
