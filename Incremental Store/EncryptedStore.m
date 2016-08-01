@@ -3185,22 +3185,26 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
         
         // left expression
         id leftOperand = nil;
+        Class leftOperandClass = Nil;
         id leftBindings = nil;
         [self parseExpression:comparisonPredicate.leftExpression
                   inPredicate:comparisonPredicate
                inFetchRequest:request
                      operator:operator
                       operand:&leftOperand
+                       ofType:&leftOperandClass
                      bindings:&leftBindings];
         
         // right expression
         id rightOperand = nil;
+        Class rightOperandClass = Nil;
         id rightBindings = nil;
         [self parseExpression:comparisonPredicate.rightExpression
                   inPredicate:comparisonPredicate
                inFetchRequest:request
                      operator:operator
                       operand:&rightOperand
+                       ofType:&rightOperandClass
                      bindings:&rightBindings];
         
         // build result and return
@@ -3378,6 +3382,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
          inFetchRequest:(NSFetchRequest *)request
                operator:(NSDictionary *)operator
                 operand:(id *)operand
+                 ofType:(Class *)operandType
                bindings:(id *)bindings {
     NSExpressionType type = [expression expressionType];
     
@@ -3421,8 +3426,12 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                          [self tableNameForEntity:entity],
                          [self foreignKeyColumnForRelationship:property]];
             }
+            *operandType = [NSManagedObjectID class];
         }
         else if (property != nil) {
+            if ([property isKindOfClass:[NSAttributeDescription class]]) {
+                *operandType = NSClassFromString(((NSAttributeDescription *)property).attributeValueClassName);
+            }
             value = [NSString stringWithFormat:@"%@.%@",
                      [self tableNameForEntity:entity],
                      value];
@@ -3486,6 +3495,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                         }
                     }
                 }
+                *operandType = [NSNumber class];
                 value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
                 foundPredicate = YES;
             }
@@ -3510,6 +3520,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                               rel.destinationEntity.typeHash]];
                 }
                 value = [value stringByAppendingString:@")"];
+                *operandType = [NSNumber class];
                 foundPredicate = YES;
             }
             
@@ -3525,7 +3536,6 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                         NSEntityDescription * entity = [property destinationEntity];
                         subProperties = entity.propertiesByName;
                     } else {
-                        property = nil;
                         *stop = YES;
                     }
                 }];
@@ -3533,6 +3543,10 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                 if ([property isKindOfClass:[NSRelationshipDescription class]]) {
                     [request setReturnsDistinctResults:YES];
                     lastComponentName = @"__objectID";
+                    *operandType = [NSManagedObjectID class];
+                }
+                else if ([property isKindOfClass:[NSAttributeDescription class]]) {
+                    *operandType = NSClassFromString(((NSAttributeDescription *)property).attributeValueClassName);
                 }
                 
                 value = [NSString stringWithFormat:@"%@.%@",
@@ -3564,10 +3578,12 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
             *operand = [NSString stringWithFormat:
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSDate class]]) {
             *bindings = value;
             *operand = @"?";
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSArray class]]) {
             if (predicate.predicateOperatorType == NSBetweenPredicateOperatorType) {
@@ -3581,6 +3597,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                             [operator objectForKey:@"format"],
                             [parameters componentsJoinedByString:@", "]];
             }
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSString class]]) {
             *operand = @"?";
@@ -3591,6 +3608,7 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
             *bindings = [NSString stringWithFormat:
                          [operator objectForKey:@"format"],
                          value];
+            *operandType = [NSString class];
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
             NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
             *operand = @"?";
@@ -3601,14 +3619,17 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
             } else {
                 *bindings = value;
             }
+            *operandType = [NSManagedObjectID class];
         }
         else if (!value || value == [NSNull null]) {
             *bindings = nil;
             *operand = @"NULL";
+            *operandType = [NSNull class];
         }
         else {
             *bindings = value;
             *operand = @"?";
+            *operandType = [value class];
         }
     }
     
