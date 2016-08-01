@@ -3110,6 +3110,11 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
     return result;
 }
 
+static BOOL isCollection(Class class)
+{
+    return [class conformsToProtocol:@protocol(NSFastEnumeration)];
+}
+
 - (NSDictionary *)recursiveWhereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
     
     //    enum {
@@ -3233,14 +3238,14 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
                     case NSInPredicateOperatorType:
                     case NSContainsPredicateOperatorType: {
                         if (comparisonPredicate.predicateOperatorType == NSInPredicateOperatorType) {
-                            if (comparisonPredicate.rightExpression.expressionType != NSConstantValueExpressionType || ![comparisonPredicate.rightExpression.constantValue isKindOfClass:[NSString class]]) {
+                            if (rightOperandClass == Nil || isCollection(rightOperandClass)) {
                                 // not an error, this IN is just not a string operation
                                 break;
                             }
                         }
                         
                         if (comparisonPredicate.predicateOperatorType == NSContainsPredicateOperatorType) {
-                            if (comparisonPredicate.leftExpression.expressionType != NSConstantValueExpressionType || ![comparisonPredicate.leftExpression.constantValue isKindOfClass:[NSString class]]) {
+                            if (leftOperandClass == Nil || isCollection(leftOperandClass)) {
                                 // not an error, this CONTAINS is just not a string operation
                                 break;
                             }
