@@ -1038,7 +1038,7 @@ static void dbsqliteStringBetween(sqlite3_context *context, int argc, sqlite3_va
         const char *operand = (const char *)sqlite3_value_text(argv[1]);
         const char *rangeLow = (const char *)sqlite3_value_text(argv[2]);
         const char *rangeHigh = (const char *)sqlite3_value_text(argv[2]);
-        NSComparisonPredicateOptions options = sqlite3_value_int64(argv[3]);
+        NSComparisonPredicateOptions options = (NSUInteger)sqlite3_value_int64(argv[3]);
         
         NSString *operandString = [[NSString alloc] initWithBytesNoCopy:(void *)operand
                                                                  length:strlen(operand)
@@ -1121,10 +1121,10 @@ static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_
             return;
         }
         
-        NSPredicateOperatorType operation = sqlite3_value_int64(argv[0]);
+        NSPredicateOperatorType operation = (NSUInteger)sqlite3_value_int64(argv[0]);
         const char *operand1 = (const char *)sqlite3_value_text(argv[1]);
         const char *operand2 = (const char *)sqlite3_value_text(argv[2]);
-        NSComparisonPredicateOptions options = sqlite3_value_int64(argv[3]);
+        NSComparisonPredicateOptions options = (NSUInteger)sqlite3_value_int64(argv[3]);
         
         NSString *operand1String = [[NSString alloc] initWithBytesNoCopy:(void *)operand1
                                                                   length:strlen(operand1)
