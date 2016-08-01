@@ -15,6 +15,10 @@
 
 typedef sqlite3_stmt sqlite3_statement;
 
+#ifndef SQLITE_DETERMINISTIC
+#define SQLITE_DETERMINISTIC 0
+#endif
+
 NSString * const EncryptedStoreType = @"EncryptedStore";
 NSString * const EncryptedStorePassphraseKey = @"EncryptedStorePassphrase";
 NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
@@ -23,9 +27,9 @@ NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocati
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
 
 static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
-static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv);
-static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const char **argv);
-static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv);
+static void dbsqliteStringBetween(sqlite3_context *context, int argc, sqlite3_value **argv);
+static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_value **argv);
+
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
@@ -667,38 +671,11 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         // load metadata
         BOOL success = [self performInTransaction:^{
             
-            //make 'LIKE' case-sensitive
-            sqlite3_stmt *setPragma = [self preparedStatementForQuery:@"PRAGMA case_sensitive_like = true;"];
-            if (!setPragma || sqlite3_step(setPragma) != SQLITE_DONE || sqlite3_finalize(setPragma) != SQLITE_OK) {
-                return NO;
-            }
-            
-#ifdef SQLITE_DETERMINISTIC
             //enable regexp
             sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            sqlite3_create_function(database, "ECDSTRINGOPERATION", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, dbsqliteStringOperation, NULL, NULL);
+            sqlite3_create_function(database, "ECDSTRINGBETWEEN", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, dbsqliteStringBetween, NULL, NULL);
             
-            //enable case insentitivity
-            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCase, NULL, NULL);
-
-            //enable diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
-
-            //enable combined case and diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
-#else
-            //enable regexp
-            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8, NULL, (void *)dbsqliteRegExp, NULL, NULL);
-
-            //enable case insentitivity
-            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCase, NULL, NULL);
-
-            //enable diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
-            
-            //enable combined case and diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
-#endif
-
             // ask if we have a metadata table
             BOOL hasTable = NO;
             if (![self hasMetadataTable:&hasTable error:error]) { return NO; }
@@ -1057,48 +1034,219 @@ static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv
     sqlite3_result_int(context, (int)numberOfMatches);
 }
 
-static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv) {
-    assert(argc == 1);
-    NSString* string;
-    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
-
-    /*Safeguard against null returns*/
-    if (aux) {
-        string = [NSString stringWithUTF8String:aux];
-        string = [string stringByFoldingWithOptions:NSCaseInsensitiveSearch locale:nil];
-        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
-    } else {
-        sqlite3_result_text(context, nil, -1, NULL);
+static void dbsqliteStringBetween(sqlite3_context *context, int argc, sqlite3_value **argv) {
+    @autoreleasepool {
+        assert(argc == 4);
+        
+        // if any of the operands is NULL, return NULL
+        if (sqlite3_value_type(argv[0]) == SQLITE_NULL ||
+            sqlite3_value_type(argv[1]) == SQLITE_NULL ||
+            sqlite3_value_type(argv[2]) == SQLITE_NULL) {
+            sqlite3_result_null(context);
+            return;
+        }
+        
+        const char *operand = (const char *)sqlite3_value_text(argv[1]);
+        const char *rangeLow = (const char *)sqlite3_value_text(argv[2]);
+        const char *rangeHigh = (const char *)sqlite3_value_text(argv[2]);
+        NSComparisonPredicateOptions options = (NSUInteger)sqlite3_value_int64(argv[3]);
+        
+        NSString *operandString = [[NSString alloc] initWithBytesNoCopy:(void *)operand
+                                                                 length:strlen(operand)
+                                                               encoding:NSUTF8StringEncoding
+                                                           freeWhenDone:NO];
+        
+        NSString *rangeLowString = [[NSString alloc] initWithBytesNoCopy:(void *)rangeLow
+                                                                  length:strlen(rangeLow)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSString *rangeHighString = [[NSString alloc] initWithBytesNoCopy:(void *)rangeHigh
+                                                                   length:strlen(rangeHigh)
+                                                                 encoding:NSUTF8StringEncoding
+                                                             freeWhenDone:NO];
+        
+        NSStringCompareOptions comparisonOptions = 0;
+        
+        if (options & NSCaseInsensitivePredicateOption) {
+            comparisonOptions |= NSCaseInsensitiveSearch;
+        }
+        
+        if (options & NSDiacriticInsensitivePredicateOption) {
+            comparisonOptions |= NSDiacriticInsensitiveSearch;
+        }
+        
+        BOOL result =
+            [operandString compare:rangeLowString options:comparisonOptions] != NSOrderedAscending &&
+            [rangeHighString compare:operandString options:comparisonOptions] != NSOrderedAscending;
+        
+        sqlite3_result_int(context, result);
     }
 }
 
-static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const char **argv) {
-    assert(argc == 1);
-    NSString* string;
-    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
-
-    /*Safeguard against null returns*/
-    if (aux) {
-        string = [NSString stringWithUTF8String:aux];
-        string = [string stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
-        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
-    } else {
-        sqlite3_result_text(context, nil, -1, NULL);
+static NSString *formatComparisonPredicateOptions(NSComparisonPredicateOptions options) {
+    // special-case the most common options
+    if (options == 0) {
+        return @"";
     }
+    
+    if (options == NSCaseInsensitivePredicateOption) {
+        return @"[c]";
+    }
+    
+    // the general case
+    NSMutableString *optionsString = [NSMutableString stringWithCapacity:5];
+    
+    [optionsString appendString:@"["];
+    
+    if (options & NSCaseInsensitivePredicateOption) {
+        [optionsString appendString:@"c"];
+    }
+    
+    if (options & NSDiacriticInsensitivePredicateOption) {
+        [optionsString appendString:@"d"];
+    }
+    
+    if (options & NSNormalizedPredicateOption) {
+        [optionsString appendString:@"n"];
+    }
+    
+    [optionsString appendString:@"]"];
+    
+    return [optionsString copy];
 }
 
-static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv) {
-    assert(argc == 1);
-    NSString* string;
-    const char *aux = (const char *)sqlite3_value_text((sqlite3_value*)argv[0]);
+static void dbsqliteStringOperation(sqlite3_context *context, int argc, sqlite3_value **argv) {
+    @autoreleasepool {
+        assert(argc == 4);
+        
+        // must have an operator
+        if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+            sqlite3_result_error(context, "NULL operator passed to ECDSTRINGOPERATION", -1);
+            return;
+        }
+        
+        // if any of the two operands is NULL, return NULL
+        if (sqlite3_value_type(argv[1]) == SQLITE_NULL || sqlite3_value_type(argv[2]) == SQLITE_NULL) {
+            sqlite3_result_null(context);
+            return;
+        }
+        
+        NSPredicateOperatorType operation = (NSUInteger)sqlite3_value_int64(argv[0]);
+        const char *operand1 = (const char *)sqlite3_value_text(argv[1]);
+        const char *operand2 = (const char *)sqlite3_value_text(argv[2]);
+        NSComparisonPredicateOptions options = (NSUInteger)sqlite3_value_int64(argv[3]);
+        
+        NSString *operand1String = [[NSString alloc] initWithBytesNoCopy:(void *)operand1
+                                                                  length:strlen(operand1)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSString *operand2String = [[NSString alloc] initWithBytesNoCopy:(void *)operand2
+                                                                  length:strlen(operand2)
+                                                                encoding:NSUTF8StringEncoding
+                                                            freeWhenDone:NO];
+        
+        NSStringCompareOptions comparisonOptions = 0;
+        
+        if (options & NSNormalizedPredicateOption) {
+            comparisonOptions = NSLiteralSearch;
+        }
+        else {
+            if (options & NSCaseInsensitivePredicateOption) {
+                comparisonOptions |= NSCaseInsensitiveSearch;
+            }
+            
+            if (options & NSDiacriticInsensitivePredicateOption) {
+                comparisonOptions |= NSDiacriticInsensitiveSearch;
+            }
+        }
+        
+        switch (operation) {
+            case NSLessThanPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedAscending);
+                return;
+                
+            case NSLessThanOrEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedDescending);
+                return;
+                
+            case NSGreaterThanPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedDescending);
+                return;
+                
+            case NSGreaterThanOrEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedAscending);
+                return;
+                
+            case NSEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] == NSOrderedSame);
+                return;
+                
+            case NSNotEqualToPredicateOperatorType:
+                sqlite3_result_int(context, [operand1String compare:operand2String options:comparisonOptions] != NSOrderedSame);
+                return;
+                
+            case NSMatchesPredicateOperatorType: {
+                // TODO: we should probably memoize the predicate
+                NSString *matchesPredicateFormat = [NSString stringWithFormat:@"SELF MATCHES%@ %%@",
+                                                    formatComparisonPredicateOptions(options)];
+                
+                BOOL matchesResult = [[NSPredicate predicateWithFormat:matchesPredicateFormat,
+                                       operand2String] evaluateWithObject:operand1String];
+                
+                sqlite3_result_int(context, !!matchesResult);
+                return;
+            }
+                
+            case NSLikePredicateOperatorType: {
+                // TODO: we should probably memoize the predicate
+                NSString *likePredicateFormat = [NSString stringWithFormat:@"SELF LIKE%@ %%@",
+                                                 formatComparisonPredicateOptions(options)];
+                
+                BOOL likeResult = [[NSPredicate predicateWithFormat:likePredicateFormat,
+                                    operand2String] evaluateWithObject:operand1String];
+                
+                sqlite3_result_int(context, !!likeResult);
+                return;
+            }
+                
+            case NSBeginsWithPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String
+                                                      options:NSAnchoredSearch | comparisonOptions];
 
-    /*Safeguard against null returns*/
-    if (aux) {
-        string = [NSString stringWithUTF8String:aux];
-        string = [string stringByFoldingWithOptions:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch locale:nil];
-        sqlite3_result_text(context, [string UTF8String], -1, SQLITE_TRANSIENT);
-    } else {
-        sqlite3_result_text(context, nil, -1, NULL);
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSEndsWithPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String
+                                                      options:NSAnchoredSearch | NSBackwardsSearch | comparisonOptions];
+
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSInPredicateOperatorType: {
+                NSRange range = [operand2String rangeOfString:operand1String options:comparisonOptions];
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            case NSContainsPredicateOperatorType: {
+                NSRange range = [operand1String rangeOfString:operand2String options:comparisonOptions];
+                sqlite3_result_int(context, range.location != NSNotFound);
+                return;
+            }
+                
+            default:
+                break;
+        }
+        
+        NSString *errorString = [NSString stringWithFormat:@"unsupported operator type %lu for ECDSTRINGOPERATION",
+                                 (unsigned long)operation];
+        
+        sqlite3_result_error(context, errorString.UTF8String, -1);
     }
 }
 
@@ -2956,6 +3104,11 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     return result;
 }
 
+static BOOL isCollection(Class class)
+{
+    return [class conformsToProtocol:@protocol(NSFastEnumeration)];
+}
+
 - (NSDictionary *)recursiveWhereClauseWithFetchRequest:(NSFetchRequest *)request predicate:(NSPredicate *)predicate {
     
     //    enum {
@@ -3031,36 +3184,141 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         
         // left expression
         id leftOperand = nil;
+        Class leftOperandClass = Nil;
         id leftBindings = nil;
         [self parseExpression:comparisonPredicate.leftExpression
                   inPredicate:comparisonPredicate
                inFetchRequest:request
                      operator:operator
                       operand:&leftOperand
+                       ofType:&leftOperandClass
                      bindings:&leftBindings];
         
         // right expression
         id rightOperand = nil;
+        Class rightOperandClass = Nil;
         id rightBindings = nil;
         [self parseExpression:comparisonPredicate.rightExpression
                   inPredicate:comparisonPredicate
                inFetchRequest:request
                      operator:operator
                       operand:&rightOperand
+                       ofType:&rightOperandClass
                      bindings:&rightBindings];
         
         // build result and return
-        if (rightOperand && !rightBindings) {
-            if([[operator objectForKey:@"operator"] isEqualToString:@"!="]) {
-                query = [@[leftOperand, @"IS NOT", rightOperand] componentsJoinedByString:@" "];
+        if ([rightOperandClass isEqual:[NSNull class]] && (comparisonPredicate.predicateOperatorType == NSEqualToPredicateOperatorType || comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType)) {
+            if(comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType) {
+                query = [@[leftOperand, @"IS NOT NULL"] componentsJoinedByString:@" "];
             } else {
-                query = [@[leftOperand, @"IS", rightOperand] componentsJoinedByString:@" "];
+                query = [@[leftOperand, @"IS NULL"] componentsJoinedByString:@" "];
+            }
+        }
+        else if ([leftOperandClass isEqual:[NSNull class]] && (comparisonPredicate.predicateOperatorType == NSEqualToPredicateOperatorType || comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType)) {
+            if(comparisonPredicate.predicateOperatorType == NSNotEqualToPredicateOperatorType) {
+                query = [@[rightOperand, @"IS NOT NULL"] componentsJoinedByString:@" "];
+            } else {
+                query = [@[rightOperand, @"IS NULL"] componentsJoinedByString:@" "];
             }
         }
         else {
-            query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
-            if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                query = [query stringByAppendingString:@" ESCAPE '\\'"];
+            BOOL isStringOperation = NO;
+
+            // Note: SQLite's LIKE is case-insensitive, so if we want a case-sensitive LIKE, we have to use ECDSTRINGOPERATION
+            if (comparisonPredicate.options || comparisonPredicate.predicateOperatorType == NSLikePredicateOperatorType) {
+                switch (comparisonPredicate.predicateOperatorType) {
+                    case NSLessThanPredicateOperatorType:
+                    case NSLessThanOrEqualToPredicateOperatorType:
+                    case NSGreaterThanPredicateOperatorType:
+                    case NSGreaterThanOrEqualToPredicateOperatorType:
+                    case NSEqualToPredicateOperatorType:
+                    case NSNotEqualToPredicateOperatorType:
+                    case NSMatchesPredicateOperatorType:
+                    case NSLikePredicateOperatorType:
+                    case NSBeginsWithPredicateOperatorType:
+                    case NSEndsWithPredicateOperatorType:
+                    case NSInPredicateOperatorType:
+                    case NSContainsPredicateOperatorType: {
+                        if (comparisonPredicate.predicateOperatorType == NSInPredicateOperatorType) {
+                            if (rightOperandClass == Nil || isCollection(rightOperandClass)) {
+                                // not an error, this IN is just not a string operation
+                                break;
+                            }
+                        }
+                        
+                        if (comparisonPredicate.predicateOperatorType == NSContainsPredicateOperatorType) {
+                            if (leftOperandClass == Nil || isCollection(leftOperandClass)) {
+                                // not an error, this CONTAINS is just not a string operation
+                                break;
+                            }
+                        }
+                        
+                        isStringOperation = YES;
+                        
+                        // Re-parse the expressions with a dummy operator that formats the operand/bindings verbatim
+                        operator = @{ @"operator" : @"ECDSTRINGOPERATION", @"format" : @"%@" };
+                        
+                        // left expression
+                        leftOperand = nil;
+                        leftOperandClass = Nil;
+                        leftBindings = nil;
+                        [self parseExpression:comparisonPredicate.leftExpression
+                                  inPredicate:comparisonPredicate
+                               inFetchRequest:request
+                                     operator:operator
+                                      operand:&leftOperand
+                                       ofType:&leftOperandClass
+                                     bindings:&leftBindings];
+                        
+                        // right expression
+                        rightOperand = nil;
+                        rightOperandClass = Nil;
+                        rightBindings = nil;
+                        [self parseExpression:comparisonPredicate.rightExpression
+                                  inPredicate:comparisonPredicate
+                               inFetchRequest:request
+                                     operator:operator
+                                      operand:&rightOperand
+                                       ofType:&rightOperandClass
+                                     bindings:&rightBindings];
+                        
+                        query = [NSString stringWithFormat:@"ECDSTRINGOPERATION(%@, %@, %@, %@)",
+                                 @(comparisonPredicate.predicateOperatorType),
+                                 leftOperand,
+                                 rightOperand,
+                                 @(comparisonPredicate.options)];
+                        
+                        break;
+                    }
+                        
+                    case NSBetweenPredicateOperatorType: {
+                        if (comparisonPredicate.rightExpression.expressionType != NSConstantValueExpressionType ||
+                            ![comparisonPredicate.rightExpression.constantValue isKindOfClass:[NSArray class]]) {
+                            // TODO: we should emit a warning if we can't handle the operand types
+                            break;
+                        }
+                        
+                        NSArray *range = comparisonPredicate.rightExpression.constantValue;
+                        rightBindings = @[range[0], range[1]];
+                        isStringOperation = YES;
+                        
+                        query = [NSString stringWithFormat:@"ECDSTRINGBETWEEN(%@, ?, ?, %@)",
+                                 leftOperand,
+                                 @(comparisonPredicate.options)];
+                        
+                        break;
+                    }
+                        
+                    default:
+                        break;
+                }
+            }
+            
+            if (!isStringOperation) {
+                query = [@[leftOperand, [operator objectForKey:@"operator"], rightOperand] componentsJoinedByString:@" "];
+                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                    query = [query stringByAppendingString:@" ESCAPE '\\'"];
+                }
             }
         }
         
@@ -3158,6 +3416,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
          inFetchRequest:(NSFetchRequest *)request
                operator:(NSDictionary *)operator
                 operand:(id *)operand
+                 ofType:(Class *)operandType
                bindings:(id *)bindings {
     NSExpressionType type = [expression expressionType];
     
@@ -3201,8 +3460,12 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                          [self tableNameForEntity:entity],
                          [self foreignKeyColumnForRelationship:property]];
             }
+            *operandType = [NSManagedObjectID class];
         }
         else if (property != nil) {
+            if ([property isKindOfClass:[NSAttributeDescription class]]) {
+                *operandType = NSClassFromString(((NSAttributeDescription *)property).attributeValueClassName);
+            }
             value = [NSString stringWithFormat:@"%@.%@",
                      [self tableNameForEntity:entity],
                      value];
@@ -3266,6 +3529,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         }
                     }
                 }
+                *operandType = [NSNumber class];
                 value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
                 foundPredicate = YES;
             }
@@ -3290,6 +3554,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                               rel.destinationEntity.typeHash]];
                 }
                 value = [value stringByAppendingString:@")"];
+                *operandType = [NSNumber class];
                 foundPredicate = YES;
             }
             
@@ -3305,7 +3570,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         NSEntityDescription * entity = [property destinationEntity];
                         subProperties = entity.propertiesByName;
                     } else {
-                        property = nil;
                         *stop = YES;
                     }
                 }];
@@ -3313,22 +3577,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 if ([property isKindOfClass:[NSRelationshipDescription class]]) {
                     [request setReturnsDistinctResults:YES];
                     lastComponentName = @"__objectID";
+                    *operandType = [NSManagedObjectID class];
+                }
+                else if ([property isKindOfClass:[NSAttributeDescription class]]) {
+                    *operandType = NSClassFromString(((NSAttributeDescription *)property).attributeValueClassName);
                 }
                 
                 value = [NSString stringWithFormat:@"%@.%@",
                      [self joinedTableNameForComponents:[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count -1)] forRelationship:NO], lastComponentName];
             }
         }
-        NSComparisonPredicateOptions options = [predicate options];
-        if ((options & NSCaseInsensitivePredicateOption) && (options & NSDiacriticInsensitivePredicateOption)) {
-            *operand = [@[@"STRIP_CASE_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
-        } else if (options & NSCaseInsensitivePredicateOption) {
-            *operand = [@[@"STRIP_CASE(", value, @")"] componentsJoinedByString:@""];
-        } else if (options & NSDiacriticInsensitivePredicateOption) {
-            *operand = [@[@"STRIP_DIACRITICS(", value, @")"] componentsJoinedByString:@""];
-        } else {
         *operand = value;
-    }
     }
     else if (type == NSEvaluatedObjectExpressionType) {
         *operand = @"__objectid";
@@ -3344,10 +3603,12 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             *operand = [NSString stringWithFormat:
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSDate class]]) {
             *bindings = value;
             *operand = @"?";
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSArray class]]) {
             if (predicate.predicateOperatorType == NSBetweenPredicateOperatorType) {
@@ -3361,22 +3622,18 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                             [operator objectForKey:@"format"],
                             [parameters componentsJoinedByString:@", "]];
             }
+            *operandType = [value class];
         }
         else if ([value isKindOfClass:[NSString class]]) {
-                if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
-                    BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
-                    value = [self escapedString:value allowWildcards:isLike];
-                }
-            NSComparisonPredicateOptions options = [predicate options];
-            if ((options & NSCaseInsensitivePredicateOption) && (options & NSDiacriticInsensitivePredicateOption)) {
-                value = [value stringByFoldingWithOptions:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch locale:nil];
-            } else if (options & NSCaseInsensitivePredicateOption) {
-                value = [value stringByFoldingWithOptions:NSCaseInsensitiveSearch locale:nil];
-            } else if (options & NSDiacriticInsensitivePredicateOption) {
-                value = [value stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
+            *operand = @"?";
+            if ([[operator objectForKey:@"operator"] isEqualToString:@"LIKE"]) {
+                BOOL isLike = predicate.predicateOperatorType == NSLikePredicateOperatorType;
+                value = [self escapedString:value allowWildcards:isLike];
             }
-                *operand = @"?";
-            *bindings = [NSString stringWithFormat:[operator objectForKey:@"format"], value];
+            *bindings = [NSString stringWithFormat:
+                         [operator objectForKey:@"format"],
+                         value];
+            *operandType = [NSString class];
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
             NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
             *operand = @"?";
@@ -3387,14 +3644,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             } else {
                 *bindings = value;
             }
+            *operandType = [NSManagedObjectID class];
         }
         else if (!value || value == [NSNull null]) {
             *bindings = nil;
             *operand = @"NULL";
+            *operandType = [NSNull class];
         }
         else {
             *bindings = value;
             *operand = @"?";
+            *operandType = [value class];
         }
     }
     
