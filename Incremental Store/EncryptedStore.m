@@ -3245,6 +3245,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             
             // Test if the last component is actually a predicate
             // TODO: Conflict if the model has an attribute named length?
+            NSString * entityTableName = [self tableNameForEntity:entity];
             if ([lastComponent isEqualToString:@"length"]){
                                 
                 // We terminate when there is one item left since that is the field of interest
@@ -3266,7 +3267,11 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         }
                     }
                 }
-                value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+                // to resolve the issue "ambiguous column name:" in case of join clause, we need
+                // to add entityTableName before the column name explictly
+                value = [NSString stringWithFormat:@"LENGTH(%@.%@)", entityTableName,
+                                [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+
                 foundPredicate = YES;
             }
 
@@ -3276,7 +3281,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 NSRelationshipDescription *rel = [self relationshipForEntity:entity
                                                                         name:[pathComponents objectAtIndex:0]];
                 NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
-                NSString * entityTableName = [self tableNameForEntity:entity];
                 value = [NSString stringWithFormat:@"(SELECT COUNT(*) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
                          destinationName,
                          rel.name,
