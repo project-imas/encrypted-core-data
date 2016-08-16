@@ -351,7 +351,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             while (sqlite3_step(statement) == SQLITE_ROW) {
                 NSMutableDictionary* singleResult = [NSMutableDictionary dictionary];
                 [propertiesToFetch enumerateObjectsUsingBlock:^(id property, NSUInteger idx, BOOL *stop) {
-                    id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx];
+                    id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx withEntity:entity];
                     if (value)
                     {
                         [singleResult setValue:value forKey:[property name]];
@@ -475,7 +475,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
         
         [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             NSPropertyDescription *property = [properties objectForKey:obj];
-            id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx + offset];
+            id value = [self valueForProperty:property inStatement:statement atIndex:(int)idx + offset withEntity:entity];
             
             if ([entityTypes containsObject:obj]) {
                 // This key needs an entity type - the next column will be it, so shift all values from now on
@@ -2780,7 +2780,8 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 
 - (id)valueForProperty:(NSPropertyDescription *)property
            inStatement:(sqlite3_statement *)theStatement
-               atIndex:(int)index {
+               atIndex:(int)index
+                withEntity:(NSEntityDescription *)theEntity{
     
     sqlite3_stmt *statement = (sqlite3_stmt *)theStatement;
     
@@ -2865,14 +2866,15 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     
     else if ([property isKindOfClass:[NSExpressionDescription class]]) {
         NSNumber *number = @(sqlite3_column_double(statement, index));
-        return [self expressionDescriptionTypeValue:(NSExpressionDescription *)property withReferenceNumber:number];
+        return [self expressionDescriptionTypeValue:(NSExpressionDescription *)property withReferenceNumber:number withEntity:theEntity];
     }
     
     return nil;
 }
 
 -(id)expressionDescriptionTypeValue:(NSExpressionDescription *)expressionDescription
-                withReferenceNumber:(NSNumber *)number {
+                withReferenceNumber:(NSNumber *)number
+                         withEntity:(NSEntityDescription *)entity {
     
     switch ([expressionDescription expressionResultType]) {
         case NSObjectIDAttributeType:
@@ -2880,11 +2882,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 return [self newObjectIDForEntity:[expressionDescription entity] referenceObject:number];
             else if (expressionDescription.name) {
                 NSEntityDescription * e = [[[self persistentStoreCoordinator] managedObjectModel] entitiesByName][expressionDescription.name];
+                
+                // If we fail to determine the entity, use the one we have passed in
+                if (e == nil) {
+                    e = entity;
+                }
+                
                 return [self newObjectIDForEntity:e referenceObject:number];
             }
             else
             {
-                return nil;
+                return [self newObjectIDForEntity:entity referenceObject:number];
             }
             break;
             
@@ -3245,6 +3253,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             
             // Test if the last component is actually a predicate
             // TODO: Conflict if the model has an attribute named length?
+            NSString * entityTableName = [self tableNameForEntity:entity];
             if ([lastComponent isEqualToString:@"length"]){
                                 
                 // We terminate when there is one item left since that is the field of interest
@@ -3266,7 +3275,11 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         }
                     }
                 }
-                value = [NSString stringWithFormat:@"LENGTH(%@)", [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+                // to resolve the issue "ambiguous column name:" in case of join clause, we need
+                // to add entityTableName before the column name explictly
+                value = [NSString stringWithFormat:@"LENGTH(%@.%@)", entityTableName,
+                                [[pathComponents subarrayWithRange:NSMakeRange(0, pathComponents.count - 1)] componentsJoinedByString:@"."]];
+
                 foundPredicate = YES;
             }
 
@@ -3276,7 +3289,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 NSRelationshipDescription *rel = [self relationshipForEntity:entity
                                                                         name:[pathComponents objectAtIndex:0]];
                 NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
-                NSString * entityTableName = [self tableNameForEntity:entity];
                 value = [NSString stringWithFormat:@"(SELECT COUNT(*) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
                          destinationName,
                          rel.name,
