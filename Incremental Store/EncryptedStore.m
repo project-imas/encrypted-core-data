@@ -3283,25 +3283,183 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 foundPredicate = YES;
             }
 
-            // We should probably provide for @count on nested relationships
-            // This will do for now though
-            if ([lastComponent isEqualToString:@"@count"] && pathComponents.count == 2){
-                NSRelationshipDescription *rel = [self relationshipForEntity:entity
-                                                                        name:[pathComponents objectAtIndex:0]];
-                NSString * destinationName = [self tableNameForEntity:rel.destinationEntity];
-                value = [NSString stringWithFormat:@"(SELECT COUNT(*) FROM %@ [%@] WHERE [%@].%@ = %@.__objectid",
-                         destinationName,
-                         rel.name,
-                         rel.name,
-                         [self foreignKeyColumnForRelationship:rel.inverseRelationship],
-                         entityTableName];
-                if (rel.destinationEntity.superentity != nil) {
-                    value = [value stringByAppendingString:
-                             [NSString stringWithFormat:@" AND [%@].__entityType = %ld",
-                              rel.name,
-                              rel.destinationEntity.typeHash]];
+
+            // @count on key path (relationships)
+            if ([lastComponent isEqualToString:@"@count"]) {
+
+                NSMutableArray<NSRelationshipDescription*> *relationships = [NSMutableArray arrayWithCapacity:pathComponents.count-1];
+                {
+                    NSEntityDescription *relEntity = entity;
+                    for (NSUInteger i=0; i < pathComponents.count - 1; i++) {
+                        NSRelationshipDescription *rel = [self relationshipForEntity:relEntity
+                                                                                name:[pathComponents objectAtIndex:i]];
+                        [relationships addObject:rel];
+                        relEntity = rel.destinationEntity;
+                    }
                 }
-                value = [value stringByAppendingString:@")"];
+
+                NSString *path = nil;
+                NSString *prevPath = nil;
+
+                NSMutableString *subquery = [NSMutableString string];// The subquery to fetch the count
+
+                // First we construct all the JOINs for nested relationships
+                for (NSRelationshipDescription *rel in relationships) {
+                    prevPath = path;
+                    path = path ? [path stringByAppendingFormat:@".%@", rel.name] : rel.name;
+
+                    if (prevPath) {
+                        NSString *destTableName = [self tableNameForEntity:rel.destinationEntity];
+
+                        if (rel.isToMany) {
+                            if (rel.inverseRelationship.isToMany) { // many-to-many
+                                NSString *relationTable = [self tableNameForRelationship:rel];
+
+                                NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+                                BOOL firstColumnIsSource = [self relationships:rel
+                                                                 firstIDColumn:&firstIDColumn
+                                                                secondIDColumn:&secondIDColumn
+                                                              firstOrderColumn:&firstOrderColumn
+                                                             secondOrderColumn:&secondOrderColumn];
+
+                                NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
+                                NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
+
+                                NSString *relationTableAlias = [NSString stringWithFormat:@"%@_rel", path];
+
+                                [subquery appendFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]\n",
+                                                         relationTable,     // relation table
+                                                         relationTableAlias,// relation table alias
+
+                                                         prevPath,          // left table alias
+                                                         @"__objectid",     // ID column on left table
+
+                                                         relationTableAlias,// relation table alias
+                                                         sourceIDColumn];   // foreign key on relation table
+
+                                [subquery appendFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]",
+                                                         destTableName,      // right table
+                                                         path,               // right table alias
+
+                                                         relationTableAlias, // relation table alias
+                                                         destinationIDColumn,// foreign key on relation table
+
+                                                         path,               // right table alias
+                                                         @"__objectid"];     // ID column on right table
+
+                            } else { // one-to-many
+                                [subquery appendFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]",
+                                                         destTableName, // right table
+                                                         path,          // right table alias
+
+                                                         prevPath,      // left table alias
+                                                         @"__objectid", // ID column on left table
+
+                                                         path,          // right table alias
+                                                         [self foreignKeyColumnForRelationship:rel.inverseRelationship]]; // foreign key on right table
+                            }
+                        } else { // one-to-one
+                            [subquery appendFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]",
+                                                     destTableName, // right table
+                                                     path,          // right table alias
+
+                                                     prevPath,      // left table alias
+                                                     [self foreignKeyColumnForRelationship:rel], // foreign key on left table
+
+                                                     path,          // right table alias
+                                                     @"__objectid"];// ID column on right table
+                        }
+
+                        // Add an entity type filter to the join of the destination table if it's a subentity
+                        if (rel.destinationEntity.superentity != nil) {
+                            [subquery appendFormat:@" AND [%@].__entityType IN (%@)",
+                                                     path,
+                                                     [rel.destinationEntity.typeHashSubhierarchy componentsJoinedByString:@", "]];
+                        }
+
+                        [subquery appendString:@"\n"];
+                    }
+                }
+
+                // Next after the JOINs we construct the SELECT to COUNT the results
+                // FROM the last joined table and prepend it to the joins.
+
+                NSRelationshipDescription *firstRel = [relationships firstObject];
+
+                BOOL isFirstRelManyToMany = firstRel.isToMany && firstRel.inverseRelationship.isToMany;
+
+                NSString *firstDestTableName = [self tableNameForEntity:firstRel.destinationEntity];
+
+                NSMutableString *select = [NSMutableString stringWithFormat:@"(SELECT COUNT([%@].[%@])\nFROM %@ [%@]\n",
+                                                                               path,
+                                                                               @"__objectid",
+
+                                                                               isFirstRelManyToMany ? [self tableNameForRelationship:firstRel] : firstDestTableName,
+                                                                               isFirstRelManyToMany ? [NSString stringWithFormat:@"%@_rel", firstRel.name] : firstRel.name];
+
+                if (isFirstRelManyToMany) {
+                    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+                    BOOL firstColumnIsSource = [self relationships:firstRel
+                                                     firstIDColumn:&firstIDColumn
+                                                    secondIDColumn:&secondIDColumn
+                                                  firstOrderColumn:&firstOrderColumn
+                                                 secondOrderColumn:&secondOrderColumn];
+
+                    NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
+                    NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
+
+                    select = [select stringByAppendingFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]\n",
+                                                                firstDestTableName,     // right table
+                                                                firstRel.name,          // right table alias
+
+                                                                [NSString stringWithFormat:@"%@_rel", firstRel.name],// relation table alias
+                                                                destinationIDColumn,    // foreign key on relation table
+
+                                                                firstRel.name,          // right table alias
+                                                                @"__objectid"];
+                }
+
+                [subquery insertString:select atIndex:0];
+
+                // And last we add a WHERE clause to link/filter the subquery with the main query
+
+                if (isFirstRelManyToMany) {
+                    NSString *firstIDColumn, *secondIDColumn, *firstOrderColumn, *secondOrderColumn;
+                    BOOL firstColumnIsSource = [self relationships:firstRel
+                                                     firstIDColumn:&firstIDColumn
+                                                    secondIDColumn:&secondIDColumn
+                                                  firstOrderColumn:&firstOrderColumn
+                                                 secondOrderColumn:&secondOrderColumn];
+
+                    NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
+                    NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
+
+                    [subquery appendFormat:@"WHERE %@.[%@] = [%@].[%@]",
+                                             entityTableName,
+                                             @"__objectid",
+                                             [NSString stringWithFormat:@"%@_rel", firstRel.name],
+                                             sourceIDColumn];
+                } else {
+                    [subquery appendFormat:@"WHERE %@.[%@] = [%@].[%@]",
+                                             entityTableName,
+                                             firstRel.isToMany ? @"__objectid" : [self foreignKeyColumnForRelationship:firstRel],
+                                             firstRel.name,
+                                             firstRel.isToMany ? [self foreignKeyColumnForRelationship:firstRel.inverseRelationship] : @"__objectid"];
+                }
+
+                // Again don't forget the entity type filter if we're querying a subentity
+                if (firstRel.destinationEntity.superentity != nil) {
+                    [subquery appendFormat:@" AND [%@].__entityType IN (%@)",
+                                            firstRel.name,
+                                            [firstRel.destinationEntity.typeHashSubhierarchy componentsJoinedByString:@", "]];
+                }
+
+                [subquery appendString:@")"];
+
+                // Set the subquery to be the equivalent of the CoreData expression
+                value = subquery;
+
+                // Let it be known we did it!
                 foundPredicate = YES;
             }
             
