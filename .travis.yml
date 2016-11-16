@@ -1,9 +1,9 @@
 language: objective-c
-osx_image: xcode8.1
+osx_image: xcode8
 
 before_install:
-    - brew update
-    - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
+    # - brew update
+    # - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
 
 script:
     - pushd vendor/sqlcipher/sqlcipher.xcodeproj
