@@ -2,17 +2,27 @@ language: objective-c
 osx_image: xcode8.1
 
 before_install:
-    - brew update
-    - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
-
+    - gpg2 --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+    - rvm get head
+    # - brew update
+    # - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
+    
 script:
+    - pushd vendor/sqlcipher
+    - git submodule init
+    - git submodule update
+    - ./configure
+    - make sqlite3.c
+    - popd
     - pushd vendor/sqlcipher/sqlcipher.xcodeproj
     - cp project.pbxproj proj.tmp
     - sed 's/ CFLAGS=../ CFLAGS=\\"-miphoneos-version-min=6.0 /' proj.tmp > project.pbxproj
     - popd
     - cd exampleProjects/IncrementalStore
     # 32-bit tests
-    # - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" run-tests -destination "platform=iOS Simulator,name=iPhone 5"
+    - set -o pipefail && xcodebuild -sdk iphonesimulator -scheme "Incremental Store Demo" build test -destination "platform=iOS Simulator,name=iPhone 5" | xcpretty
     # 64-bit tests
-    - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" run-tests
+    - set -o pipefail && xcodebuild -sdk iphonesimulator -scheme "Incremental Store Demo" build test -destination "platform=iOS Simulator,name=iPhone 5s" | xcpretty
+    - sleep 20
+    
     

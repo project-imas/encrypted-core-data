@@ -206,7 +206,10 @@
     for (NSUInteger i = 0; i < count; i++) {
         id user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
         if(arc4random_uniform(2) == 1) a = 'A';
-        [user setValue:[NSString stringWithFormat:@"%cusername",(char)(arc4random_uniform(26) + a)] forKey:@"name"];
+        NSString *name = [NSString stringWithFormat:@"%cusername",(char)(arc4random_uniform(26) + a)];
+        [user setValue:name forKey:@"name"];
+        [user setValue:@0 forKey:@"age"];
+        [user setValue:@NO forKey:@"admin"];
         [users addObject:user];
     }
     
@@ -222,6 +225,7 @@
     XCTAssertNil(error, @"Could not execute fetch request.");
     XCTAssertEqual(testCount, count, @"The number of users is wrong.");
     
+    return users;
 }
 
 - (void)setUp {
