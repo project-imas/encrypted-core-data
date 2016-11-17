@@ -1,5 +1,5 @@
 language: objective-c
-osx_image: xcode8
+osx_image: xcode8.1
 
 before_install:
     # - brew update
@@ -15,6 +15,6 @@ script:
     # - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" run-tests -destination "platform=iOS Simulator,name=iPhone 5"
     # 64-bit tests
     - xcodebuild -sdk iphonesimulator -scheme "Incremental Store Demo" build test -destination "platform=iOS Simulator,name=iPhone 5s"
-    
+    sleep 20
     
     
