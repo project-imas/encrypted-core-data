@@ -12,6 +12,7 @@ script:
     - git submodule init
     - git submodule update
     - ./configure
+    - make sqlite3.c
     - popd
     - pushd vendor/sqlcipher/sqlcipher.xcodeproj
     - cp project.pbxproj proj.tmp
