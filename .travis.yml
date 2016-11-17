@@ -4,8 +4,12 @@ osx_image: xcode8.1
 before_install:
     # - brew update
     # - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
-
+    
 script:
+    - pushd vendor/sqlcipher
+    - git submodule init
+    - git submodule update
+    - popd
     - pushd vendor/sqlcipher/sqlcipher.xcodeproj
     - cp project.pbxproj proj.tmp
     - sed 's/ CFLAGS=../ CFLAGS=\\"-miphoneos-version-min=6.0 /' proj.tmp > project.pbxproj
