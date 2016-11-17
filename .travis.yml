@@ -14,6 +14,7 @@ script:
     # 32-bit tests
     # - xctool -sdk iphonesimulator -scheme "Incremental Store Demo" run-tests -destination "platform=iOS Simulator,name=iPhone 5"
     # 64-bit tests
-    - set -o pipefail && xcodebuild -sdk iphonesimulator -scheme "Incremental Store Demo" build test -destination "platform=iOS Simulator,name=iPhone 5s" | xcpretty
+    - xcodebuild -sdk iphonesimulator -scheme "Incremental Store Demo" build test -destination "platform=iOS Simulator,name=iPhone 5s"
+    
     
     
