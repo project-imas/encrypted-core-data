@@ -2,6 +2,7 @@ language: objective-c
 osx_image: xcode8.1
 
 before_install:
+    - rvm get head
     # - brew update
     # - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
     
@@ -9,7 +10,7 @@ script:
     - pushd vendor/sqlcipher
     - git submodule init
     - git submodule update
-    - ./configure --enable-tempstore=yes CFLAGS="-DSQLITE_HAS_CODEC" LDFLAGS="-lcrypto"
+    - ./configure
     - make
     - popd
     - pushd vendor/sqlcipher/sqlcipher.xcodeproj
