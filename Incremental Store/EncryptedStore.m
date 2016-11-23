@@ -3576,6 +3576,35 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             *operand = @"?";
         }
     }
+
+    // a collection that contains further expressions
+    else if (type == NSAggregateExpressionType) {
+        NSUInteger exprCount = [expression.collection count];
+        NSMutableArray *subOperands = [NSMutableArray arrayWithCapacity:exprCount];
+        *bindings = [NSMutableArray arrayWithCapacity:exprCount];
+
+        // The implicit operation applying to the single expressions
+        // within the collection would be the equality operator.
+        NSDictionary *exprOperator = @{ @"operator" : @"=", @"format" : @"%@" };
+
+        for (NSExpression *expr in expression.collection) {
+            id operand = nil;
+            id binding = nil;
+            [self parseExpression:expr
+                      inPredicate:predicate
+                   inFetchRequest:request
+                         operator:exprOperator
+                          operand:&operand
+                         bindings:&binding];
+
+            if (operand) [subOperands addObject:operand];
+            if (binding) [*bindings addObject:binding];
+        }
+
+        *operand = [NSString stringWithFormat:[operator objectForKey:@"format"],
+                                                [subOperands componentsJoinedByString:@","]];
+        *bindings = [*bindings cmdFlatten];
+    }
     
     // unsupported type
     else {
