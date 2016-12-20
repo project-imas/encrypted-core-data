@@ -665,6 +665,22 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             return NO;
         }
         
+        // invoke vacuum if needed
+        if ([self.options[NSSQLiteManualVacuumOption] boolValue]) {
+            char *errorMessage = NULL;
+            
+            if (sqlite3_exec(database, "VACUUM;", NULL, NULL, &errorMessage) != SQLITE_OK) {
+                if (errorMessage != NULL) {
+                    NSLog(@"Failed to invoke SQLite's VACUUM command with error: \"%s\".", errorMessage);
+                    
+                    sqlite3_free(errorMessage);
+                }
+                else {
+                    NSLog(@"Failed to invoke SQLite's VACUUM command.");
+                }
+            }
+        }
+        
         // load metadata
         BOOL success = [self performInTransaction:^{
             
@@ -3417,7 +3433,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                     NSString *sourceIDColumn = firstColumnIsSource ? firstIDColumn : secondIDColumn;
                     NSString *destinationIDColumn = firstColumnIsSource ? secondIDColumn : firstIDColumn;
 
-                    select = [select stringByAppendingFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]\n",
+                    [select appendFormat:@"LEFT OUTER JOIN %@ [%@] ON [%@].[%@] = [%@].[%@]\n",
                                                                 firstDestTableName,     // right table
                                                                 firstRel.name,          // right table alias
 
