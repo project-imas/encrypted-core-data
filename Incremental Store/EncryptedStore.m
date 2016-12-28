@@ -28,6 +28,9 @@ static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const ch
 static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv);
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
+static NSString * const EncryptedStoreMetadataTableCheckVersionKey = @"EncryptedStoreMetadataTableCheckVersion";
+
+static const NSInteger kTableCheckVersion = 1;
 
 #pragma mark - category interfaces
 
@@ -726,7 +729,21 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     return NO;
                 }
                 sqlite3_finalize(statement);
-                
+
+                if ([metadata[EncryptedStoreMetadataTableCheckVersionKey] integerValue] < kTableCheckVersion) {
+                    // should check for missing subentity columns and many-to-many relationship tables
+                    if (![self checkTableForMissingColumns:metadata error:error]) {
+                        return NO;
+                    }
+                    NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                    mutableMetadata[EncryptedStoreMetadataTableCheckVersionKey] = @(kTableCheckVersion);
+                    [self setMetadata:mutableMetadata];
+                    if (![self saveMetadata]) {
+                        if (error) { *error = [self databaseError]; }
+                        return NO;
+                    }
+                }
+
                 // run migrations
                 NSDictionary *options = [self options];
                 if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
@@ -748,6 +765,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                         
                         // no migration is needed if the old and new models are identical:
                         if ([[oldModel entityVersionHashesByName] isEqualToDictionary:[newModel entityVersionHashesByName]]) {
+                            // TODO: check for entity column index changes
                             return YES;
                         }
                         
@@ -1644,6 +1662,36 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     return success;
 }
 
+- (BOOL)getTableColumnNames:(NSSet **)nameSet tableName:(NSString *)tableName error:(NSError **)error
+{
+    NSString *tiPragmaStr = [NSString stringWithFormat:@"PRAGMA table_info(%@);", tableName];
+    sqlite3_stmt *tiPragma = [self preparedStatementForQuery:tiPragmaStr];
+
+    //NSLog(@"table : %@", tableName);
+
+    NSMutableSet *mNameSet = [NSMutableSet set];
+    while (sqlite3_step(tiPragma) == SQLITE_ROW) {
+        //const int rowId = sqlite3_column_int(tiPragma, 0);
+        const char *name = sqlite3_column_text(tiPragma, 1);
+        //const char *type = sqlite3_column_text(tiPragma, 2);
+        //const int canBeNull = sqlite3_column_int(tiPragma, 3);
+        //const char *dftValue = sqlite3_column_text(tiPragma, 4);
+        //const int pkOrder = sqlite3_column_int(tiPragma, 5);
+
+        //NSLog(@"row[%d] name:[%s] type:[%s] null[%d] dft[%s] pkOrder[%d]", rowId, name, type, canBeNull, dftValue, pkOrder);
+        [mNameSet addObject:[NSString stringWithCString:name encoding:NSUTF8StringEncoding]];
+    }
+    if (tiPragma == NULL || sqlite3_finalize(tiPragma) != SQLITE_OK) {
+        if (error) *error = [self databaseError];
+        return NO;
+    }
+
+    if (nameSet) {
+        *nameSet = mNameSet;
+    }
+    return YES;
+}
+
 /// Performs case insensitive comparsion using the fixed EN-US POSIX locale
 -(NSComparator)fixedLocaleCaseInsensitiveComparator
 {
@@ -1781,6 +1829,168 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     
     // Return if the relationship.entity was first
     return orderedEntities[0] == rootSourceEntity;
+}
+
+- (BOOL)checkTableForMissingColumns:(NSDictionary *)metadata error:(NSError **)error {
+    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[[NSBundle mainBundle]]
+                                                                     forStoreMetadata:metadata];
+
+    if (!currentModel) {
+        NSLog(@"Failed to create NSManagedObjectModel.");
+        if (error) {
+            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain
+                                         code:EncryptedStoreErrorMigrationFailed
+                                     userInfo:@{EncryptedStoreErrorMessageKey:@"Missing old model, cannot check database"}];
+        }
+        return NO;
+    }
+
+    __block BOOL success = YES;
+    NSString *configurationName = ([self.configurationName isEqualToString:@"PF_DEFAULT_CONFIGURATION_NAME"] ?
+                                   nil : self.configurationName);
+    NSArray<NSEntityDescription *> *entities = [currentModel entitiesForConfiguration:configurationName];
+    NSMutableSet<NSRelationshipDescription *> *manytomany = [NSMutableSet set];
+    [entities enumerateObjectsUsingBlock:^(NSEntityDescription * _Nonnull entity, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (!success) {
+            *stop = YES;
+            return;
+        }
+
+        if (!entity.superentity) {
+            if (![self checkTableForEntity:entity error:error]) {
+                success = NO;
+                *stop = YES;
+                return;
+            }
+        }
+
+        [entity.relationshipsByName.allValues enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSRelationshipDescription *inverse = relation.inverseRelationship;
+            if (relation.transient || inverse.transient) return;
+            if (relation.toMany && inverse.toMany && ![manytomany containsObject:inverse]) {
+                [manytomany addObject:relation];
+            }
+        }];
+    }];
+
+    [manytomany enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, BOOL * _Nonnull stop) {
+        if (![self checkTableForRelationship:relation error:error]) {
+            success = NO;
+            *stop = YES;
+        }
+    }];
+
+    return success;
+}
+
+- (BOOL)checkTableForEntity:(NSEntityDescription *)entity error:(NSError **)error {
+    if (entity.superentity) return YES;
+
+    NSString *tableName = [self tableNameForEntity:entity];
+
+    BOOL hasTable;
+    if (![self hasTable:&hasTable withName:tableName error:error]) {
+        return NO;
+    }
+
+    if (!hasTable) {
+        return [self createTableForEntity:entity error:error];
+    }
+
+    // current sqlite columns
+    NSSet<NSString *> *nameSet;
+    if (![self getTableColumnNames:&nameSet tableName:tableName error:error]) {
+        return NO;
+    }
+
+    NSArray *requiredNames = [self columnNamesForEntity:entity indexedOnly:NO quotedNames:NO];
+    NSMutableSet<NSString *> *requiredNameSet = [NSMutableSet setWithArray:requiredNames];
+    [requiredNameSet minusSet:nameSet];
+
+    NSMutableArray<NSString *> *addColumns = [NSMutableArray array];
+    [requiredNameSet enumerateObjectsUsingBlock:^(NSString * _Nonnull columnName, BOOL * _Nonnull stop) {
+        // TODO: here we assume NO core data property is named link *_order, maybe add some assertions?
+        [addColumns addObject:[NSString stringWithFormat:([columnName hasSuffix:@"_order"] ?
+                                                          @"'%@' integer default 0" :
+                                                          @"'%@'"),
+                               columnName]];
+    }];
+
+    if ([self entityNeedsEntityTypeColumn:entity] &&
+        ![nameSet containsObject:@"__entityType"]) {
+        [addColumns addObject:@"'__entityType' integer"];
+    }
+
+    __block BOOL success = YES;
+    [addColumns enumerateObjectsUsingBlock:^(NSString * _Nonnull columnDef, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *string = [NSString stringWithFormat:@"ALTER TABLE %@ ADD COLUMN %@;", tableName, columnDef];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+        sqlite3_step(statement);
+
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+            if (error) *error = [self databaseError];
+            success = NO;
+            *stop = YES;
+            return;
+        }
+    }];
+
+    // TODO: check index
+
+    return success;
+}
+
+- (BOOL)checkTableForRelationship:(NSRelationshipDescription *)relation error:(NSError **)error {
+    NSString *tableName = [self tableNameForRelationship:relation];
+
+    BOOL hasTable;
+    if (![self hasTable:&hasTable withName:tableName error:error]) {
+        return NO;
+    }
+
+    if (!hasTable) {
+        return [self createTableForRelationship:relation error:error];
+    }
+
+    // current sqlite columns
+    NSSet<NSString *> *nameSet;
+    if (![self getTableColumnNames:&nameSet tableName:tableName error:error]) {
+        return NO;
+    }
+
+    NSString *col1;
+    NSString *col2;
+    NSString *col3;
+    NSString *col4;
+    [self relationships:relation firstIDColumn:&col1 secondIDColumn:&col2 firstOrderColumn:&col3 secondOrderColumn:&col4];
+
+    NSMutableSet<NSString *> *requiredNameSet = [NSMutableSet set];
+    [requiredNameSet addObject:col1];
+    [requiredNameSet addObject:col2];
+    [requiredNameSet addObject:col3];
+    [requiredNameSet addObject:col4];
+    [requiredNameSet minusSet:nameSet];
+
+    __block BOOL success = YES;
+    [requiredNameSet enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+        // many-to-many column name bug was on order column, no need to check primary key for now
+        NSString *columnDef = [NSString stringWithFormat:([obj hasSuffix:@"__objectid"] ?
+                                                          @"'%@' INTEGER NOT NULL" :
+                                                          @"'%@' INTEGER DEFAULT 0"),
+                               obj];
+        NSString *string = [NSString stringWithFormat:@"ALTER TABLE %@ ADD COLUMN %@;", tableName, columnDef];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+        sqlite3_step(statement);
+
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+            if (error) *error = [self databaseError];
+            success = NO;
+            *stop = YES;
+            return;
+        }
+    }];
+
+    return success;
 }
 
 #pragma mark - save changes to the database
