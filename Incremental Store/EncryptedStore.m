@@ -733,24 +733,25 @@ static const NSInteger kTableCheckVersion = 1;
                 }
                 sqlite3_finalize(statement);
 
-                if ([metadata[EncryptedStoreMetadataTableCheckVersionKey] integerValue] < kTableCheckVersion) {
-                    // should check for missing subentity columns and many-to-many relationship tables
-                    if (![self checkTableForMissingColumns:metadata error:error]) {
-                        return NO;
-                    }
-                    NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
-                    mutableMetadata[EncryptedStoreMetadataTableCheckVersionKey] = @(kTableCheckVersion);
-                    [self setMetadata:mutableMetadata];
-                    if (![self saveMetadata]) {
-                        if (error) { *error = [self databaseError]; }
-                        return NO;
-                    }
-                }
-
                 // run migrations
                 NSDictionary *options = [self options];
                 if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
                     [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
+
+                    if ([metadata[EncryptedStoreMetadataTableCheckVersionKey] integerValue] < kTableCheckVersion) {
+                        // should check for missing subentity columns and many-to-many relationship tables
+                        if (![self checkTableForMissingColumns:metadata error:error]) {
+                            return NO;
+                        }
+                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                        mutableMetadata[EncryptedStoreMetadataTableCheckVersionKey] = @(kTableCheckVersion);
+                        [self setMetadata:mutableMetadata];
+                        if (![self saveMetadata]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
+                        }
+                    }
+
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
                     
                     // check that a migration is required first:
