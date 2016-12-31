@@ -28,6 +28,9 @@ static void dbsqliteStripDiacritics(sqlite3_context *context, int argc, const ch
 static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, const char **argv);
 
 static NSString * const EncryptedStoreMetadataTableName = @"meta";
+static NSString * const EncryptedStoreMetadataTableCheckVersionKey = @"EncryptedStoreMetadataTableCheckVersion";
+
+static const NSInteger kTableCheckVersion = 1;
 
 #pragma mark - category interfaces
 
@@ -69,6 +72,9 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 /// Recursively returns an array of this NSEntityDescription's typeHash, along with all of its subentities'.
 @property (nonatomic, readonly) NSArray *typeHashSubhierarchy;
+
+@property (nonatomic, readonly) NSDictionary<NSString *, NSAttributeDescription *> *directAttributesByName;
+@property (nonatomic, readonly) NSDictionary<NSString *, NSRelationshipDescription *> *directRelationshipsByName;
 
 @end
 
@@ -742,11 +748,26 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                     return NO;
                 }
                 sqlite3_finalize(statement);
-                
+
                 // run migrations
                 NSDictionary *options = [self options];
                 if ([[options objectForKey:NSMigratePersistentStoresAutomaticallyOption] boolValue] &&
                     [[options objectForKey:NSInferMappingModelAutomaticallyOption] boolValue]) {
+
+                    if ([metadata[EncryptedStoreMetadataTableCheckVersionKey] integerValue] < kTableCheckVersion) {
+                        // should check for missing subentity columns and many-to-many relationship tables
+                        if (![self checkTableForMissingColumns:metadata error:error]) {
+                            return NO;
+                        }
+                        NSMutableDictionary *mutableMetadata = [metadata mutableCopy];
+                        mutableMetadata[EncryptedStoreMetadataTableCheckVersionKey] = @(kTableCheckVersion);
+                        [self setMetadata:mutableMetadata];
+                        if (![self saveMetadata]) {
+                            if (error) { *error = [self databaseError]; }
+                            return NO;
+                        }
+                    }
+
                     NSManagedObjectModel *newModel = [[self persistentStoreCoordinator] managedObjectModel];
                     
                     // check that a migration is required first:
@@ -764,6 +785,7 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                         
                         // no migration is needed if the old and new models are identical:
                         if ([[oldModel entityVersionHashesByName] isEqualToDictionary:[newModel entityVersionHashesByName]]) {
+                            // TODO: check for entity column index changes
                             return YES;
                         }
                         
@@ -1134,10 +1156,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     // grab entity snapshots
     NSDictionary *sourceEntities = [fromModel entitiesByName];
     NSDictionary *destinationEntities = [toModel entitiesByName];
-    
+
+    NSMutableSet<NSEntityDescription *> *removedRootEntities = [NSMutableSet set];
+    NSMutableSet<NSEntityDescription *> *updatedRootEntities = [NSMutableSet set];
+
     // enumerate over entities
     [[mappingModel entityMappings] enumerateObjectsUsingBlock:^(NSEntityMapping *entityMapping, NSUInteger idx, BOOL *stop) {
-        
+        if (!success) {
+            *stop = YES;
+            return;
+        }
+
         // get names
         NSString *sourceEntityName = [entityMapping sourceEntityName];
         NSString *destinationEntityName = [entityMapping destinationEntityName];
@@ -1145,18 +1174,22 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         // get entity descriptions
         NSEntityDescription *sourceEntity = [sourceEntities objectForKey:sourceEntityName];
         NSEntityDescription *destinationEntity = [destinationEntities objectForKey:destinationEntityName];
-        
+
+        if (sourceEntity.superentity || destinationEntity.superentity) return;
+
         // get mapping type
         NSEntityMappingType type = [entityMapping mappingType];
         
         // add a new entity from final snapshot
         if (type == NSAddEntityMappingType) {
             success &= [self createTableForEntity:destinationEntity error:error];
+            [updatedRootEntities addObject:destinationEntity];
         }
         
         // drop table for deleted entity
         else if (type == NSRemoveEntityMappingType) {
             success &= [self dropTableForEntity:sourceEntity];
+            [removedRootEntities addObject:sourceEntity];
         }
         
         // change an entity
@@ -1166,13 +1199,108 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         destinationEntity:destinationEntity
                         withMapping:entityMapping
                         error:error];
-            if (success)
-            {
+            if (success) {
                 success &= [self alterRelationshipForSourceEntity:sourceEntity
                                                 destinationEntity:destinationEntity
                                                       withMapping:entityMapping
                                                             error:error];
             }
+            [updatedRootEntities addObject:destinationEntity];
+        }
+    }];
+
+    // root entity updated, process pending subentities
+    [[mappingModel entityMappings] enumerateObjectsUsingBlock:^(NSEntityMapping *entityMapping, NSUInteger idx, BOOL *stop) {
+        if (!success) {
+            *stop = YES;
+            return;
+        }
+
+        // get entity descriptions
+        NSEntityDescription *sourceEntity = [sourceEntities objectForKey:[entityMapping sourceEntityName]];
+        NSEntityDescription *destinationEntity = [destinationEntities objectForKey:[entityMapping destinationEntityName]];
+
+        // sub entities only
+        if (!(sourceEntity.superentity || destinationEntity.superentity)) return;
+
+        switch ([entityMapping mappingType]) {
+            case NSAddEntityMappingType: {
+                NSString *destRootEntityName = [self rootForEntity:destinationEntity].name;
+                NSEntityDescription *destRootEntity = destinationEntities[destRootEntityName];
+                if ([updatedRootEntities containsObject:destRootEntity]) {
+                    return;
+                }
+                [updatedRootEntities addObject:destRootEntity];
+
+                NSString *srcRootEntityName = destRootEntity.name;
+                NSEntityDescription *srcRootEntity = [sourceEntities objectForKey:srcRootEntityName];
+
+                success &= [self alterTableForSourceEntity:srcRootEntity
+                                         destinationEntity:destinationEntity
+                                               withMapping:nil
+                                                     error:error];
+                [destinationEntity.directRelationshipsByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSRelationshipDescription * _Nonnull obj, BOOL * _Nonnull stop) {
+                    NSString *tableName = [self tableNameForRelationship:obj];
+                    BOOL hasTable;
+                    if (![self hasTable:&hasTable withName:tableName error:error]) {
+                        success = NO;
+                        *stop = YES;
+                    }
+                    if (!hasTable) {
+                        if (![self createTableForRelationship:obj error:error]) {
+                            success = NO;
+                            *stop = YES;
+                        }
+                    }
+                }];
+            } break;
+
+            case NSRemoveEntityMappingType: {
+                NSString *srcRootEntityName = [self rootForEntity:sourceEntity].name;
+                NSEntityDescription *srcRootEntity = sourceEntities[srcRootEntityName];
+                if ([removedRootEntities containsObject:srcRootEntity]) {
+                    return;
+                }
+
+                NSString *destRootEntityName = srcRootEntity.name;
+                NSEntityDescription *destRootEntity = [destinationEntities objectForKey:destRootEntityName];
+                if ([updatedRootEntities containsObject:destRootEntity]) {
+                    return;
+                }
+                [updatedRootEntities addObject:destRootEntity];
+
+                success &= [self alterTableForSourceEntity:srcRootEntity
+                                         destinationEntity:destRootEntity
+                                               withMapping:nil
+                                                     error:error];
+                // TODO: should we remove many-to-many relationship tables here?
+            } break;
+
+            case NSTransformEntityMappingType: {
+                // root Entity for Src/Dest MUST exist when we got subentity only changes
+                NSString *srcRootEntityName = [self rootForEntity:sourceEntity].name;
+                NSString *destRootEntityName = [self rootForEntity:destinationEntity].name;
+                NSEntityDescription *srcRootEntity = sourceEntities[srcRootEntityName];
+                NSEntityDescription *destRootEntity = destinationEntities[destRootEntityName];
+                if ([updatedRootEntities containsObject:destRootEntity]) {
+                    return;
+                }
+                [updatedRootEntities addObject:destRootEntity];
+
+                success &= [self alterTableForSourceEntity:srcRootEntity
+                                         destinationEntity:destRootEntity
+                                               withMapping:nil
+                                                     error:error];
+                if (success) {
+                    success &= [self alterRelationshipForSourceEntity:sourceEntity
+                                                    destinationEntity:destinationEntity
+                                                          withMapping:entityMapping
+                                                                error:error];
+                }
+            } break;
+
+            default: {
+            } break;
         }
     }];
     return success;
@@ -1571,12 +1699,13 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     
     [[mapping relationshipMappings] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSRelationshipDescription *destinationRelationship = [destinationEntity relationshipsByName][[obj name]];
-        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ? [destinationRelationship renamingIdentifier] : [obj name])];
+        NSRelationshipDescription * relationship = [sourceEntity relationshipsByName][([destinationRelationship renamingIdentifier] ?: [obj name])];
         if ([relationship isToMany] && [relationship.inverseRelationship isToMany] && [destinationRelationship isToMany] && [destinationRelationship.inverseRelationship isToMany])
         {
             sqlite3_stmt *statement;
-            NSString *oldTableName = [self tableNameForPreviousRelationship:destinationRelationship];
-            
+            NSString *oldTableName = [self tableNameForPreviousRelationship:relationship];
+            NSString *newTableName = [self tableNameForRelationship:destinationRelationship];
+
             //check if table exists
             BOOL tableExists = NO;
             NSString *checkExistenceOfTable = [NSString stringWithFormat:@"SELECT count(*) FROM %@", oldTableName];
@@ -1590,7 +1719,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             //if tableExists = YES; it probably means we haven't upgraded the table yet.
             if (tableExists)
             {
-                NSString *newTableName = [self tableNameForRelationship:destinationRelationship];
                 NSString *temporaryTableName = [NSString stringWithFormat:@"_T_%@", oldTableName];
                 
                 //rename old table
@@ -1642,22 +1770,60 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                     success &= NO;
                     return;
                 }
-                
-                
+
                 //drop old temporary table
                 if (![self dropTableNamed:temporaryTableName])
                 {
                     success &= NO;
                     return;
                 }
-                
-                
-            }
+            } else {
+                NSString *checkExistenceOfTable = [NSString stringWithFormat:@"SELECT count(*) FROM %@", newTableName];
+                statement = [self preparedStatementForQuery:checkExistenceOfTable];
+                sqlite3_step(statement);
+                if (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK)
+                {
+                    tableExists = YES;
+                }
 
+                if (!tableExists) {
+                    success &= [self createTableForRelationship:destinationRelationship error:error];
+                }
+            }
         }
     }];
     
     return success;
+}
+
+- (BOOL)getTableColumnNames:(NSSet **)nameSet tableName:(NSString *)tableName error:(NSError **)error
+{
+    NSString *tiPragmaStr = [NSString stringWithFormat:@"PRAGMA table_info(%@);", tableName];
+    sqlite3_stmt *tiPragma = [self preparedStatementForQuery:tiPragmaStr];
+
+    //NSLog(@"table : %@", tableName);
+
+    NSMutableSet *mNameSet = [NSMutableSet set];
+    while (sqlite3_step(tiPragma) == SQLITE_ROW) {
+        //const int rowId = sqlite3_column_int(tiPragma, 0);
+        const char *name = sqlite3_column_text(tiPragma, 1);
+        //const char *type = sqlite3_column_text(tiPragma, 2);
+        //const int canBeNull = sqlite3_column_int(tiPragma, 3);
+        //const char *dftValue = sqlite3_column_text(tiPragma, 4);
+        //const int pkOrder = sqlite3_column_int(tiPragma, 5);
+
+        //NSLog(@"row[%d] name:[%s] type:[%s] null[%d] dft[%s] pkOrder[%d]", rowId, name, type, canBeNull, dftValue, pkOrder);
+        [mNameSet addObject:[NSString stringWithCString:name encoding:NSUTF8StringEncoding]];
+    }
+    if (tiPragma == NULL || sqlite3_finalize(tiPragma) != SQLITE_OK) {
+        if (error) *error = [self databaseError];
+        return NO;
+    }
+
+    if (nameSet) {
+        *nameSet = mNameSet;
+    }
+    return YES;
 }
 
 /// Performs case insensitive comparsion using the fixed EN-US POSIX locale
@@ -1797,6 +1963,168 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     
     // Return if the relationship.entity was first
     return orderedEntities[0] == rootSourceEntity;
+}
+
+- (BOOL)checkTableForMissingColumns:(NSDictionary *)metadata error:(NSError **)error {
+    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[[NSBundle mainBundle]]
+                                                                     forStoreMetadata:metadata];
+
+    if (!currentModel) {
+        NSLog(@"Failed to create NSManagedObjectModel.");
+        if (error) {
+            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain
+                                         code:EncryptedStoreErrorMigrationFailed
+                                     userInfo:@{EncryptedStoreErrorMessageKey:@"Missing old model, cannot check database"}];
+        }
+        return NO;
+    }
+
+    __block BOOL success = YES;
+    NSString *configurationName = ([self.configurationName isEqualToString:@"PF_DEFAULT_CONFIGURATION_NAME"] ?
+                                   nil : self.configurationName);
+    NSArray<NSEntityDescription *> *entities = [currentModel entitiesForConfiguration:configurationName];
+    NSMutableSet<NSRelationshipDescription *> *manytomany = [NSMutableSet set];
+    [entities enumerateObjectsUsingBlock:^(NSEntityDescription * _Nonnull entity, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (!success) {
+            *stop = YES;
+            return;
+        }
+
+        if (!entity.superentity) {
+            if (![self checkTableForEntity:entity error:error]) {
+                success = NO;
+                *stop = YES;
+                return;
+            }
+        }
+
+        [entity.relationshipsByName.allValues enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSRelationshipDescription *inverse = relation.inverseRelationship;
+            if (relation.transient || inverse.transient) return;
+            if (relation.toMany && inverse.toMany && ![manytomany containsObject:inverse]) {
+                [manytomany addObject:relation];
+            }
+        }];
+    }];
+
+    [manytomany enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, BOOL * _Nonnull stop) {
+        if (![self checkTableForRelationship:relation error:error]) {
+            success = NO;
+            *stop = YES;
+        }
+    }];
+
+    return success;
+}
+
+- (BOOL)checkTableForEntity:(NSEntityDescription *)entity error:(NSError **)error {
+    if (entity.superentity) return YES;
+
+    NSString *tableName = [self tableNameForEntity:entity];
+
+    BOOL hasTable;
+    if (![self hasTable:&hasTable withName:tableName error:error]) {
+        return NO;
+    }
+
+    if (!hasTable) {
+        return [self createTableForEntity:entity error:error];
+    }
+
+    // current sqlite columns
+    NSSet<NSString *> *nameSet;
+    if (![self getTableColumnNames:&nameSet tableName:tableName error:error]) {
+        return NO;
+    }
+
+    NSArray *requiredNames = [self columnNamesForEntity:entity indexedOnly:NO quotedNames:NO];
+    NSMutableSet<NSString *> *requiredNameSet = [NSMutableSet setWithArray:requiredNames];
+    [requiredNameSet minusSet:nameSet];
+
+    NSMutableArray<NSString *> *addColumns = [NSMutableArray array];
+    [requiredNameSet enumerateObjectsUsingBlock:^(NSString * _Nonnull columnName, BOOL * _Nonnull stop) {
+        // TODO: here we assume NO core data property is named link *_order, maybe add some assertions?
+        [addColumns addObject:[NSString stringWithFormat:([columnName hasSuffix:@"_order"] ?
+                                                          @"'%@' integer default 0" :
+                                                          @"'%@'"),
+                               columnName]];
+    }];
+
+    if ([self entityNeedsEntityTypeColumn:entity] &&
+        ![nameSet containsObject:@"__entityType"]) {
+        [addColumns addObject:@"'__entityType' integer"];
+    }
+
+    __block BOOL success = YES;
+    [addColumns enumerateObjectsUsingBlock:^(NSString * _Nonnull columnDef, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *string = [NSString stringWithFormat:@"ALTER TABLE %@ ADD COLUMN %@;", tableName, columnDef];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+        sqlite3_step(statement);
+
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+            if (error) *error = [self databaseError];
+            success = NO;
+            *stop = YES;
+            return;
+        }
+    }];
+
+    // TODO: check index
+
+    return success;
+}
+
+- (BOOL)checkTableForRelationship:(NSRelationshipDescription *)relation error:(NSError **)error {
+    NSString *tableName = [self tableNameForRelationship:relation];
+
+    BOOL hasTable;
+    if (![self hasTable:&hasTable withName:tableName error:error]) {
+        return NO;
+    }
+
+    if (!hasTable) {
+        return [self createTableForRelationship:relation error:error];
+    }
+
+    // current sqlite columns
+    NSSet<NSString *> *nameSet;
+    if (![self getTableColumnNames:&nameSet tableName:tableName error:error]) {
+        return NO;
+    }
+
+    NSString *col1;
+    NSString *col2;
+    NSString *col3;
+    NSString *col4;
+    [self relationships:relation firstIDColumn:&col1 secondIDColumn:&col2 firstOrderColumn:&col3 secondOrderColumn:&col4];
+
+    NSMutableSet<NSString *> *requiredNameSet = [NSMutableSet set];
+    [requiredNameSet addObject:col1];
+    [requiredNameSet addObject:col2];
+    [requiredNameSet addObject:col3];
+    [requiredNameSet addObject:col4];
+    [requiredNameSet minusSet:nameSet];
+
+    __block BOOL success = YES;
+    [requiredNameSet enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+        // many-to-many column name bug was on order column, no need to check primary key for now
+        NSString *columnDef = [NSString stringWithFormat:([obj hasSuffix:@"__objectid"] ?
+                                                          @"'%@' INTEGER NOT NULL" :
+                                                          @"'%@' INTEGER DEFAULT 0"),
+                               obj];
+        NSString *string = [NSString stringWithFormat:@"ALTER TABLE %@ ADD COLUMN %@;", tableName, columnDef];
+        sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+        sqlite3_step(statement);
+
+        if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+            if (error) *error = [self databaseError];
+            success = NO;
+            *stop = YES;
+            return;
+        }
+    }];
+
+    return success;
 }
 
 #pragma mark - save changes to the database
@@ -3780,6 +4108,28 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         [hashes addObjectsFromArray: entity.typeHashSubhierarchy];
     }
     return hashes;
+}
+
+- (NSDictionary *)directAttributesByName {
+    if (!self.superentity) return nil;
+    NSSet<NSString *> *superKeys = [NSSet setWithArray:self.superentity.attributesByName.allKeys];
+
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    [self.attributesByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSAttributeDescription * _Nonnull obj, BOOL * _Nonnull stop) {
+        if (![superKeys containsObject:key]) dict[key] = obj;
+    }];
+    return dict;
+}
+
+- (NSDictionary *)directRelationshipsByName {
+    if (!self.superentity) return nil;
+    NSSet<NSString *> *superKeys = [NSSet setWithArray:self.superentity.relationshipsByName.allKeys];
+
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    [self.relationshipsByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSRelationshipDescription * _Nonnull obj, BOOL * _Nonnull stop) {
+        if (![superKeys containsObject:key]) dict[key] = obj;
+    }];
+    return dict;
 }
 
 @end
