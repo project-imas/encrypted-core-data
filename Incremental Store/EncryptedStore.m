@@ -528,11 +528,12 @@ static const NSInteger kTableCheckVersion = 1;
     
     if (![relationship isToMany]) {
         // to-one relationship, foreign key exists in source entity table
-        
+        BOOL shouldFetchSourceEntityType = [self entityNeedsEntityTypeColumn:sourceEntity];
+
         NSString *string = [NSString stringWithFormat:
                             @"SELECT %@%@ FROM %@ WHERE __objectID=?",
                             [self foreignKeyColumnForRelationship:relationship],
-                            shouldFetchDestinationEntityType ? @", __entityType" : @"",
+                            shouldFetchSourceEntityType ? @", __entityType" : @"",
                             [self tableNameForEntity:sourceEntity]];
         statement = [self preparedStatementForQuery:string];
         sqlite3_bind_int64(statement, 1, key);
