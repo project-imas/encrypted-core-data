@@ -591,8 +591,8 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
                 resolvedDestinationEntity = destinationEntity;
             }
             
-            NSManagedObjectID *objectID = [self newObjectIDForEntity:resolvedDestinationEntity referenceObject:value];
-            [objectIDs addObject:objectID];
+            NSManagedObjectID *newObjectID = [self newObjectIDForEntity:resolvedDestinationEntity referenceObject:value];
+            [objectIDs addObject:newObjectID];
         }
     }
     
@@ -623,21 +623,23 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
 
 - (void)managedObjectContextDidRegisterObjectsWithIDs:(NSArray *)objectIDs {
     [objectIDs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSUInteger value = [[objectCountCache objectForKey:obj] unsignedIntegerValue];
-        [objectCountCache setObject:@(value + 1) forKey:obj];
+        NSUInteger value = [[self->objectCountCache objectForKey:obj] unsignedIntegerValue];
+        [self->objectCountCache setObject:@(value + 1) forKey:obj];
     }];
 }
 
 - (void)managedObjectContextDidUnregisterObjectsWithIDs:(NSArray *)objectIDs {
     [objectIDs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSNumber *value = [objectCountCache objectForKey:obj];
+        NSNumber *value = [self->objectCountCache objectForKey:obj];
         if (value) {
             NSUInteger newValue = ([value unsignedIntegerValue] - 1);
             if (newValue == 0) {
-                [objectCountCache removeObjectForKey:obj];
-                [nodeCache removeObjectForKey:obj];
+                [self->objectCountCache removeObjectForKey:obj];
+                [self->nodeCache removeObjectForKey:obj];
             }
-            else { [objectCountCache setObject:@(newValue) forKey:obj]; }
+            else {
+                [self->objectCountCache setObject:@(newValue) forKey:obj];
+            }
         }
     }];
 }
@@ -675,28 +677,28 @@ static NSString * const EncryptedStoreMetadataTableName = @"meta";
             
 #ifdef SQLITE_DETERMINISTIC
             //enable regexp
-            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            sqlite3_create_function(self->database, "REGEXP", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteRegExp, NULL, NULL);
             
             //enable case insentitivity
-            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCase, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_CASE", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCase, NULL, NULL);
 
             //enable diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
 
             //enable combined case and diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
 #else
             //enable regexp
-            sqlite3_create_function(database, "REGEXP", 2, SQLITE_UTF8, NULL, (void *)dbsqliteRegExp, NULL, NULL);
+            sqlite3_create_function(self->database, "REGEXP", 2, SQLITE_UTF8, NULL, (void *)dbsqliteRegExp, NULL, NULL);
 
             //enable case insentitivity
-            sqlite3_create_function(database, "STRIP_CASE", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCase, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_CASE", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCase, NULL, NULL);
 
             //enable diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripDiacritics, NULL, NULL);
             
             //enable combined case and diacritic insentitivity
-            sqlite3_create_function(database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
+            sqlite3_create_function(self->database, "STRIP_CASE_DIACRITICS", 1, SQLITE_UTF8, NULL, (void *)dbsqliteStripCaseDiacritics, NULL, NULL);
 #endif
 
             // ask if we have a metadata table
@@ -1807,7 +1809,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         NSMutableArray *keys = [NSMutableArray array];
         NSMutableArray *columns = [NSMutableArray arrayWithObject:@"'__objectid'"];
         NSDictionary *properties = [entity propertiesByName];
-        [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        [properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *propertyStop) {
             if ([obj isKindOfClass:[NSAttributeDescription class]]) {
                 [keys addObject:key];
                 [columns addObject:[NSString stringWithFormat:@"'%@'", key]];
@@ -1899,7 +1901,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         
         // bind properties
         int __block columnIndex;
-        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *keyStop) {
             // SQL indexes start at 1
             columnIndex = (int)idx + 1;
             NSPropertyDescription *property = [properties objectForKey:obj];
@@ -1991,7 +1993,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         
         // enumerate changed properties
         NSDictionary *properties = [entity propertiesByName];
-        [changedAttributes enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+        [changedAttributes enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *attributeStop) {
             id property = [properties objectForKey:key];
             if ([property isKindOfClass:[NSAttributeDescription class]]) {
                 [columns addObject:[NSString stringWithFormat:@"%@=?", key]];
@@ -2045,7 +2047,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         sqlite3_stmt *statement = [self preparedStatementForQuery:string];
         
         // bind values
-        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *keyStop) {
             id value = [changedAttributes objectForKey:obj];
             id property = [properties objectForKey:obj];
 #if USE_MANUAL_NODE_CACHE
@@ -3298,19 +3300,19 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 
                 // Handle the case where the last component points to a relationship rather than a simple attribute
                 __block NSDictionary * subProperties = properties;
-                __block id property = nil;
+                __block id localProperty = nil;
                 [pathComponents enumerateObjectsUsingBlock:^(NSString * comp, NSUInteger idx, BOOL * stop) {
-                    property = [subProperties objectForKey:comp];
-                    if ([property isKindOfClass:[NSRelationshipDescription class]]) {
-                        NSEntityDescription * entity = [property destinationEntity];
-                        subProperties = entity.propertiesByName;
+                    localProperty = [subProperties objectForKey:comp];
+                    if ([localProperty isKindOfClass:[NSRelationshipDescription class]]) {
+                        NSEntityDescription * localEntity = [localProperty destinationEntity];
+                        subProperties = localEntity.propertiesByName;
                     } else {
-                        property = nil;
+                        localProperty = nil;
                         *stop = YES;
                     }
                 }];
                 
-                if ([property isKindOfClass:[NSRelationshipDescription class]]) {
+                if ([localProperty isKindOfClass:[NSRelationshipDescription class]]) {
                     [request setReturnsDistinctResults:YES];
                     lastComponentName = @"__objectID";
                 }
