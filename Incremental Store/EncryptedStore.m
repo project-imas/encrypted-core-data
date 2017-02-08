@@ -916,7 +916,7 @@ static const NSInteger kTableCheckVersion = 1;
             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
         }
     }
-    return result && (*error == nil);
+    return result && (error == NULL || *error == nil);
 }
     
 - (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
@@ -962,7 +962,7 @@ static const NSInteger kTableCheckVersion = 1;
         result = [self checkDatabaseStatusWithError:error];
     }
 
-    return result && (*error == nil);
+    return result && (error == NULL || *error == nil);
 }
 
 - (BOOL)validateDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
