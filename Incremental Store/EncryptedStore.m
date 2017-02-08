@@ -1241,17 +1241,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                                          destinationEntity:destinationEntity
                                                withMapping:nil
                                                      error:error];
-                [destinationEntity.directRelationshipsByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSRelationshipDescription * _Nonnull obj, BOOL * _Nonnull stop) {
+                [destinationEntity.directRelationshipsByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSRelationshipDescription * _Nonnull obj, BOOL * _Nonnull relationshipStop) {
                     NSString *tableName = [self tableNameForRelationship:obj];
                     BOOL hasTable;
                     if (![self hasTable:&hasTable withName:tableName error:error]) {
                         success = NO;
-                        *stop = YES;
+                        *relationshipStop = YES;
                     }
                     if (!hasTable) {
                         if (![self createTableForRelationship:obj error:error]) {
                             success = NO;
-                            *stop = YES;
+                            *relationshipStop = YES;
                         }
                     }
                 }];
@@ -1780,8 +1780,8 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                     return;
                 }
             } else {
-                NSString *checkExistenceOfTable = [NSString stringWithFormat:@"SELECT count(*) FROM %@", newTableName];
-                statement = [self preparedStatementForQuery:checkExistenceOfTable];
+                NSString *newCheckExistenceOfTable = [NSString stringWithFormat:@"SELECT count(*) FROM %@", newTableName];
+                statement = [self preparedStatementForQuery:newCheckExistenceOfTable];
                 sqlite3_step(statement);
                 if (statement != NULL && sqlite3_finalize(statement) == SQLITE_OK)
                 {
@@ -1808,14 +1808,14 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     NSMutableSet *mNameSet = [NSMutableSet set];
     while (sqlite3_step(tiPragma) == SQLITE_ROW) {
         //const int rowId = sqlite3_column_int(tiPragma, 0);
-        const char *name = sqlite3_column_text(tiPragma, 1);
+        const unsigned char *name = sqlite3_column_text(tiPragma, 1);
         //const char *type = sqlite3_column_text(tiPragma, 2);
         //const int canBeNull = sqlite3_column_int(tiPragma, 3);
         //const char *dftValue = sqlite3_column_text(tiPragma, 4);
         //const int pkOrder = sqlite3_column_int(tiPragma, 5);
 
         //NSLog(@"row[%d] name:[%s] type:[%s] null[%d] dft[%s] pkOrder[%d]", rowId, name, type, canBeNull, dftValue, pkOrder);
-        [mNameSet addObject:[NSString stringWithCString:name encoding:NSUTF8StringEncoding]];
+        [mNameSet addObject:[NSString stringWithCString:(char*)name encoding:NSUTF8StringEncoding]];
     }
     if (tiPragma == NULL || sqlite3_finalize(tiPragma) != SQLITE_OK) {
         if (error) *error = [self databaseError];
@@ -2000,7 +2000,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             }
         }
 
-        [entity.relationshipsByName.allValues enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, NSUInteger idx, BOOL * _Nonnull stop) {
+        [entity.relationshipsByName.allValues enumerateObjectsUsingBlock:^(NSRelationshipDescription * _Nonnull relation, NSUInteger relationshipIdx, BOOL * _Nonnull relationshipStop) {
             NSRelationshipDescription *inverse = relation.inverseRelationship;
             if (relation.transient || inverse.transient) return;
             if (relation.toMany && inverse.toMany && ![manytomany containsObject:inverse]) {
@@ -3934,17 +3934,17 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
         NSDictionary *exprOperator = @{ @"operator" : @"=", @"format" : @"%@" };
 
         for (NSExpression *expr in expression.collection) {
-            id operand = nil;
-            id binding = nil;
+            id exprOperand = nil;
+            id exprBinding = nil;
             [self parseExpression:expr
                       inPredicate:predicate
                    inFetchRequest:request
                          operator:exprOperator
-                          operand:&operand
-                         bindings:&binding];
+                          operand:&exprOperand
+                         bindings:&exprBinding];
 
-            if (operand) [subOperands addObject:operand];
-            if (binding) [*bindings addObject:binding];
+            if (exprOperand) [subOperands addObject:exprOperand];
+            if (exprBinding) [*bindings addObject:exprBinding];
         }
 
         *operand = [NSString stringWithFormat:[operator objectForKey:@"format"],
