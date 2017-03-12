@@ -36,6 +36,62 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 * Run `pod install`
 * In your application delegate source file (AppDelegate.m), add `#import "EncryptedStore.h"`
 
+# Using EncryptedStoreFileManager
+In case of strong coupling with file system functions and others default conventions FileManager was introduced.
+Have a look at components:
+
+* EncryptedStoreFileManagerConfiguration
+* EncryptedStoreFileManager
+
+Various options are stored in Configuration.
+And FileManager could be bypaased to all functions as option.
+
+```
+NSDictionary *options = @{ EncryptedStore.optionFileManager : fileManager };
+```
+
+However, it should solve some dirty hacks.
+Let's try.
+
+1. Database lives in different bundle.
+
+```
+NSBundle *bundle = [NSBundle bundleWithIdentifier:"com.opensource.database_framework"];
+EncryptedStoreFileManagerConfiguration *configuration = [EncryptedStoreFileManagerConfiguration new];
+configuration.bundle = bundle;
+
+// or
+[[EncryptedStoreFileManagerConfiguration alloc] initWithOptions: @{EncryptedStoreFileManagerConfiguration.optionBundle : bundle}];
+
+// next, you need to bypassing configuration to setup store.
+EncryptedStoreFileManager *fileManager = [[EncryptedStoreFileManager alloc] initWithConfiguration:configuration];
+NSDictionary *options = @{ EncryptedStore.optionFileManager : fileManager };
+```
+
+2. Complex setup and file system methods separation.
+
+By default, database file (sqlite) is stored on disk in Application Support Directory.
+But you can configure file extension, file name and file url in `EncryptedStoreFileManagerConfiguration`.
+
+3. Apply attributes to database file.
+In general, this functionality is not needed.
+It is a part of setup core data stack process.
+
+But if you wish:
+
+```
+EncryptedStore *store = // retrieve store from coordinator.
+
+// set database file attributes
+NSDictionary *attributes = // set attributes
+NSError *error = nil;
+[store.fileManager setAttributes:attributes ofItemAtURL:store.fileManager.databaseURL error:&error];
+
+// inspect bundle
+store.fileManager.configuration.bundle;
+```
+
+
 # Using EncryptedStore
 
 EncryptedStore is known to work successfully on iOS versions 6.0 through 9.2.
