@@ -38,13 +38,15 @@ Provides a Core Data store that encrypts all data that is persisted.  Besides th
 
 # Using EncryptedStoreFileManager
 In case of strong coupling with file system functions and others default conventions FileManager was introduced.
+
 Have a look at components:
 
 * EncryptedStoreFileManagerConfiguration
 * EncryptedStoreFileManager
 
 Various options are stored in Configuration.
-And FileManager could be bypaased to all functions as option.
+
+And FileManager could be passed to all functions as an option.
 
 ```
 NSDictionary *options = @{ EncryptedStore.optionFileManager : fileManager };
@@ -53,7 +55,7 @@ NSDictionary *options = @{ EncryptedStore.optionFileManager : fileManager };
 However, it should solve some dirty hacks.
 Let's try.
 
-1. Database lives in different bundle.
+## Database lives in different bundle.
 
 ```
 NSBundle *bundle = [NSBundle bundleWithIdentifier:"com.opensource.database_framework"];
@@ -68,12 +70,12 @@ EncryptedStoreFileManager *fileManager = [[EncryptedStoreFileManager alloc] init
 NSDictionary *options = @{ EncryptedStore.optionFileManager : fileManager };
 ```
 
-2. Complex setup and file system methods separation.
+## Complex setup and file system methods separation.
 
 By default, database file (sqlite) is stored on disk in Application Support Directory.
 But you can configure file extension, file name and file url in `EncryptedStoreFileManagerConfiguration`.
 
-3. Apply attributes to database file.
+## Apply attributes to database file.
 In general, this functionality is not needed.
 It is a part of setup core data stack process.
 
