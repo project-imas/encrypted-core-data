@@ -65,6 +65,7 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 @end
 
 @interface EncryptedStore : NSIncrementalStore
+#pragma mark - Initialization
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel;
 + (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel;
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
@@ -75,6 +76,7 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 + (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
                                    passcode:(NSString *) passcode error:(NSError * __autoreleasing*)error;
 
+#pragma mark - Passphrase manipulation
 - (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error;
 - (BOOL)checkDatabaseStatusWithError:(NSError *__autoreleasing*)error;
 - (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
@@ -89,6 +91,11 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 @interface EncryptedStore (Initialization)
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
 + (NSPersistentStoreCoordinator *)coordinator:(NSPersistentStoreCoordinator *)coordinator byAddingStoreAtURL:(NSURL *)url configuration:(NSString *)configuration options:(NSDictionary *)options error:(NSError * __autoreleasing*)error;
+@end
+
+@interface EncryptedStore (Configuration)
+@property (copy, nonatomic, readonly) NSDictionary *configurationOptions;
+@property (strong, nonatomic, readonly) EncryptedStoreFileManager *fileManager;
 @end
 
 @interface EncryptedStore (OptionsKeys)

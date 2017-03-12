@@ -210,6 +210,23 @@ static const NSInteger kTableCheckVersion = 1;
 }
 @end
 
+@implementation EncryptedStore (Configuration)
+@dynamic configurationOptions;
+- (EncryptedStoreFileManager *)fileManager {
+    EncryptedStoreFileManager *fileManager = [self.configurationOptions objectForKey:self.class.optionFileManager];
+    
+    if ([fileManager isKindOfClass:EncryptedStoreFileManager.class]) {
+        return fileManager;
+    }
+    
+    return EncryptedStoreFileManager.defaultManager;
+}
+@end
+
+@interface EncryptedStore ()
+@property (copy, nonatomic, readwrite) NSDictionary *configurationOptions;
+@end
+
 @implementation EncryptedStore (Initialization)
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
 {
@@ -257,9 +274,9 @@ static const NSInteger kTableCheckVersion = 1;
     //     databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
 
     // }
-    
-    [persistentCoordinator addPersistentStoreWithType:EncryptedStoreType configuration:nil URL:databaseURL options:options error:error];
 
+    persistentCoordinator = [self coordinator:persistentCoordinator byAddingStoreAtURL:databaseURL configuration:nil options:options error:error];
+    
     if (*error)
     {
         NSLog(@"Unable to add persistent store.");
@@ -273,7 +290,13 @@ static const NSInteger kTableCheckVersion = 1;
     if (!coordinator) {
         return nil;
     }
-    [coordinator addPersistentStoreWithType:EncryptedStoreType configuration:configuration URL:url options:options error:error];
+    
+    EncryptedStore *store = [coordinator addPersistentStoreWithType:EncryptedStoreType configuration:configuration URL:url options:options error:error];
+    
+    if (store) {
+        store.configurationOptions = options;
+    }
+    
     return coordinator;
 }
 @end
@@ -929,7 +952,8 @@ static const NSInteger kTableCheckVersion = 1;
                     
                     // load the old model:
                     NSMutableArray *bundles = [NSMutableArray array];
-                    [bundles addObject:[NSBundle mainBundle]];
+                    NSBundle *bundle = self.fileManager.configuration.bundle;
+                    [bundles addObject:bundle];
                     NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:bundles
                                                                                  forStoreMetadata:metadata];
                     
@@ -2118,7 +2142,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 }
 
 - (BOOL)checkTableForMissingColumns:(NSDictionary *)metadata error:(NSError **)error {
-    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[[NSBundle mainBundle]]
+    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[self.fileManager.configuration.bundle]
                                                                      forStoreMetadata:metadata];
 
     if (!currentModel) {
