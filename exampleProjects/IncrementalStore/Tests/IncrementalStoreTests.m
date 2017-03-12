@@ -932,6 +932,47 @@
         }];
 }
 
+- (void)test_aggregateExpressions {
+    NSManagedObject *user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context];
+
+    // Create tags not assigned to any user
+    NSArray *unusedTagNames = @[@"tag 1", @"Tag 2", @"Täg 3"];
+    for (NSString *tagName in unusedTagNames) {
+        NSManagedObject *tag = [NSEntityDescription insertNewObjectForEntityForName:@"Tag" inManagedObjectContext:context];
+        [tag setValue:tagName forKey:@"name"];
+    }
+
+    // Create tags assigned to user
+    NSArray *usedTagNames = @[@"User Tag 1", @"User Tag 2"];
+    for (NSString *tagName in usedTagNames) {
+        NSManagedObject *tag = [NSEntityDescription insertNewObjectForEntityForName:@"Tag" inManagedObjectContext:context];
+        [tag setValue:tagName forKey:@"name"];
+
+        [tag setValue:[NSSet setWithObject:user] forKey:@"hasUsers"];
+    }
+
+    [context save:nil];
+
+    // Create aggregate expression consisting of (a) constant and (b) key path expressions
+    NSString *constantValue = unusedTagNames[1];
+    NSArray *aggregate = @[[NSExpression expressionForConstantValue:constantValue],
+                           [NSExpression expressionForKeyPath:@"hasUsers.hasTags.name"]];
+
+    NSExpression *aggregateExpression = [NSExpression expressionForAggregate:aggregate];
+
+    // Query tags with names in aggregate expression
+    NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"Tag"];
+    req.predicate = [NSPredicate predicateWithFormat:@"name IN %@", aggregateExpression];
+    NSArray *result = [context executeFetchRequest:req error:nil];
+
+    // Compare query result with expected values
+    NSSet *resultSet = [NSSet setWithArray:[result valueForKey:@"name"]];
+    NSSet *expectedSet = [NSSet setWithArray:[[NSMutableArray arrayWithObject:constantValue]
+                                              arrayByAddingObjectsFromArray:usedTagNames]];
+
+    XCTAssertEqualObjects(resultSet, expectedSet);
+}
+
 - (void)test_aggregateFunctions {
     NSArray *data = @[@1, @2, @3, @4, @7];
     
