@@ -91,9 +91,11 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
 @interface EncryptedStore (Initialization)
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
 + (NSPersistentStoreCoordinator *)coordinator:(NSPersistentStoreCoordinator *)coordinator byAddingStoreAtURL:(NSURL *)url configuration:(NSString *)configuration options:(NSDictionary *)options error:(NSError * __autoreleasing*)error;
++ (NSPersistentStoreDescription *)makeDescriptionWithOptions:(NSDictionary *)options configuration:(NSString *)configuration error:(NSError * __autoreleasing*)error API_AVAILABLE(macosx(10.12),ios(10.0),tvos(10.0),watchos(3.0));
 @end
 
 @interface EncryptedStore (Configuration)
+//alias to options.
 @property (copy, nonatomic, readonly) NSDictionary *configurationOptions;
 @property (strong, nonatomic, readonly) EncryptedStoreFileManager *fileManager;
 @end

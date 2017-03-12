@@ -79,6 +79,27 @@ But you can configure file extension, file name and file url in `EncryptedStoreF
 In general, this functionality is not needed.
 It is a part of setup core data stack process.
 
+## Configure persistentContainer
+`NSPersistentContainer` uses NSPersistentStoreDescriptions to configure stores.
+
+```
+NSManagedObjectModel *model = [NSManagedObjectModel new];
+NSPersistentContainer *container = [[NSPersistentContainer alloc] initWithName:@"abc" managedObjectModel:model];
+NSDictionary *options = @{
+                          self.optionPassphraseKey : @"123",
+                          self.optionFileManager : [EncryptedStoreFileManager defaultManager]
+};
+NSPersistentStoreDescription *description = [self makeDescriptionWithOptions:options configuration:nil error:nil];
+
+container.persistentStoreDescriptions = @[description];
+
+[container loadPersistentStoresWithCompletionHandler:^(NSPersistentStoreDescription *description, NSError * error) {
+    if (error) {
+        NSLog(@"error! %@", error);
+    }
+}];
+```
+
 But if you wish:
 
 ```
