@@ -91,6 +91,10 @@ static const NSInteger kTableCheckVersion = 1;
     return self;
 }
 
+- (instancetype)init {
+    return [self initWithOptions:@{}];
+}
+
 - (NSString *)databaseFilename {
     return [self.databaseName stringByAppendingPathExtension:self.databaseExtension];
 }
