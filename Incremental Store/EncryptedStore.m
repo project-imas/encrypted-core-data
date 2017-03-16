@@ -21,6 +21,7 @@ NSString * const EncryptedStoreErrorDomain = @"EncryptedStoreErrorDomain";
 NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
 NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocation";
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
+NSString * const EncryptedStoreFileManagerOption = @"EncryptedStoreFileManagerOption";
 
 static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
 static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv);
@@ -78,6 +79,243 @@ static const NSInteger kTableCheckVersion = 1;
 
 @end
 
+@implementation EncryptedStoreFileManagerConfiguration
+- (instancetype)initWithOptions:(NSDictionary *)options {
+    if (self = [super init]) {
+        self.fileManager = options[self.class.optionFileManager] ?: [NSFileManager defaultManager];
+        self.bundle = options[self.class.optionBundle] ?: NSBundle.mainBundle;
+        self.databaseName = options[self.class.optionDatabaseName] ?: [self databaseNameInBundle:self.bundle];
+        self.databaseExtension = options[self.class.optionDatabaseExtension] ?: @"sqlite";
+        self.databaseURL = options[self.class.optionDatabaseURL];
+    }
+    return self;
+}
+
+- (instancetype)init {
+    return [self initWithOptions:@{}];
+}
+
+- (NSString *)databaseFilename {
+    return [self.databaseName stringByAppendingPathExtension:self.databaseExtension];
+}
+
+- (NSString *)databaseNameInBundle:(NSBundle *)bundle {
+    NSString *bundleNameKey = (__bridge NSString *)kCFBundleNameKey;
+    NSString *databaseName = bundle.infoDictionary[bundleNameKey];
+    return databaseName;
+}
+
+@end
+@implementation EncryptedStoreFileManagerConfiguration (OptionsKeys)
++ (NSString *)optionFileManager {
+    return NSStringFromSelector(_cmd);
+}
++ (NSString *)optionBundle {
+    return NSStringFromSelector(_cmd);
+}
++ (NSString *)optionDatabaseName {
+    return NSStringFromSelector(_cmd);
+}
++ (NSString *)optionDatabaseExtension {
+    return NSStringFromSelector(_cmd);
+}
++ (NSString *)optionDatabaseURL {
+    return NSStringFromSelector(_cmd);
+}
+@end
+
+@implementation EncryptedStoreFileManager
+#pragma mark - Initialization
++ (instancetype)defaultManager {
+    return self.new;
+}
+
+- (instancetype)initWithConfiguration:(EncryptedStoreFileManagerConfiguration *)configuration {
+    if (self = [super init]) {
+        self.configuration = configuration;
+    }
+    return self;
+}
+
+#pragma mark - Getters
+- (EncryptedStoreFileManagerConfiguration *)configuration {
+    if (!_configuration) {
+        _configuration = EncryptedStoreFileManagerConfiguration.new;
+    }
+    return _configuration;
+}
+
+#pragma mark - Setup
+- (void)setupDatabaseWithOptions:(NSDictionary *)options error:(NSError *__autoreleasing *)error {
+    BOOL backup = YES;
+    NSURL *databaseURL = nil;
+    
+    id dburl = [options objectForKey:EncryptedStoreDatabaseLocation] ?: self.configuration.databaseURL;
+
+    if ([dburl isKindOfClass:[NSString class]]){
+        databaseURL = [NSURL URLWithString:dburl];
+        backup = NO;
+    }
+    else if ([dburl isKindOfClass:[NSURL class]]){
+        databaseURL = dburl;
+        backup = NO;
+    }
+    
+    
+    if (databaseURL)
+    {
+        self.configuration.databaseURL = databaseURL;
+        NSMutableDictionary *fileAttributes = [options mutableCopy];
+        [fileAttributes removeObjectsForKeys:@[EncryptedStorePassphraseKey, EncryptedStoreDatabaseLocation]];
+        [self setAttributes:fileAttributes ofItemAtURL:databaseURL error:error];
+    }
+    
+    if (backup){
+        [self.configuration.fileManager createDirectoryAtURL:self.applicationSupportURL withIntermediateDirectories:NO attributes:nil error:error];
+    }
+}
+
+- (NSURL *)databaseURL {
+    return self.configuration.databaseURL ?: [self.applicationSupportURL URLByAppendingPathComponent:self.configuration.databaseFilename];
+}
+@end
+
+@implementation EncryptedStoreFileManager (FileManagerExtensions)
+- (NSURL *)applicationSupportURL {
+    NSFileManager *manager = self.configuration.fileManager;
+    NSURL *applicationSupportURL = [[manager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+    return applicationSupportURL;
+}
+
+- (void)setAttributes:(NSDictionary *)attributes ofItemAtURL:(NSURL *)url error:(NSError *__autoreleasing *)error {
+    [self.configuration.fileManager setAttributes:attributes ofItemAtPath:[url copy] error:error];
+}
+@end
+
+@implementation EncryptedStore (OptionsKeys)
++ (NSString *)optionType {
+    return EncryptedStoreType;
+}
++ (NSString *)optionPassphraseKey {
+    return EncryptedStorePassphraseKey;
+}
++ (NSString *)optionErrorDomain {
+    return EncryptedStoreErrorDomain;
+}
++ (NSString *)optionErrorMessageKey {
+    return EncryptedStoreErrorMessageKey;
+}
++ (NSString *)optionDatabaseLocation {
+    return EncryptedStoreDatabaseLocation;
+}
++ (NSString *)optionCacheSize {
+    return EncryptedStoreCacheSize;
+}
++ (NSString *)optionFileManager {
+    return EncryptedStoreFileManagerOption;
+}
+@end
+
+@implementation EncryptedStore (Configuration)
+- (NSDictionary *)configurationOptions {
+    return self.options;
+}
+
+- (EncryptedStoreFileManager *)fileManager {
+    EncryptedStoreFileManager *fileManager = [self.configurationOptions objectForKey:self.class.optionFileManager];
+    
+    if ([fileManager isKindOfClass:EncryptedStoreFileManager.class]) {
+        return fileManager;
+    }
+    
+    return EncryptedStoreFileManager.defaultManager;
+}
+@end
+
+@implementation EncryptedStore (Initialization)
++ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
+{
+    NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
+    
+    //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    EncryptedStoreFileManager *fileManager = [options objectForKey:self.optionFileManager] ?: [EncryptedStoreFileManager defaultManager];
+    [fileManager setupDatabaseWithOptions:options error:error];
+    if (error) {
+        NSError *theError = *error;
+        if (theError) {
+            NSLog(@"Error: %@\n%@\n%@", theError, [theError userInfo], [theError localizedDescription]);
+        }
+    }
+
+    NSURL *databaseURL = fileManager.databaseURL;
+    // BOOL backup = YES;
+    // NSURL *databaseURL;
+    // id dburl = [options objectForKey:EncryptedStoreDatabaseLocation];
+    // if(dburl != nil) {
+    //     if ([dburl isKindOfClass:[NSString class]]){
+    //         databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
+    //         backup = NO;
+    //     }
+    //     else if ([dburl isKindOfClass:[NSURL class]]){
+    //         databaseURL = dburl;
+    //         backup = NO;
+    //     }
+    // }
+    
+    // if (databaseURL)
+    // {
+    //     NSMutableDictionary *fileAttributes = [options mutableCopy];
+    //     [fileAttributes removeObjectsForKeys:@[EncryptedStorePassphraseKey, EncryptedStoreDatabaseLocation]];
+        
+    //     [[NSFileManager defaultManager] setAttributes:[fileAttributes copy] ofItemAtPath:[databaseURL absoluteString] error:nil];
+    // }
+    
+    // if (backup){
+    //     NSString *dbNameKey = (__bridge NSString *)kCFBundleNameKey;
+    //     NSString *dbName = NSBundle.mainBundle.infoDictionary[dbNameKey];
+    //     NSFileManager *fileManager = [NSFileManager defaultManager];
+    //     NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+    //     [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
+    //     databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
+
+    // }
+
+    persistentCoordinator = [self coordinator:persistentCoordinator byAddingStoreAtURL:databaseURL configuration:nil options:options error:error];
+    
+    if (*error)
+    {
+        NSLog(@"Unable to add persistent store.");
+        NSLog(@"Error: %@\n%@\n%@", *error, [*error userInfo], [*error localizedDescription]);
+    }
+    
+    return persistentCoordinator;
+}
+
++ (NSPersistentStoreCoordinator *)coordinator:(NSPersistentStoreCoordinator *)coordinator byAddingStoreAtURL:(NSURL *)url configuration:(NSString *)configuration options:(NSDictionary *)options error:(NSError * __autoreleasing*)error {
+    if (!coordinator) {
+        return nil;
+    }
+    
+    [coordinator addPersistentStoreWithType:EncryptedStoreType configuration:configuration URL:url options:options error:error];
+    
+    return coordinator;
+}
+
++ (NSPersistentStoreDescription *)makeDescriptionWithOptions:(NSDictionary *)options configuration:(NSString *)configuration error:(NSError * __autoreleasing*)error {
+    NSPersistentStoreDescription *description = [NSPersistentStoreDescription new];
+    EncryptedStoreFileManager *fileManager = [options objectForKey:self.class.optionFileManager] ?: [EncryptedStoreFileManager defaultManager];
+    [fileManager setupDatabaseWithOptions:options error:error];
+    description.type = self.optionType;
+    description.URL = fileManager.databaseURL;
+    description.configuration = configuration;
+    for (NSString *key in options) {
+        [description setOption:options[key] forKey:key];
+    }
+    return description;
+}
+
+@end
+
 @implementation EncryptedStore {
     
     // database resources
@@ -105,56 +343,6 @@ static const NSInteger kTableCheckVersion = 1;
 {
     NSError * error;
     return [self makeStore:objModel passcode:passcode error:&error];
-}
-
-+ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error
-{
-    NSPersistentStoreCoordinator * persistentCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:objModel];
-    
-    //  NSString* appSupportDir = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-    
-    BOOL backup = YES;
-    NSURL *databaseURL;
-    id dburl = [options objectForKey:EncryptedStoreDatabaseLocation];
-    if(dburl != nil) {
-        if ([dburl isKindOfClass:[NSString class]]){
-            databaseURL = [NSURL URLWithString:[options objectForKey:EncryptedStoreDatabaseLocation]];
-            backup = NO;
-        }
-        else if ([dburl isKindOfClass:[NSURL class]]){
-            databaseURL = dburl;
-            backup = NO;
-        }
-    }
-    
-    if (databaseURL)
-    {
-        NSMutableDictionary *fileAttributes = [options mutableCopy];
-        [fileAttributes removeObjectsForKeys:@[EncryptedStorePassphraseKey, EncryptedStoreDatabaseLocation]];
-        
-        [[NSFileManager defaultManager] setAttributes:[fileAttributes copy] ofItemAtPath:[databaseURL absoluteString] error:nil];
-    }
-    
-    if (backup){
-        NSString *dbNameKey = (__bridge NSString *)kCFBundleNameKey;
-        NSString *dbName = NSBundle.mainBundle.infoDictionary[dbNameKey];
-        NSFileManager *fileManager = [NSFileManager defaultManager];
-        NSURL *applicationSupportURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
-        [fileManager createDirectoryAtURL:applicationSupportURL withIntermediateDirectories:NO attributes:nil error:nil];
-        databaseURL = [applicationSupportURL URLByAppendingPathComponent:[dbName stringByAppendingString:@".sqlite"]];
-
-    }
-    
-    [persistentCoordinator addPersistentStoreWithType:EncryptedStoreType configuration:nil URL:databaseURL
-        options:options error:error];
-
-    if (*error)
-    {
-        NSLog(@"Unable to add persistent store.");
-        NSLog(@"Error: %@\n%@\n%@", *error, [*error userInfo], [*error localizedDescription]);
-    }
-    
-    return persistentCoordinator;
 }
 
 + (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError *__autoreleasing *)error {
@@ -779,7 +967,8 @@ static const NSInteger kTableCheckVersion = 1;
                     
                     // load the old model:
                     NSMutableArray *bundles = [NSMutableArray array];
-                    [bundles addObject:[NSBundle mainBundle]];
+                    NSBundle *bundle = self.fileManager.configuration.bundle;
+                    [bundles addObject:bundle];
                     NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:bundles
                                                                                  forStoreMetadata:metadata];
                     
@@ -1968,7 +2157,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 }
 
 - (BOOL)checkTableForMissingColumns:(NSDictionary *)metadata error:(NSError **)error {
-    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[[NSBundle mainBundle]]
+    NSManagedObjectModel *currentModel = [NSManagedObjectModel mergedModelFromBundles:@[self.fileManager.configuration.bundle]
                                                                      forStoreMetadata:metadata];
 
     if (!currentModel) {
