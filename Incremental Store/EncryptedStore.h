@@ -77,12 +77,123 @@ typedef NS_ENUM(NSInteger, EncryptedStoreError)
                                    passcode:(NSString *) passcode error:(NSError * __autoreleasing*)error;
 
 #pragma mark - Passphrase manipulation
+#pragma mark - Public
+
+/**
+ @discussion Check old passphrase and if success change old passphrase to new passphrase.
+ 
+ @param oldPassphrase The old passhrase with which database was previously opened.
+ @param newPassphrase The new passhrase which is desired for database.
+ @param error Inout error.
+ @return The status of operation.
+ */
+- (BOOL)checkAndChangeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error;
+
+
+/**
+ @discussion Check database passphrase.
+ 
+ @param passphrase The desired passphrase to test for.
+ @param error Inout error.
+ @return The status of operation.
+ */
+- (BOOL)checkDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+
+#pragma mark - Internal
+
+/**
+ @brief Configure database with passhrase.
+ 
+ @discussion Configure database with passphrase stored in options dictionary.
+ 
+ @attention Internal usage.
+
+ @pre (error != NULL)
+ 
+ @param error Inout error.
+ @return The status of operation.
+ */
 - (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error;
+
+/**
+ @brief Test database connection against simple sql request.
+ @discussion Test database connection against simple sql request. Success means database open state and correctness of previous passphrase manipulation operation.
+
+ @attention Internal usage.
+ 
+ @pre (error != NULL)
+ 
+ @param error Inout error.
+ @return The status of operation.
+ */
 - (BOOL)checkDatabaseStatusWithError:(NSError *__autoreleasing*)error;
+
+
+/**
+ @brief
+ Primitive change passphrase operation.
+ 
+ @discussion Ignores database state and tries to change database passphrase.
+ Behaviour is unknown if used before old passphrase validation.
+ 
+ @attention Internal usage.
+
+ @pre (error != NULL)
+
+ @param passphrase The new passphrase.
+ @param error Inout error.
+ @return The status of operation.
+ */
 - (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+
+
+/**
+ @brief Primitive set passphrase operation.
+ 
+ @discussion Ignores database state and tries to set database passphrase.
+ One of first-call functions in database setup.
+
+ @attention Internal usage.
+ 
+ @pre (error != NULL)
+
+ @param passphrase The desired first passphrase of database.
+ @param error Inout error.
+ @return The status of operation.
+ */
 - (BOOL)setDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
-// Warning! // This method could close database connection ( look at implementation for details )
+
+
+/**
+ @brief Validates database passphrase for correctness.
+ 
+ @discussion Tries to reopen database on provided passphrase.
+ Closes database and try to open in on provided passphrase.
+ 
+ @warning Could close database connection ( look at an implementation for details ).
+ 
+ @pre (error != NULL)
+
+ @param passphrase The desired passphrase to validate.
+ @param error Inout error.
+ @return The status of operation.
+ */
 - (BOOL)validateDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error;
+
+/**
+ @brief Primitive database change passphrase operation.
+ 
+ @discussion Tries to open database on provided oldPassphrase and in success it tries to change passphrase to new passphrase.
+
+ @attention Internal usage.
+ 
+ @pre (error != NULL)
+
+ @param oldPassphrase: The old passphrase.
+ @param newPassphrase: The new passphrase.
+ @param error: Inout error.
+ @return The status of operation.
+ */
 - (BOOL)changeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error;
 
 
