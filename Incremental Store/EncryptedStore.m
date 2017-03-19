@@ -188,7 +188,7 @@ static const NSInteger kTableCheckVersion = 1;
 }
 
 - (void)setAttributes:(NSDictionary *)attributes ofItemAtURL:(NSURL *)url error:(NSError *__autoreleasing *)error {
-    [self.configuration.fileManager setAttributes:attributes ofItemAtPath:[url copy] error:error];
+    [self.configuration.fileManager setAttributes:attributes ofItemAtPath:[[url absoluteString] copy] error:error];
 }
 @end
 
