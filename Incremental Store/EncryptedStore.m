@@ -188,7 +188,7 @@ static const NSInteger kTableCheckVersion = 1;
 }
 
 - (void)setAttributes:(NSDictionary *)attributes ofItemAtURL:(NSURL *)url error:(NSError *__autoreleasing *)error {
-    [self.configuration.fileManager setAttributes:attributes ofItemAtPath:[url copy] error:error];
+    [self.configuration.fileManager setAttributes:attributes ofItemAtPath:[[url absoluteString] copy] error:error];
 }
 @end
 
@@ -1081,8 +1081,49 @@ static const NSInteger kTableCheckVersion = 1;
     return YES;
 }
 
-#pragma mark - passphrase
+#pragma mark - Passphrase manipulation
 
+#pragma mark - Public
+- (BOOL)checkAndChangeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing *)error {
+
+    NSError *validateError = nil;
+    BOOL validateResult = [self validateDatabasePassphrase:oldPassphrase error:&validateError];
+    
+    if (error) {
+        *error = validateError;
+    }
+    
+    BOOL checked = validateResult && validateError == nil;
+    
+    if (!checked) {
+        return checked;
+    }
+    
+    NSError *changeError = nil;
+    BOOL changeResult = [self changeDatabasePassphrase:oldPassphrase toNewPassphrase:newPassphrase error:&changeError];
+    
+    BOOL changed = changeResult && changeError == nil;
+    
+    if (error) {
+        *error = changeError;
+    }
+    
+    return changed;
+}
+
+- (BOOL)checkDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing *)error {
+    NSError *theError = nil;
+    BOOL operationResult = [self validateDatabasePassphrase:passphrase error:&theError];
+    BOOL checked = operationResult && theError == nil;
+    
+    if (error) {
+        *error = theError;
+    }
+    
+    return checked;
+}
+
+#pragma mark - Internal
 - (BOOL)configureDatabasePassphrase:(NSError *__autoreleasing*)error {
     NSString *passphrase = [[self options] objectForKey:EncryptedStorePassphraseKey];
     return [self setDatabasePassphrase:passphrase error:error];
@@ -1161,7 +1202,7 @@ static const NSInteger kTableCheckVersion = 1;
     int status;
     status = sqlite3_close(database);
     BOOL result = status == SQLITE_OK;
-
+    
     if (result) {
         // try to open
         status = sqlite3_open([[[self URL] path] UTF8String], &database);
@@ -1185,22 +1226,22 @@ static const NSInteger kTableCheckVersion = 1;
             database = NULL;
         }
     }
-
+    
     else {
         // could not close databse? hm
-            if (error) {
+        if (error) {
             NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey : @"Could not close database :("} mutableCopy];
-                // If we have a DB error keep it for extra info
-                NSError *underlyingError = [self databaseError];
-                if (underlyingError) {
-                    userInfo[NSUnderlyingErrorKey] = underlyingError;
-                }
-                *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
-        }
+            // If we have a DB error keep it for extra info
+            NSError *underlyingError = [self databaseError];
+            if (underlyingError) {
+                userInfo[NSUnderlyingErrorKey] = underlyingError;
             }
+            *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
+        }
+    }
 
     return result && (*error == nil);
-        }
+}
 
 - (BOOL)changeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error {
     BOOL result;
