@@ -1148,7 +1148,7 @@ static const NSInteger kTableCheckVersion = 1;
             *error = [NSError errorWithDomain:EncryptedStoreErrorDomain code:EncryptedStoreErrorIncorrectPasscode userInfo:userInfo];
         }
     }
-    return result && (*error == nil);
+    return result && (error == NULL || *error == nil);
 }
     
 - (BOOL)changeDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
@@ -1194,7 +1194,7 @@ static const NSInteger kTableCheckVersion = 1;
         result = [self checkDatabaseStatusWithError:error];
     }
 
-    return result && (*error == nil);
+    return result && (error == NULL || *error == nil);
 }
 
 - (BOOL)validateDatabasePassphrase:(NSString *)passphrase error:(NSError *__autoreleasing*)error {
@@ -1541,7 +1541,8 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 - (BOOL)initializeDatabase:(NSError**)error {
     BOOL __block success = YES;
     NSMutableSet *manytomanys = [NSMutableSet set];
-    
+    NSMutableSet *tableNames = [NSMutableSet new];
+
     if (success) {
         NSArray *entities = [self storeEntities];
         [entities enumerateObjectsUsingBlock:^(NSEntityDescription *entity, NSUInteger idx, BOOL *stop) {
@@ -1555,8 +1556,12 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 NSRelationshipDescription *relation = [relations objectForKey:key];
                 NSRelationshipDescription *inverse = [relation inverseRelationship];
                 if (relation.transient || inverse.transient) continue;
-                if ([relation isToMany] && [inverse isToMany] && ![manytomanys containsObject:inverse]) {
-                    [manytomanys addObject:relation];
+                if ([relation isToMany] && [inverse isToMany]) {
+                    NSString *const tableName = [self tableNameForRelationship:relation];
+                    if (! [tableNames containsObject:tableName]) {
+                        [manytomanys addObject:relation];
+                        [tableNames addObject:tableName];
+                    }
                 }
             }
         }];
@@ -2074,7 +2079,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 
 -(NSString *)tableNameForRelationship:(NSRelationshipDescription *)relationship {
     NSRelationshipDescription *inverse = [relationship inverseRelationship];
-    NSArray *names = [@[[relationship name],[inverse name]] sortedArrayUsingComparator:[self fixedLocaleCaseInsensitiveComparator]];
+    NSArray *names = @[[relationship name],[inverse name]];
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 
@@ -2838,9 +2843,16 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             NSRelationshipDescription *desc = (NSRelationshipDescription *)prop;
             NSRelationshipDescription *inverse = [desc inverseRelationship];
             if ([desc isToMany] && [inverse isToMany]) {
-                
+                NSEntityDescription *rootSourceEntity = [self rootForEntity:desc.entity];
+                NSEntityDescription *rootDestinationEntity = [self rootForEntity:inverse.entity];
+                NSString *entityName = [rootSourceEntity name];
+
+                if ([rootSourceEntity isEqual:rootDestinationEntity]) {
+                    entityName = [entityName stringByAppendingString:@"_1"];
+                }
+
                 NSString *string = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@__objectid=?;",
-                                    [self tableNameForRelationship:desc],[[self rootForEntity:[desc entity]] name]];
+                                    [self tableNameForRelationship:desc],entityName];
                 sqlite3_stmt *statement = [self preparedStatementForQuery:string];
                 NSNumber *number = [self referenceObjectForObjectID:[object objectID]];
                 sqlite3_bind_int64(statement, 1, [number unsignedLongLongValue]);
