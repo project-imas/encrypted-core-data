@@ -1228,18 +1228,18 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             case NSAddEntityMappingType: {
                 NSString *destRootEntityName = [self rootForEntity:destinationEntity].name;
                 NSEntityDescription *destRootEntity = destinationEntities[destRootEntityName];
-                if ([updatedRootEntities containsObject:destRootEntity]) {
-                    return;
+                if (![updatedRootEntities containsObject:destRootEntity]) {
+                    [updatedRootEntities addObject:destRootEntity];
+
+                    NSString *srcRootEntityName = destRootEntity.name;
+                    NSEntityDescription *srcRootEntity = [sourceEntities objectForKey:srcRootEntityName];
+
+                    success &= [self alterTableForSourceEntity:srcRootEntity
+                                             destinationEntity:destinationEntity
+                                                   withMapping:nil
+                                                         error:error];
                 }
-                [updatedRootEntities addObject:destRootEntity];
 
-                NSString *srcRootEntityName = destRootEntity.name;
-                NSEntityDescription *srcRootEntity = [sourceEntities objectForKey:srcRootEntityName];
-
-                success &= [self alterTableForSourceEntity:srcRootEntity
-                                         destinationEntity:destinationEntity
-                                               withMapping:nil
-                                                     error:error];
                 [destinationEntity.directRelationshipsByName enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSRelationshipDescription * _Nonnull obj, BOOL * _Nonnull stop) {
                     NSString *tableName = [self tableNameForRelationship:obj];
                     BOOL hasTable;
@@ -1265,15 +1265,15 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 
                 NSString *destRootEntityName = srcRootEntity.name;
                 NSEntityDescription *destRootEntity = [destinationEntities objectForKey:destRootEntityName];
-                if ([updatedRootEntities containsObject:destRootEntity]) {
-                    return;
-                }
-                [updatedRootEntities addObject:destRootEntity];
+                if (![updatedRootEntities containsObject:destRootEntity]) {
+                    [updatedRootEntities addObject:destRootEntity];
 
-                success &= [self alterTableForSourceEntity:srcRootEntity
-                                         destinationEntity:destRootEntity
-                                               withMapping:nil
-                                                     error:error];
+                    success &= [self alterTableForSourceEntity:srcRootEntity
+                                             destinationEntity:destRootEntity
+                                                   withMapping:nil
+                                                         error:error];
+                }
+
                 // TODO: should we remove many-to-many relationship tables here?
             } break;
 
@@ -1283,15 +1283,15 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 NSString *destRootEntityName = [self rootForEntity:destinationEntity].name;
                 NSEntityDescription *srcRootEntity = sourceEntities[srcRootEntityName];
                 NSEntityDescription *destRootEntity = destinationEntities[destRootEntityName];
-                if ([updatedRootEntities containsObject:destRootEntity]) {
-                    return;
-                }
-                [updatedRootEntities addObject:destRootEntity];
+                if (![updatedRootEntities containsObject:destRootEntity]) {
+                    [updatedRootEntities addObject:destRootEntity];
 
-                success &= [self alterTableForSourceEntity:srcRootEntity
-                                         destinationEntity:destRootEntity
-                                               withMapping:nil
-                                                     error:error];
+                    success &= [self alterTableForSourceEntity:srcRootEntity
+                                             destinationEntity:destRootEntity
+                                                   withMapping:nil
+                                                         error:error];
+                }
+
                 if (success) {
                     success &= [self alterRelationshipForSourceEntity:sourceEntity
                                                     destinationEntity:destinationEntity
