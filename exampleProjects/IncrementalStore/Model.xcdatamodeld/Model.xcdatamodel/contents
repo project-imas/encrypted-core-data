@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15C50" minimumToolsVersion="Xcode 4.3">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="11759" systemVersion="16D32" minimumToolsVersion="Xcode 4.3" sourceLanguage="Objective-C" userDefinedModelVersionIdentifier="">
+    <entity name="Account" syncable="YES">
+        <attribute name="accountID" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="transferFromAccounts" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Account" inverseName="transferToAccounts" inverseEntity="Account" syncable="YES"/>
+        <relationship name="transferToAccounts" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Account" inverseName="transferFromAccounts" inverseEntity="Account" syncable="YES"/>
+    </entity>
     <entity name="Comment" parentEntity="Post" syncable="YES">
         <relationship name="parent" optional="YES" minCount="1" maxCount="1" deletionRule="Nullify" destinationEntity="Post" inverseName="comments" inverseEntity="Post" syncable="YES"/>
     </entity>
@@ -10,7 +15,7 @@
     <entity name="Post" syncable="YES">
         <attribute name="body" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="tags" optional="YES" attributeType="Transformable" syncable="YES"/>
-        <attribute name="timestamp" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="comments" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Comment" inverseName="parent" inverseEntity="Comment" syncable="YES"/>
         <relationship name="user" optional="YES" minCount="1" maxCount="1" deletionRule="Cascade" destinationEntity="User" inverseName="posts" inverseEntity="User" syncable="YES"/>
@@ -21,8 +26,8 @@
         <relationship name="hasUsers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="User" inverseName="hasTags" inverseEntity="User" syncable="YES"/>
     </entity>
     <entity name="User" syncable="YES">
-        <attribute name="admin" optional="YES" attributeType="Boolean" syncable="YES"/>
-        <attribute name="age" optional="YES" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <attribute name="admin" optional="YES" attributeType="Boolean" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="age" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="hasTags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tag" inverseName="hasUsers" inverseEntity="Tag" syncable="YES"/>
         <relationship name="nicknames" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Nickname" inverseName="user" inverseEntity="Nickname" syncable="YES"/>
@@ -30,10 +35,11 @@
     </entity>
     <elements>
         <element name="Comment" positionX="97" positionY="-13" width="128" height="58"/>
+        <element name="Nickname" positionX="-153" positionY="99" width="128" height="75"/>
         <element name="Post" positionX="-144" positionY="-45" width="128" height="133"/>
         <element name="RootTag" positionX="-99" positionY="117" width="128" height="45"/>
         <element name="Tag" positionX="-99" positionY="197" width="128" height="73"/>
         <element name="User" positionX="-360" positionY="54" width="128" height="135"/>
-        <element name="Nickname" positionX="-153" positionY="99" width="128" height="75"/>
+        <element name="Account" positionX="-153" positionY="99" width="128" height="90"/>
     </elements>
 </model>
