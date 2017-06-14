@@ -8,7 +8,7 @@
 #error This class requires ARC.
 #endif
 
-#import <sqlite3.h>
+#import "sqlite3.h"
 #import <objc/runtime.h>
 
 #import "EncryptedStore.h"
