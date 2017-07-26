@@ -22,6 +22,7 @@ NSString * const EncryptedStoreErrorMessageKey = @"EncryptedStoreErrorMessage";
 NSString * const EncryptedStoreDatabaseLocation = @"EncryptedStoreDatabaseLocation";
 NSString * const EncryptedStoreCacheSize = @"EncryptedStoreCacheSize";
 NSString * const EncryptedStoreFileManagerOption = @"EncryptedStoreFileManagerOption";
+NSString * const EncryptedStoreBundleId = @"EncryptedStoreBundleId";
 
 static void dbsqliteRegExp(sqlite3_context *context, int argc, const char **argv);
 static void dbsqliteStripCase(sqlite3_context *context, int argc, const char **argv);
@@ -965,12 +966,21 @@ static const NSInteger kTableCheckVersion = 1;
                     if ([newModel isConfiguration:nil compatibleWithStoreMetadata:metadata]){
                         return YES;
                     }
-                    
-                    // load the old model:
-                    NSMutableArray *bundles = [NSMutableArray array];
-                    NSBundle *bundle = self.fileManager.configuration.bundle;
-                    [bundles addObject:bundle];
-                    NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:bundles
+
+                    // load the old model
+                    NSBundle *modelBundle;
+                    NSString *bundleId = [options objectForKey:EncryptedStoreBundleId];
+                    if (bundleId.length > 0)
+                    {
+                        modelBundle = [NSBundle bundleWithIdentifier:bundleId];
+                    }
+
+                    if (modelBundle == nil)
+                    {
+                        modelBundle = [NSBundle mainBundle];
+                    }
+
+                    NSManagedObjectModel *oldModel = [NSManagedObjectModel mergedModelFromBundles:@[modelBundle]
                                                                                  forStoreMetadata:metadata];
                     
                     if (oldModel && newModel) {

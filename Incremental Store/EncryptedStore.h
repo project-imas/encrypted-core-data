@@ -20,6 +20,8 @@ extern NSString * const EncryptedStoreErrorMessageKey;
 extern NSString * const EncryptedStoreDatabaseLocation;
 extern NSString * const EncryptedStoreCacheSize;
 extern NSString * const EncryptedStoreFileManagerOption;
+extern NSString * const EncryptedStoreBundleId;
+
 typedef NS_ENUM(NSInteger, EncryptedStoreError)
 {
     EncryptedStoreErrorIncorrectPasscode = 6000,
