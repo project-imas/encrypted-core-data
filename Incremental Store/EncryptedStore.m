@@ -970,6 +970,7 @@ static const NSInteger kTableCheckVersion = 1;
                 sqlite3_finalize(statement);
                 
                 // run migrations
+                // MARK: (Josh) - Remove the manual migration and use iOS default lightweight migration
             }
             
             // this is a new store
