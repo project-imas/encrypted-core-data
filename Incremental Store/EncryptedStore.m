@@ -861,6 +861,11 @@ static const NSInteger kTableCheckVersion = 1;
             database = NULL;
             return NO;
         }
+        if (![self configureNSSQLitePragmasOption]) {
+            sqlite3_close(database);
+            database = NULL;
+            return NO;
+        }
         
         // invoke vacuum if needed
         if ([self.options[NSSQLiteManualVacuumOption] boolValue]) {
@@ -1251,6 +1256,28 @@ static const NSInteger kTableCheckVersion = 1;
         result = [self changeDatabasePassphrase:newPassphrase error:error];
     }
     return result && (*error == nil);
+}
+
+-(BOOL)configureNSSQLitePragmasOption
+{
+    NSDictionary *pragmasOption = [[self options] objectForKey:NSSQLitePragmasOption];
+    if (pragmasOption != nil) {
+        for (NSString *pragmaKey in pragmasOption) {
+            NSString *pragmaValue = [pragmasOption objectForKey:pragmaKey];
+            NSString *string = [NSString stringWithFormat:@"PRAGMA %@ = %@;", pragmaKey, pragmaValue];
+            sqlite3_stmt *statement = [self preparedStatementForQuery:string];
+            sqlite3_step(statement);
+            
+            if (statement == NULL || sqlite3_finalize(statement) != SQLITE_OK) {
+                // TO-DO: handle error with statement
+                NSLog(@"Error: statement is NULL or could not be finalized");
+                return NO;
+            } else {
+                return YES;
+            }
+        }
+    }
+    return YES;
 }
 
 -(BOOL)configureDatabaseCacheSize
