@@ -1272,8 +1272,6 @@ static const NSInteger kTableCheckVersion = 1;
                 // TO-DO: handle error with statement
                 NSLog(@"Error: statement is NULL or could not be finalized");
                 return NO;
-            } else {
-                return YES;
             }
         }
     }
