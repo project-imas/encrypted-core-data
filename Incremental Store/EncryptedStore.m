@@ -525,7 +525,7 @@ static const NSInteger kTableCheckVersion = 1;
         // return fetched dictionaries
         if (type == NSDictionaryResultType && [[fetchRequest propertiesToFetch] count] > 0) {
             NSArray * propertiesToFetch = [fetchRequest propertiesToFetch];
-            NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch];
+            NSString * propertiesToFetchString = [self columnsClauseWithProperties:propertiesToFetch fromTable:table];
             
             // TODO: Need a test case to reach here, or remove it entirely
             // NOTE - this now supports joins but in a limited fashion. It will successfully
@@ -3235,11 +3235,11 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 }
 
 
-- (NSString *)expressionDescriptionTypeString:(NSExpressionDescription *)expressionDescription {
+- (NSString *)expressionDescriptionTypeString:(NSExpressionDescription *)expressionDescription  fromTable:(NSString *)table {
     
     switch (expressionDescription.expressionResultType) {
         case NSObjectIDAttributeType:
-            return @"__objectID";
+            return [NSString stringWithFormat:@"%@.__objectID", table];
             break;
             
             /*  NSUndefinedAttributeType
@@ -3262,20 +3262,20 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     }
 }
 
-- (NSString *)columnsClauseWithProperties:(NSArray *)properties {
+- (NSString *)columnsClauseWithProperties:(NSArray *)properties fromTable:(NSString *)table {
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[properties count]];
     
     [properties enumerateObjectsUsingBlock:^(NSPropertyDescription *prop, NSUInteger idx, BOOL *stop) {
         if ([prop isKindOfClass:[NSRelationshipDescription class]]) {
             if (![(NSRelationshipDescription *)prop isToMany]) {
-                [columns addObject:[self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]];
+                [columns addObject:[NSString stringWithFormat:@"%@.%@", table, [self foreignKeyColumnForRelationship:(NSRelationshipDescription *)prop]]];
             }
         } else if ([prop isKindOfClass:[NSExpressionDescription class]]) {
             NSExpressionDescription *expression = (NSExpressionDescription*) prop;
-            NSString *column = [self expressionDescriptionTypeString:expression];
+            NSString *column = [self expressionDescriptionTypeString:expression fromTable:table];
             [columns addObject:column];
         } else {
-            [columns addObject:[NSString stringWithFormat:@"%@",prop.name]];
+            [columns addObject:[NSString stringWithFormat:@"%@.%@", table, prop.name]];
         }
     }];
     
