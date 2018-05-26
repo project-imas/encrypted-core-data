@@ -4112,6 +4112,14 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                         [operator objectForKey:@"format"],
                         [parameters componentsJoinedByString:@", "]];
         }
+        else if ([value isKindOfClass:[NSDictionary class]]) {
+            NSUInteger count = [value count];
+            NSArray *parameters = [NSArray cmdArrayWithObject:@"?" times:count];
+            *bindings = [value allKeys];
+            *operand = [NSString stringWithFormat:
+                        [operator objectForKey:@"format"],
+                        [parameters componentsJoinedByString:@", "]];
+        }
         else if ([value isKindOfClass:[NSDate class]]) {
             *bindings = value;
             *operand = @"?";
