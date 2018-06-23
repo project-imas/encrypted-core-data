@@ -4189,8 +4189,15 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
             if (exprBinding) [*bindings addObject:exprBinding];
         }
 
-        *operand = [NSString stringWithFormat:[operator objectForKey:@"format"],
-                                                [subOperands componentsJoinedByString:@","]];
+        NSString *strFormat = [operator objectForKey:@"format"];
+        NSMutableString *strOperands = [NSMutableString string];
+        // Courtesy of Ruslan Soldatenko at https://stackoverflow.com/a/40638476
+        NSArray *arrComponents = strFormat ? [strFormat componentsSeparatedByString:@"%@"] : @[@""];
+        NSUInteger iterationCount = subOperands.count < arrComponents.count ? subOperands.count : arrComponents.count;
+        for ( NSUInteger i = 0; i < iterationCount; i++ )
+            [strOperands appendFormat:@"%@%@", arrComponents[i], subOperands[i]];
+        [strOperands appendString:[arrComponents lastObject]];
+        *operand = iterationCount == 0 ? [strOperands stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] : strOperands;
         *bindings = [*bindings cmdFlatten];
     }
     
