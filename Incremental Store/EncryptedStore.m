@@ -2086,7 +2086,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 - (NSString *)tableNameForPreviousRelationship:(NSRelationshipDescription *)relationship
 {
     NSRelationshipDescription *inverse = [relationship inverseRelationship];
-    NSArray *names = [@[([relationship renamingIdentifier] ? [relationship renamingIdentifier] : [relationship name]), ([inverse renamingIdentifier] ? [inverse renamingIdentifier] : [inverse name])] sortedArrayUsingComparator:[self fixedLocaleCaseInsensitiveComparator]];
+    NSArray *names = @[([relationship renamingIdentifier] ? [relationship renamingIdentifier] : [relationship name]), ([inverse renamingIdentifier] ? [inverse renamingIdentifier] : [inverse name])];
     return [NSString stringWithFormat:@"ecd_%@",[names componentsJoinedByString:@"_"]];
 }
 /// Create columns for both object IDs. @returns YES  if the relationship.entity was first
