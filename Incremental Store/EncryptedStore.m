@@ -282,10 +282,9 @@ static const NSInteger kTableCheckVersion = 1;
 
     persistentCoordinator = [self coordinator:persistentCoordinator byAddingStoreAtURL:databaseURL configuration:nil options:options error:error];
     
-    if (*error)
-    {
-        NSLog(@"Unable to add persistent store.");
-        NSLog(@"Error: %@\n%@\n%@", *error, [*error userInfo], [*error localizedDescription]);
+    if (*error) {
+        // Returning nil will cause the error object to be thrown as intended if this method is called in Swift
+        return nil;
     }
     
     return persistentCoordinator;
@@ -297,7 +296,12 @@ static const NSInteger kTableCheckVersion = 1;
     }
     
     [coordinator addPersistentStoreWithType:EncryptedStoreType configuration:configuration URL:url options:options error:error];
-    
+
+    if (*error) {
+        // Returning nil will cause the error object to be thrown as intended if this method is called in Swift
+        return nil;
+    }
+
     return coordinator;
 }
 
@@ -305,6 +309,12 @@ static const NSInteger kTableCheckVersion = 1;
     NSPersistentStoreDescription *description = [NSPersistentStoreDescription new];
     EncryptedStoreFileManager *fileManager = [options objectForKey:self.class.optionFileManager] ?: [EncryptedStoreFileManager defaultManager];
     [fileManager setupDatabaseWithOptions:options error:error];
+
+    if (*error) {
+        // Returning nil will cause the error object to be thrown as intended if this method is called in Swift
+        return nil;
+    }
+
     description.type = self.optionType;
     description.URL = fileManager.databaseURL;
     description.configuration = configuration;
