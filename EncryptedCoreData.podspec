@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name          = 'EncryptedCoreData'
-    s.version       = '3.1'
+    s.version       = '3.2'
     s.license       = 'Apache-2.0'
   
     s.summary       = 'iOS Core Data encrypted SQLite store using SQLCipher'
@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
         'MITRE' => 'imas-proj-list@lists.mitre.org'
     }
   
-    s.source        = { :git => 'https://github.com/project-imas/encrypted-core-data.git', :tag => '3.1' }
+    s.source        = { :git => 'https://github.com/project-imas/encrypted-core-data.git', :tag => '3.2' }
   
     s.frameworks    = ['CoreData', 'Security']
     s.requires_arc  = true
