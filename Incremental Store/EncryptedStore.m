@@ -3530,7 +3530,19 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
  
  */
 - (NSDictionary *)whereClauseWithFetchRequest:(NSFetchRequest *)request {
-    NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:[request predicate]];
+    NSPredicate *predicate = [request predicate];
+
+    // Perform substitution in predicate if substitutionVariables are available
+    SEL substitutionVariablesSelector = NSSelectorFromString(@"substitutionVariables");
+    if ([request respondsToSelector:substitutionVariablesSelector]) {
+        // See https://stackoverflow.com/questions/7017281/performselector-may-cause-a-leak-because-its-selector-is-unknown for explanation of this pattern
+        IMP  imp = [request methodForSelector:substitutionVariablesSelector];
+        NSDictionary *(*func)(id, SEL) = (void *)imp;
+        NSDictionary *substitutionVariables = func(request, substitutionVariablesSelector);
+        predicate = [predicate predicateWithSubstitutionVariables:substitutionVariables];
+    }
+
+    NSDictionary *result = [self recursiveWhereClauseWithFetchRequest:request predicate:predicate];
     NSString *query = result[@"query"];
     
     if ([self entityNeedsEntityTypeColumn:request.entity]) {
