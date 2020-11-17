@@ -3707,7 +3707,16 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
     NSArray *bindings = [clause objectForKey:@"bindings"];
     
     [bindings enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        // downconvert objects and objectIDs to concrete values
+        if ([obj isKindOfClass:[NSManagedObject class]]) {
+            obj = [obj objectID];
+        }
         
+        if ([obj isKindOfClass:[NSManagedObjectID class]]) {
+            // objects with temporary ids haven't been inserted yet, so look for an id we know will never match
+            obj = [obj isTemporaryID] ? @"-1" : [self referenceObjectForObjectID:obj];
+        }
+
         // string
         if ([obj isKindOfClass:[NSString class]]) {
             const char* str = [obj UTF8String];
@@ -3730,19 +3739,6 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                     sqlite3_bind_int64(statement, ((int)idx + 1), [obj longLongValue]);
                     break;
             }
-        }
-        
-        // managed object id
-        else if ([obj isKindOfClass:[NSManagedObjectID class]]) {
-            id referenceObject = [self referenceObjectForObjectID:obj];
-            sqlite3_bind_int64(statement, ((int)idx + 1), [referenceObject unsignedLongLongValue]);
-        }
-        
-        // managed object
-        else if ([obj isKindOfClass:[NSManagedObject class]]) {
-            NSManagedObjectID *objectID = [obj objectID];
-            id referenceObject = [self referenceObjectForObjectID:objectID];
-            sqlite3_bind_int64(statement, ((int)idx + 1), [referenceObject unsignedLongLongValue]);
         }
         
         // date
@@ -4145,15 +4141,8 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
                 *operand = @"?";
             *bindings = [NSString stringWithFormat:[operator objectForKey:@"format"], value];
         } else if ([value isKindOfClass:[NSManagedObject class]] || [value isKindOfClass:[NSManagedObjectID class]]) {
-            NSManagedObjectID * objectId = [value isKindOfClass:[NSManagedObject class]] ? [value objectID]:value;
             *operand = @"?";
-            // We're not going to be able to look up an object with a temporary id, it hasn't been inserted yet
-            if ([objectId isTemporaryID]) {
-                // Just look for an id we know will never match
-                *bindings = @"-1";
-            } else {
-                *bindings = value;
-            }
+            *bindings = value;
         }
         else if (!value || value == [NSNull null]) {
             *bindings = nil;
