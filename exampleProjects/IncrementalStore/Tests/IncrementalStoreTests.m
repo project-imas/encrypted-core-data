@@ -851,6 +851,42 @@
     }];
 }
 
+-(void)test_predicateForSelfInComparisonWithUnpersistedObjects {
+    NSArray *users = @[
+        [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context],
+        [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:context]
+    ];
+
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
+    [request setPredicate:[NSPredicate predicateWithFormat:@"SELF IN %@", users]];
+
+    NSError *error;
+    NSArray<NSManagedObject *> *results = [context executeFetchRequest:request error:&error];
+    XCTAssertNotNil(results);
+    XCTAssertEqual([results count], 2);
+}
+
+-(void)test_batchFetchWithNestedContextsAndUnpersistedObjects {
+    NSManagedObjectContext *parentContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+    [parentContext setPersistentStoreCoordinator: coordinator];
+
+    NSManagedObjectContext *childContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+    [childContext setParentContext:parentContext];
+    NSManagedObject *user = [NSEntityDescription insertNewObjectForEntityForName:@"User" inManagedObjectContext:childContext];
+
+    NSError *error;
+    BOOL saved = [childContext save:&error];
+    XCTAssertTrue(saved, @"Failed to save child context: %@", error);
+
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
+    [request setFetchBatchSize:20];
+
+    NSArray<NSManagedObject *> *results = [childContext executeFetchRequest:request error:&error];
+    XCTAssertNotNil(results, @"Failed to fetch saved user from parent context: %@", error);
+    XCTAssertEqual([results count], 1);
+    XCTAssertEqualObjects([results[0] objectID], [user objectID]);
+}
+
 -(void)test_sumExpression {
     
     [self createUsers:10];
