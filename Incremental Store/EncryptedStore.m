@@ -2923,7 +2923,7 @@ static void dbsqliteStripCaseDiacritics(sqlite3_context *context, int argc, cons
 
 - (NSError *)databaseError {
     int code = sqlite3_errcode(database);
-    if (code) {
+    if (code && code != SQLITE_DONE && code != SQLITE_OK && code != SQLITE_ROW) {
         NSDictionary *userInfo = @{
                                    EncryptedStoreErrorMessageKey : [NSString stringWithUTF8String:sqlite3_errmsg(database)]
                                    };
